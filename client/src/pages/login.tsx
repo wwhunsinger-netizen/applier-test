@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
-import logoUrl from "@assets/Its_not_a_career,_its_a_heist._(5)_1766203128601.png";
+import logoUrl from "@assets/Jumpseat_(17)_1766203547189.png";
 import LoadingScreen from "@/components/loading";
 
 export default function LoginPage() {

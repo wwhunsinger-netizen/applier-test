@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import logoUrl from "@assets/Its_not_a_career,_its_a_heist._(5)_1766203128601.png";
+import logoUrl from "@assets/Jumpseat_(17)_1766203547189.png";
 
 export default function LoadingScreen() {
   return (

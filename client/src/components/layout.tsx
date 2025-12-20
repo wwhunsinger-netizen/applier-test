@@ -4,7 +4,7 @@ import { LayoutDashboard, Briefcase, Send, Trophy, User, LogOut } from "lucide-r
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { CURRENT_USER } from "@/lib/mockData";
-import logoUrl from "@assets/Its_not_a_career,_its_a_heist._(5)_1766203128601.png";
+import logoUrl from "@assets/Jumpseat_(17)_1766203547189.png";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
