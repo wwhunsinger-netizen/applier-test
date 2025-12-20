@@ -1,0 +1,946 @@
+PROJECT OVERVIEW
+Build a web application dashboard for job application reviewers. This is a gamified, performance-tracking system where remote workers review AI-generated job applications before submission. The system must support multiple users with isolated data, real-time performance tracking, leaderboards, and an extremely satisfying user experience focused on speed and gamification.
+
+CORE CONCEPT
+Users (appliers) log in to their personal dashboard where they see a queue of pre-loaded job applications. AI has already filled out the resume, cover letter, and application form. The applier's job is to review everything for accuracy (wrong company names, AI-generated text that sounds fake, typos, mismatched skills) and either approve or edit before submitting. Target time: 90-120 seconds per application. Target volume: 100 applications per day.
+
+USER ROLES & AUTHENTICATION
+Role 1: Applier (Primary User)
+
+Each applier has their own isolated account
+Can only see their assigned clients and jobs
+Tracks personal performance, earnings, and stats
+Competes on leaderboard against other appliers
+
+Role 2: Admin (You/Wilson)
+
+Can see all appliers' performance
+Can flag applications for quality issues
+Can assign clients to appliers
+Can view system-wide analytics
+
+Authentication Requirements:
+
+Simple email/password login
+Create test accounts:
+
+applier1@test.com / password123
+applier2@test.com / password123
+applier3@test.com / password123
+applier4@test.com / password123
+applier5@test.com / password123
+admin@jumpseat.com / admin123
+
+
+
+Data Isolation:
+Each applier sees ONLY:
+
+Their assigned client(s)
+Jobs in their queue
+Their personal stats
+Leaderboard showing all appliers (for competition)
+
+Applier 1 cannot see Applier 2's client data, job queue, or detailed stats.
+
+DATABASE SCHEMA (Key Entities)
+Users Table
+
+user_id (primary key)
+email
+password (hashed)
+role (applier/admin)
+name
+created_at
+
+Clients Table
+
+client_id (primary key)
+name (e.g., "John Smith")
+target_role (e.g., "Remote Software Engineer")
+salary_range (e.g., "$120k-$150k")
+key_skills (array: ["React", "Node.js", "AWS"])
+location_preferences (e.g., "US remote only")
+work_authorization (e.g., "US Citizen")
+resume_template (text blob of their resume)
+assigned_applier_id (foreign key to Users)
+start_date
+application_cap (default: 5000)
+status (active/paused/completed)
+
+Jobs Table
+
+job_id (primary key)
+client_id (foreign key)
+company_name
+job_title
+location
+job_description (text)
+posted_date
+source_url
+status (queued/skipped/submitted)
+assigned_date
+
+Applications Table
+
+application_id (primary key)
+job_id (foreign key)
+client_id (foreign key)
+applier_id (foreign key - who submitted it)
+ai_resume (text - AI-tailored resume)
+ai_cover_letter (text)
+ai_form_answers (JSON object of question/answer pairs)
+status (draft/submitted/flagged/interview/rejected)
+time_spent_seconds
+submitted_at
+result (null/interview_scheduled/rejected/offer)
+interview_bonus_paid (boolean)
+offer_bonus_paid (boolean)
+qa_flags (JSON array of issues found)
+
+Performance_Stats Table
+
+stat_id (primary key)
+applier_id (foreign key)
+date
+applications_completed
+total_time_seconds
+average_time_per_app
+interview_count
+qa_error_count
+daily_bonus_earned
+interview_bonus_earned
+offer_bonus_earned
+
+QA_Feedback Table
+
+feedback_id (primary key)
+application_id (foreign key)
+flagged_by_admin_id (foreign key to Users)
+issue_description
+severity (low/medium/high)
+created_at
+acknowledged (boolean)
+
+
+DASHBOARD PAGES & VIEWS
+
+PAGE 1: LOGIN
+Simple login screen:
+
+Email input
+Password input
+"Login" button
+No registration (admin creates accounts)
+
+After login, redirect to Dashboard Home based on role.
+
+PAGE 2: DASHBOARD HOME (Applier View)
+This is what appliers see when they log in. It's their command center.
+Section A: Hero Stats Card (Top of page, prominent)
+YOUR PERFORMANCE TODAY:
+┌─────────────────────────────────────────────────────┐
+│ Applications: 47/100                               │
+│ [████████████░░░░░░░░] 47%                        │
+│                                                     │
+│ Time worked: 1.2 hours                            │
+│ Avg per app: 1.5 min                              │
+│ Projected finish: 1.3 hours remaining             │
+│                                                     │
+│ 🎯 Daily Goal: Need 53 more for $25 bonus         │
+└─────────────────────────────────────────────────────┘
+Design notes:
+
+Big, visual progress bar
+Green when on track, yellow when behind pace, red when way behind
+Countdown timer showing estimated time to hit 100
+Prominent bonus reminder to keep them motivated
+
+Section B: This Week's Stats
+THIS WEEK:
+├─ Time per application: 1.8 min (avg)
+├─ Applications completed: 487
+├─ Interview rate: 6.2% (30 interviews / 487 apps)
+├─ QA error rate: 1.1% (5 flagged / 487 apps)
+└─ Earnings this week: $342
+
+[View Detailed Stats →]
+Section C: Gamification - Streaks & Badges
+🔥 ACTIVE STREAKS:
+├─ 7 days: 100+ apps daily
+├─ 12 days: Sub-2min average
+└─ 3 days: Zero QA errors
+
+⚡ BADGES EARNED THIS MONTH:
+[Speed Demon 🚀] [Quality Champion 🏆] [Consistency King 👑]
+
+[View All Achievements →]
+Design notes:
+
+Streaks should have flame emoji that gets bigger with longer streaks
+Badges should be colorful, visual icons (not just text)
+Show progress bars for "almost earned" badges ("3 more days for Perfect Week!")
+Make this section FUN and rewarding
+
+Section D: Leaderboard (Monthly)
+🏆 LEADERBOARD - TOP PERFORMERS THIS MONTH:
+
+1. Maria R. ─ $1,842 (523 apps, 8.1% interview rate) 🥇
+2. Carlos M. ─ $1,721 (501 apps, 7.4% interview rate) 🥈
+3. Ana S. ─ $1,650 (498 apps, 6.9% interview rate) 🥉
+4. YOU ─ $1,340 (487 apps, 6.2% interview rate) 👈
+5. Jose P. ─ $1,215 (512 apps, 3.8% interview rate)
+
+[View Full Leaderboard →]
+Design notes:
+
+Highlight the current user's row (bold, different color)
+Show medals for top 3
+Include just enough detail to show WHY they're ranked where they are
+Update in real-time as people submit applications
+
+Section E: Call-to-Action
+┌─────────────────────────────────────────────────────┐
+│                                                     │
+│           [START REVIEWING APPLICATIONS]           │
+│                 Big, prominent button               │
+│                                                     │
+│              53 jobs waiting in your queue          │
+│                                                     │
+└─────────────────────────────────────────────────────┘
+Design notes:
+
+This button should be HUGE and impossible to miss
+Should pulse or have subtle animation to draw attention
+Clicking it goes to the Application Queue page
+
+
+PAGE 3: APPLICATION QUEUE
+This is the main work page where they spend most of their time.
+Section A: Client Context Card (Always visible at top)
+WORKING ON: John Smith
+Target Role: Remote Software Engineer | Day 47 of 90
+Progress: 2,847 / 5,000 applications sent
+Interviews: 18 | Offers: 2 (1 pending)
+
+[View Full Client Profile →]
+Design notes:
+
+Small, collapsed by default, but always visible
+Shows just enough context so they remember who they're applying for
+Can click to expand for full client details
+
+Section B: Job Cards (Main work area)
+Display jobs as cards in a vertical list. Each card shows:
+┌─────────────────────────────────────────────────────┐
+│ Software Engineer                                   │
+│ TechCorp Inc. | Remote (US) | Posted 2 hours ago   │
+│                                                     │
+│ Match Score: 94% ████████████░░                    │
+│                                                     │
+│ Key Requirements:                                  │
+│ ✓ React, Node.js (client has these)               │
+│ ✓ 5+ years experience (client: 5 years)           │
+│ ⚠ Java preferred (client: Python)                 │
+│                                                     │
+│     [START APPLICATION] ←── Big green button       │
+│     [Skip This Job] [Flag as Bad Match]            │
+│                                                     │
+└─────────────────────────────────────────────────────┘
+Design notes:
+
+Cards should be clean, scannable
+Match score helps them prioritize
+Green checkmarks for requirements they meet, warning for potential issues
+"Start Application" button is the primary action
+Show 5-10 jobs at a time, with "Load More" button
+As they complete applications, those cards fade out/disappear with satisfying animation
+
+Section C: Filters & Sorting
+Queue: [All Jobs (53)] [New Today (12)] [High Match (28)]
+Sort: [Best Match] [Most Recent] [Company A-Z]
+
+PAGE 4: APPLICATION REVIEW SCREEN
+This is THE most important page. They'll be on this screen 100 times per day. It needs to be FAST, SMOOTH, and SATISFYING.
+Layout: Split screen / Tabs approach
+Top Bar (Always visible)
+Application #47 of 100 today
+Timer: ⏱️ 0:42 (counting up)
+Job: Software Engineer at TechCorp Inc.
+
+[Save Draft] [< Previous Job] [Skip This Job >]
+Three-Step Review Process (Tabs or vertical sections)
+TAB 1: RESUME REVIEW
+┌─────────────────────────────────────────────────────┐
+│ RESUME REVIEW                                       │
+├─────────────────────────────────────────────────────┤
+│                                                     │
+│ AI Changes Made:                                   │
+│ ✏️ Job title: "Developer" → "Software Engineer"    │
+│ ✏️ Added skills: React, Node.js, AWS               │
+│ ✏️ Emphasized: Remote work experience              │
+│                                                     │
+│ AI Confidence: 94% ████████████████░░              │
+│                                                     │
+│ [View Side-by-Side Comparison]                     │
+│                                                     │
+│ Original Resume          AI-Tailored Resume        │
+│ ┌─────────────┐         ┌─────────────┐           │
+│ │             │         │             │           │
+│ │  [Preview]  │   VS    │  [Preview]  │           │
+│ │             │         │  [Changes   │           │
+│ │             │         │  highlighted]│           │
+│ └─────────────┘         └─────────────┘           │
+│                                                     │
+│ ⚠️ Check for:                                      │
+│ □ Skills match job description                     │
+│ □ Job titles make sense                           │
+│ □ No weird AI additions                           │
+│                                                     │
+│ [✓ APPROVE RESUME] [✎ Edit Resume]                │
+│                                                     │
+└─────────────────────────────────────────────────────┘
+Interaction:
+
+Clicking "Approve Resume" should have satisfying animation (checkmark, subtle green flash)
+Auto-advances to Tab 2 (Cover Letter)
+If they click "Edit Resume", open inline editor
+
+TAB 2: COVER LETTER REVIEW
+┌─────────────────────────────────────────────────────┐
+│ COVER LETTER REVIEW                                 │
+├─────────────────────────────────────────────────────┤
+│                                                     │
+│ Dear Hiring Manager,                               │
+│                                                     │
+│ I am writing to express my interest in the        │
+│ Software Engineer position at TechCorp Inc.       │
+│ With 5 years of experience in full-stack          │
+│ development, particularly with React and Node.js, │
+│ I believe I would be a strong addition to your    │
+│ team...                                            │
+│                                                     │
+│ [Full AI-generated letter shown in readable format]│
+│                                                     │
+├─────────────────────────────────────────────────────┤
+│ ✅ QUALITY CHECKS:                                 │
+│ ✓ Company name: "TechCorp Inc." (correct)         │
+│ ✓ Job title: "Software Engineer" (correct)        │
+│ ⚠️ Hiring manager name: Not found (using generic)  │
+│ ✓ No obvious AI phrases detected                  │
+│ ✓ Tone: Professional                              │
+│                                                     │
+│ [✓ APPROVE COVER LETTER] [✎ Edit Letter]          │
+│                                                     │
+└─────────────────────────────────────────────────────┘
+Interaction:
+
+Show automated quality checks with visual indicators
+Green checks = good, yellow warnings = review carefully, red X = must fix
+Approving auto-advances to Tab 3
+
+TAB 3: APPLICATION FORM REVIEW
+┌─────────────────────────────────────────────────────┐
+│ APPLICATION FORM REVIEW                             │
+├─────────────────────────────────────────────────────┤
+│                                                     │
+│ BASIC INFO (Auto-filled from client profile):     │
+│ ✓ Name: John Smith                                │
+│ ✓ Email: john.smith@email.com                     │
+│ ✓ Phone: (555) 123-4567                           │
+│ ✓ Location: San Francisco, CA                     │
+│                                                     │
+│ ─────────────────────────────────────────────────  │
+│                                                     │
+│ CUSTOM QUESTIONS (AI-generated answers):           │
+│                                                     │
+│ Q: "Why do you want to work at TechCorp?"         │
+│ A: I'm impressed by TechCorp's commitment to      │
+│    innovation in the enterprise software space.   │
+│    My experience with React and AWS aligns        │
+│    perfectly with your tech stack, and I'm        │
+│    excited about the opportunity to contribute    │
+│    to your mission of building scalable           │
+│    solutions for Fortune 500 companies.           │
+│                                                     │
+│ ⚠️ AI-GENERATED - Review for natural language      │
+│ [Looks Good ✓] [Sounds too AI-ish? Edit ✎]       │
+│                                                     │
+│ ─────────────────────────────────────────────────  │
+│                                                     │
+│ Q: "What's your salary expectation?"               │
+│ A: $120,000 - $140,000                            │
+│ ✓ From client profile (verified)                  │
+│                                                     │
+│ ─────────────────────────────────────────────────  │
+│                                                     │
+│ Q: "Are you authorized to work in the US?"        │
+│ A: Yes, I am a US Citizen                         │
+│ ✓ From client profile (verified)                  │
+│                                                     │
+│ [✓ APPROVE ALL ANSWERS] [✎ Edit Specific Answer]  │
+│                                                     │
+└─────────────────────────────────────────────────────┘
+Interaction:
+
+Each answer has a mini approve/edit option
+Clicking "Approve All" enables the final submit button
+
+FINAL SUBMIT SCREEN
+After all 3 tabs approved:
+┌─────────────────────────────────────────────────────┐
+│                READY TO SUBMIT                      │
+├─────────────────────────────────────────────────────┤
+│                                                     │
+│ ✅ Resume reviewed and approved                     │
+│ ✅ Cover letter reviewed and approved               │
+│ ✅ Application form reviewed and approved           │
+│                                                     │
+│ Time spent: 1:24                                   │
+│ Quality check: PASSED                              │
+│                                                     │
+│                                                     │
+│         [SUBMIT APPLICATION]                       │
+│         Big, satisfying green button               │
+│                                                     │
+│                                                     │
+│         [← Go Back to Review]                      │
+│                                                     │
+└─────────────────────────────────────────────────────┘
+After clicking Submit:
+SUCCESS ANIMATION:
+
+Confetti animation or satisfying checkmark animation
+Brief success message
+
+✅ APPLICATION SUBMITTED!
+
+Software Engineer at TechCorp Inc.
+Completed in: 1:24
+
+Applications today: 48/100
+You're 52% to your $25 bonus! 🎯
+
+[NEXT APPLICATION →] (Auto-loads in 2 seconds)
+[Take a Break] [View Stats]
+Design notes:
+
+The "Next Application" should auto-load after 2-3 seconds to keep momentum going
+Show progress update toward daily goal
+Celebrate the completion with positive reinforcement
+Make it feel like a game where they're leveling up
+
+
+PAGE 5: EDIT MODE (When they need to make changes)
+If they click "Edit Resume", "Edit Cover Letter", or "Edit Answer":
+┌─────────────────────────────────────────────────────┐
+│ EDITING: Cover Letter                              │
+├─────────────────────────────────────────────────────┤
+│                                                     │
+│ [Rich text editor with full letter content]        │
+│                                                     │
+│ Dear [Hiring Manager],                             │
+│                                                     │
+│ I am writing to express my interest...            │
+│                                                     │
+│ ─────────────────────────────────────────────────  │
+│                                                     │
+│ QUICK FIXES:                                       │
+│ • Replace "Hiring Manager" with actual name        │
+│   [Auto-find and replace]                          │
+│                                                     │
+│ • Scan for AI-sounding phrases                     │
+│   [Run AI Detector] [Auto-humanize Text]           │
+│                                                     │
+│ • Check company name is correct: TechCorp Inc.     │
+│   [Verify]                                         │
+│                                                     │
+│ [💾 SAVE CHANGES] [❌ Cancel]                      │
+│                                                     │
+└─────────────────────────────────────────────────────┘
+Design notes:
+
+Inline editing (don't navigate away from review screen)
+Provide helpful quick-fix tools
+Save button is prominent
+
+
+PAGE 6: SKIP / FLAG JOB
+If they click "Skip This Job":
+┌─────────────────────────────────────────────────────┐
+│ WHY ARE YOU SKIPPING THIS JOB?                     │
+├─────────────────────────────────────────────────────┤
+│                                                     │
+│ ○ Doesn't match client criteria                   │
+│ ○ Already applied to this company                 │
+│ ○ Job posting looks fake/spam                     │
+│ ○ Application system is broken/buggy              │
+│ ○ Salary too low                                  │
+│ ○ Location doesn't work                           │
+│ ○ Other: [text input box]                         │
+│                                                     │
+│ [SUBMIT & SKIP JOB] [Cancel]                      │
+│                                                     │
+└─────────────────────────────────────────────────────┘
+Design notes:
+
+This feedback is valuable for improving the AI job scraper
+Store skip reasons in database for analysis
+After submitting, auto-load next job
+
+
+PAGE 7: DETAILED STATS & ANALYTICS
+Accessible from dashboard home "View Detailed Stats" link.
+YOUR PERFORMANCE ANALYTICS
+
+📊 TIME BREAKDOWN:
+┌─────────────────────────────────────────────────────┐
+│ Average time per application: 1.8 min              │
+│ Fastest application: 0.9 min                       │
+│ Slowest application: 4.2 min                       │
+│                                                     │
+│ Time distribution:                                 │
+│ • Under 1 min: 12%                                │
+│ • 1-2 min: 68% (TARGET ✓)                         │
+│ • 2-3 min: 18%                                    │
+│ • Over 3 min: 2%                                  │
+└─────────────────────────────────────────────────────┘
+
+📈 QUALITY METRICS:
+┌─────────────────────────────────────────────────────┐
+│ Interview rate: 6.2%                               │
+│ Industry average: 5.8%                             │
+│ You're performing 7% above average! 🎉            │
+│                                                     │
+│ QA error rate: 1.1%                               │
+│ Target: <2% ✓                                     │
+│                                                     │
+│ Common errors:                                     │
+│ • AI-sounding language: 3 times                   │
+│ • Wrong company name: 2 times                     │
+│ • Typos: 0 times ✓                                │
+└─────────────────────────────────────────────────────┘
+
+💰 EARNINGS BREAKDOWN:
+┌─────────────────────────────────────────────────────┐
+│ This Month (December):                             │
+│                                                     │
+│ Base Pay:                                          │
+│ ├─ Hours worked: 88 hours × $7 = $616             │
+│                                                     │
+│ Volume Bonuses:                                    │
+│ ├─ 50-app days: 22 × $15 = $330                   │
+│ ├─ 100-app days: 22 × $10 = $220                  │
+│ └─ Total volume bonuses: $550                     │
+│                                                     │
+│ Performance Bonuses:                               │
+│ ├─ Interviews: 12 × $50 = $600                    │
+│ ├─ Offers: 1 × $400 = $400                        │
+│ └─ Total performance bonuses: $1,000              │
+│                                                     │
+│ TOTAL THIS MONTH: $2,166                          │
+│                                                     │
+│ [View Payment History →]                          │
+└─────────────────────────────────────────────────────┘
+
+📅 CALENDAR VIEW:
+[Show calendar with daily application counts, color-coded by performance]
+
+PAGE 8: LEADERBOARD (Full View)
+🏆 MONTHLY LEADERBOARD - DECEMBER 2024
+
+Rank | Name      | Earnings | Apps | Interview Rate | Avg Time
+─────┼───────────┼──────────┼──────┼────────────────┼──────────
+🥇 1  | Maria R.  | $1,842   | 523  | 8.1%          | 1.6 min
+🥈 2  | Carlos M. | $1,721   | 501  | 7.4%          | 1.7 min
+🥉 3  | Ana S.    | $1,650   | 498  | 6.9%          | 1.9 min
+👤 4  | YOU       | $1,340   | 487  | 6.2%          | 1.8 min ← Highlighted
+   5  | Jose P.   | $1,215   | 512  | 3.8%          | 2.1 min
+   6  | Rita L.   | $1,180   | 445  | 5.9%          | 2.0 min
+   ...
+
+[Filter: This Week] [This Month] [All Time]
+Design notes:
+
+Current user's row is highlighted/bold
+Can toggle between different time periods
+Medals for top 3
+Show enough data that people understand WHY someone ranks higher
+
+
+PAGE 9: BADGES & ACHIEVEMENTS
+Full gamification page.
+🏅 YOUR ACHIEVEMENTS
+
+EARNED BADGES:
+┌────────────┐ ┌────────────┐ ┌────────────┐
+│ Speed      │ │ Quality    │ │ Consistency│
+│ Demon 🚀   │ │ Champion🏆 │ │ King 👑    │
+│            │ │            │ │            │
+│ Maintain   │ │ Keep error │ │ 7-day      │
+│ <2min avg  │ │ rate <2%   │ │ streak of  │
+│ for 7 days │ │ for month  │ │ 100+ apps  │
+└────────────┘ └────────────┘ └────────────┘
+
+IN PROGRESS:
+┌────────────┐
+│ Perfect    │
+│ Week 💯    │
+│            │
+│ Progress:  │
+│ 4/7 days   │
+│ ████░░░    │
+│            │
+│ Complete 7 │
+│ days with  │
+│ zero QA    │
+│ errors     │
+└────────────┘
+
+AVAILABLE BADGES:
+[Show locked badges with requirements]
+
+PAGE 10: CLIENT PROFILE (Detailed View)
+When they click "View Full Client Profile":
+CLIENT PROFILE: JOHN SMITH
+
+🎯 TARGET ROLE:
+Remote Software Engineer (Senior level)
+
+📍 LOCATION PREFERENCES:
+- US-based remote only
+- No specific state preference
+- Open to occasional travel
+
+💰 SALARY EXPECTATIONS:
+$120,000 - $150,000 annually
+
+🛠️ KEY SKILLS:
+React | Node.js | Python | AWS | Docker | Kubernetes
+
+📝 EXPERIENCE:
+5 years in full-stack development
+Previously: Tech Lead at StartupXYZ (3 years)
+          Senior Developer at BigCorp (2 years)
+
+✅ PREFERENCES:
+- Prefer startup environment over enterprise
+- Interested in product-focused roles
+- Wants hands-on coding, not pure management
+
+❌ AVOID:
+- Agencies or consulting firms
+- Contract/freelance roles
+- On-site requirements
+- Companies with mandatory RTO policies
+
+📄 RESUME:
+[Preview of current resume]
+[Download Resume PDF]
+
+📊 CAMPAIGN STATS:
+- Start date: Nov 1, 2024
+- Days active: 47 / 90
+- Applications sent: 2,847 / 5,000 cap
+- Interviews scheduled: 18
+- Offers received: 2 (1 declined, 1 pending decision)
+- Current interview rate: 6.3%
+
+[View All Applications for This Client →]
+
+PAGE 11: APPLICATION HISTORY
+Shows all applications this applier has submitted.
+APPLICATION HISTORY
+
+Filters:
+[All (2,847)] [Today (47)] [This Week (487)] [Got Interviews (30)]
+
+Sort by: [Most Recent] [Company] [Status] [Your Review Time]
+
+┌─────────────────────────────────────────────────────┐
+│ ✅ Software Engineer - TechCorp Inc.                │
+│ Submitted: Dec 19, 2024 at 2:34 PM                │
+│ Your time: 1:24 | Status: Submitted                │
+│ Result: 🎯 INTERVIEW SCHEDULED (Dec 22, 10am)      │
+│ Bonus earned: $50 💰                               │
+│ [View Application Details]                        │
+└─────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────┐
+│ ✅ Senior Developer - StartupXYZ                    │
+│ Submitted: Dec 19, 2024 at 2:12 PM                │
+│ Your time: 2:03 | Status: Submitted                │
+│ Result: ⏳ Pending response                        │
+│ [View Application Details]                        │
+└─────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────┐
+│ ⚠️ Full Stack Engineer - BigCo                     │
+│ Submitted: Dec 19, 2024 at 1:58 PM                │
+│ Your time: 1:15 | Status: QA FLAGGED               │
+│ Issue: Wrong company name in cover letter          │
+│ Quality impact: -2 points                          │
+│ [View Feedback] [View Application]                │
+└─────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────┐
+│ ❌ Backend Engineer - DataCorp                     │
+│ Submitted: Dec 18, 2024 at 4:22 PM                │
+│ Your time: 1:52 | Status: Submitted                │
+│ Result: 🚫 REJECTED (Dec 19)                       │
+│ [View Application Details]                        │
+└─────────────────────────────────────────────────────┘
+Design notes:
+
+Visual status indicators (✅ ⏳ ⚠️ 🎯 ❌)
+Can filter and sort in multiple ways
+Clicking into any application shows full details
+
+
+PAGE 12: QA FEEDBACK INBOX
+When admin (Wilson) flags an application for quality issues:
+🚨 QUALITY FEEDBACK (3 unread)
+
+┌─────────────────────────────────────────────────────┐
+│ NEW FEEDBACK - Dec 19, 3:15 PM                     │
+│                                                     │
+│ Application: Software Engineer - TechCorp Inc.     │
+│ Submitted: Dec 19, 2:34 PM                         │
+│                                                     │
+│ ISSUE FOUND:                                       │
+│ Cover letter line 3 contains AI-generated          │
+│ language: "I am excited to leverage my extensive   │
+│ experience in synergistic solutions..."            │
+│                                                     │
+│ FEEDBACK:                                          │
+│ This is obvious AI text. Please rephrase in        │
+│ natural, conversational language. Remember:        │
+│ real people don't say "leverage synergistic        │
+│ solutions."                                        │
+│                                                     │
+│ IMPACT: -1 quality point                          │
+│                                                     │
+│ [View Full Application] [ACKNOWLEDGE & LEARN]     │
+└─────────────────────────────────────────────────────┘
+
+QUALITY SCORE: 94/100 ⚠️
+- Target: 90+ (you're good!)
+- Warning threshold: 85
+- Probation: <80
+
+Recent issues (last 30 days):
+- AI language: 3 occurrences
+- Wrong company name: 2 occurrences
+- Typos: 0 ✓
+Design notes:
+
+Unread feedback is highlighted
+Shows impact on quality score
+"Acknowledge & Learn" marks as read and logs they saw it
+Quality score is prominent - this is their "health bar"
+
+
+GAMIFICATION FEATURES (CRITICAL)
+Real-Time Progress Tracking
+
+Everything updates instantly as they work
+Seeing the progress bar move is satisfying
+Celebrate milestones (25 apps, 50 apps, 75 apps, 100 apps)
+
+Streaks System
+Track consecutive days of:
+
+Hitting 100 apps
+Maintaining sub-2min average
+Zero QA errors
+Working their full shift
+
+Visual representation:
+🔥 Current Streak: 7 days
+[🔥🔥🔥🔥🔥🔥🔥] Don't break it!
+Badges/Achievements
+Examples:
+
+Speed Demon: Maintain <2min average for 7 days
+Quality Champion: <2% error rate for a month
+Consistency King: 30-day streak of 100+ apps
+Perfect Week: 7 consecutive days, zero errors
+Interview Magnet: 10+ interviews in one week
+First Blood: First interview bonus earned
+Jackpot: First offer bonus earned
+Century Club: 100 apps in a single day
+Marathon Runner: 500 apps in a week
+Eagle Eye: Catch 5 AI errors in one day
+
+Level System (Optional but awesome)
+LEVEL 12 - SENIOR REVIEWER
+Progress to Level 13: ████████░░ 87%
+
+Next milestone: 100 more applications
+Unlock at Level 13: "Priority Queue" feature
+Sound Effects & Animations
+
+Satisfying "ding" when submitting application
+Confetti animation when hitting daily goal
+Level-up animation
+Badge unlock celebration
+Streak milestone fanfare
+
+Daily Challenges (Optional)
+TODAY'S CHALLENGE:
+Complete 100 apps in under 2.5 hours
+Reward: +$10 bonus
+Progress: 47/100 apps in 1.2 hours ✓ On track!
+
+MOBILE RESPONSIVENESS
+While not required for MVP, the dashboard should be:
+
+Readable on tablets (iPad size)
+Navigation works on touch devices
+Performance stats viewable on mobile (even if they don't do applications on mobile)
+
+
+PERFORMANCE REQUIREMENTS
+
+Dashboard loads in <2 seconds
+Application review screen loads in <1 second
+No lag between clicking "Next Application" and seeing next job
+Real-time updates (leaderboard, stats) refresh every 30 seconds
+Smooth animations (60fps)
+
+
+DATA SEEDING FOR DEMO
+Create realistic test data:
+5 Test Appliers:
+
+Maria R. - top performer (high earnings, fast, quality)
+Carlos M. - second place (balanced)
+Ana S. - third place (slightly slower but very accurate)
+Test User (YOU) - middle of pack
+Jose P. - bottom (lots of apps but low quality/interview rate)
+
+2 Test Clients:
+
+John Smith - Software Engineer (full profile as described above)
+Sarah Johnson - Product Manager (different role to show variety)
+
+100+ Jobs in Queue:
+
+Mix of good matches (80%) and okay matches (20%)
+Variety of companies
+Different job titles but all within client's target
+Some posted "2 hours ago", some "1 day ago"
+
+Historical Applications:
+
+Seed 500+ past applications for each test applier
+Mix of statuses: submitted, interview scheduled, rejected
+Realistic interview rates (5-8% for good performers, 3-4% for poor)
+Some with QA flags
+
+Badges & Achievements:
+
+Top performers have 5-7 badges
+Middle performers have 2-3
+Bottom performers have 1-2
+
+
+ADMIN FEATURES (Separate View)
+Admin dashboard should allow Wilson to:
+View All Appliers
+APPLIER MANAGEMENT
+
+Name       | Status  | Today | Week | Month | Quality | Actions
+───────────┼─────────┼───────┼──────┼───────┼─────────┼─────────
+Maria R.   | Active  | 87/100| 523  | 2,156 | 98/100  | [View]
+Carlos M.  | Active  | 72/100| 501  | 2,089 | 96/100  | [View]
+Ana S.     | Active  | 94/100| 498  | 2,012 | 97/100  | [View]
+Test User  | Active  | 47/100| 487  | 1,923 | 94/100  | [View]
+Jose P.    | Active  | 103/100| 512  | 2,234 | 82/100 ⚠️| [View]
+Flag Applications
+
+View any application from any applier
+Add QA feedback/flag issues
+Track which appliers have recurring problems
+
+Assign Clients to Appliers
+CLIENT ASSIGNMENTS
+
+Client: John Smith
+Currently assigned to: Test User
+Applications: 2,847 / 5,000
+Performance: 6.2% interview rate
+
+[Reassign Client] [Pause Campaign] [View Details]
+View System Analytics
+
+Total applications across all appliers
+Average interview rates
+Cost per application
+Revenue per client
+Applier efficiency rankings
+
+
+TECH STACK RECOMMENDATIONS
+Frontend:
+
+React (for smooth, dynamic UI)
+Tailwind CSS (for fast, beautiful styling)
+Recharts or Chart.js (for analytics visualizations)
+Framer Motion (for satisfying animations)
+
+Backend:
+
+Node.js + Express
+PostgreSQL (for relational data)
+WebSockets (for real-time leaderboard updates)
+
+Authentication:
+
+Simple JWT-based auth
+Bcrypt for password hashing
+
+Deployment:
+
+Replit works for MVP
+Can migrate to Vercel/Railway later
+
+
+CRITICAL SUCCESS FACTORS
+
+SPEED - Everything must be fast. No lag. Instant feedback.
+SATISFACTION - Submitting an application should feel GOOD. Use animations, sounds (optional), progress bars, celebrations.
+CLARITY - Always show them where they are, what they're doing, and what's next.
+MOTIVATION - Gamification keeps them engaged. Leaderboard creates competition. Streaks create commitment.
+TRANSPARENCY - They should always know exactly how much they're earning and why.
+
+
+MVP PRIORITIES
+Must Have (Phase 1):
+
+Login system
+Application review workflow (3-step process)
+Job queue
+Basic stats dashboard
+Leaderboard
+Timer tracking
+Submit functionality
+
+Should Have (Phase 2):
+
+Streaks tracking
+Badges system
+QA feedback system
+Payment tracking
+Application history
+
+Nice to Have (Phase 3):
+
+Sound effects
+Advanced animations
+Daily challenges
+Level system
+Mobile optimization
+
+
+BUILD THIS FOR REPLIT AS A WORKING PROTOTYPE WITH REALISTIC DEMO DATA.
