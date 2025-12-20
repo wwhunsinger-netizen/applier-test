@@ -16,8 +16,13 @@ import { UserProvider } from "@/lib/userContext";
 
 import { ApplicationsProvider } from "@/lib/applicationsContext";
 import AdminApplicationsPage from "@/pages/admin/applications";
+import AdminReviewPage from "@/pages/admin/review";
+import AdminQAPage from "@/pages/admin/qa";
 import AdminClientsPage from "@/pages/admin/clients";
 import AdminClientDetailPage from "@/pages/admin/clients/detail";
+import ClientInterviewsPage from "@/pages/client/interviews";
+import ClientDocumentsPage from "@/pages/client/documents";
+import ClientApplicationsPage from "@/pages/client/applications";
 
 function Router() {
   return (
