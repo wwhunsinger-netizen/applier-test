@@ -1,54 +1,60 @@
 import { motion } from "framer-motion";
-import logoUrl from "@assets/Jumpseat_(17)_1766203547189.png";
+import { Progress } from "@/components/ui/progress";
+import { useEffect, useState } from "react";
 
 export default function LoadingScreen() {
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setProgress((oldProgress) => {
+        if (oldProgress === 100) {
+          clearInterval(timer);
+          return 100;
+        }
+        const diff = Math.random() * 10;
+        return Math.min(oldProgress + diff, 100);
+      });
+    }, 100);
+
+    return () => {
+      clearInterval(timer);
+    };
+  }, []);
+
   return (
-    <div className="fixed inset-0 bg-black z-50 flex items-center justify-center">
-      <div className="relative">
-        {/* Pulse effect behind logo */}
+    <div className="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center">
+      {/* Background Gradient - Bottom Right Glow */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+         <div className="absolute -bottom-[20%] -right-[10%] w-[50%] h-[50%] bg-primary/20 blur-[150px] rounded-full opacity-40" />
+      </div>
+
+      <div className="relative z-10 flex flex-col items-center w-full max-w-sm">
+        {/* Logo J */}
         <motion.div
-          animate={{
-            scale: [1, 1.2, 1],
-            opacity: [0.3, 0.6, 0.3],
-          }}
-          transition={{
-            duration: 2,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-          className="absolute inset-0 bg-primary/20 blur-3xl rounded-full"
-        />
-        
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="relative z-10 flex flex-col items-center"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="mb-8"
         >
-          <img 
-            src={logoUrl} 
-            alt="Jumpseat" 
-            className="w-48 object-contain mb-8"
-          />
-          
-          <div className="flex gap-1.5">
-             <motion.div 
-               animate={{ scaleY: [1, 1.5, 1] }} 
-               transition={{ duration: 1, repeat: Infinity, delay: 0 }}
-               className="w-1 h-8 bg-primary rounded-full" 
-             />
-             <motion.div 
-               animate={{ scaleY: [1, 1.5, 1] }} 
-               transition={{ duration: 1, repeat: Infinity, delay: 0.1 }}
-               className="w-1 h-8 bg-primary rounded-full" 
-             />
-             <motion.div 
-               animate={{ scaleY: [1, 1.5, 1] }} 
-               transition={{ duration: 1, repeat: Infinity, delay: 0.2 }}
-               className="w-1 h-8 bg-primary rounded-full" 
-             />
+          <div className="text-6xl font-serif italic font-bold text-white tracking-tighter" style={{ fontFamily: 'Georgia, serif' }}>
+            J
           </div>
         </motion.div>
+        
+        {/* Progress Bar */}
+        <div className="w-full space-y-4">
+          <Progress value={progress} className="h-[2px] bg-white/10" indicatorClassName="bg-primary shadow-[0_0_10px_2px_rgba(220,38,38,0.5)]" />
+          
+          <motion.p 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5 }}
+            className="text-center text-xs text-muted-foreground tracking-wide"
+          >
+            Preparing your session...
+          </motion.p>
+        </div>
       </div>
     </div>
   );

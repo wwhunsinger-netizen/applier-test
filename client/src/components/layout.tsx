@@ -23,7 +23,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   ];
 
   return (
-    <div className="flex h-screen bg-black overflow-hidden font-sans">
+    <div className="flex h-screen bg-black overflow-hidden font-sans relative">
+      {/* Premium Background Glow */}
+      <div className="absolute -bottom-[20%] -right-[10%] w-[50%] h-[50%] bg-primary/20 blur-[150px] rounded-full opacity-40 pointer-events-none z-0" />
+      
       {/* Sidebar */}
       <aside className="w-64 bg-[#050505] border-r border-white/5 hidden md:flex flex-col z-20 shadow-xl">
         <div className="p-6 h-[88px] flex items-center justify-center border-b border-white/5">
