@@ -50,8 +50,16 @@ export default function ClientInterviewsPage() {
                     <span className="text-white/90">{interview.format}</span>
                   </div>
                   {interview.prepDocComplete ? (
-                    <div className="text-xs text-green-500 flex items-center gap-1 justify-end">
-                      <CheckCircle className="w-3 h-3" /> Prep Doc Ready
+                    <div className="flex flex-col items-end gap-2">
+                      <div className="text-xs text-green-500 flex items-center gap-1 justify-end">
+                        <CheckCircle className="w-3 h-3" /> Prep Doc Ready
+                      </div>
+                      <Button size="sm" variant="outline" className="h-8 text-xs border-primary/20 bg-primary/10 text-primary hover:bg-primary/20 hover:text-white" onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedInterview(interview);
+                      }}>
+                        <FileText className="w-3 h-3 mr-1.5" /> See Prep Doc
+                      </Button>
                     </div>
                   ) : (
                     <div className="text-xs text-muted-foreground">Prep Doc Pending</div>
