@@ -81,10 +81,45 @@ export const MOCK_USERS = [
     email: "admin@jumpseat.com",
     role: "Admin",
     avatar: "https://i.pravatar.cc/150?u=admin"
+  },
+  {
+    id: "user-6",
+    name: "Client User",
+    email: "client@jumpseat.com",
+    role: "Client",
+    avatar: "https://i.pravatar.cc/150?u=client"
   }
 ];
 
 export const CURRENT_USER = MOCK_USERS[0];
+
+export const MOCK_CLIENT_STATS = {
+  totalApps: 142,
+  weeklyApps: 12,
+  dailyApps: 3,
+  rejections: 45,
+  interviews: 8
+};
+
+export const MOCK_CLIENT_INTERVIEWS = [
+  {
+    id: "int-1",
+    company: "Google",
+    role: "Senior UX Designer",
+    date: "2024-05-25T14:00:00",
+    format: "Video",
+    prepDocComplete: true,
+  },
+  {
+    id: "int-2",
+    company: "Netflix",
+    role: "Product Designer",
+    date: "2024-05-28T10:00:00",
+    format: "Panel",
+    prepDocComplete: false,
+  }
+];
+
 
 export const MOCK_STATS: ApplierStats = {
   dailyApps: 47,

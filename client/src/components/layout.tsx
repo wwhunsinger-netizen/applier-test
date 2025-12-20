@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, Briefcase, Send, Trophy, User, LogOut, ShieldCheck, List, AlertTriangle } from "lucide-react";
+import { LayoutDashboard, Briefcase, Send, Trophy, User, LogOut, ShieldCheck, List, AlertTriangle, Users, FileText, Calendar } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useUser } from "@/lib/userContext";
@@ -24,12 +24,22 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   const adminNavItems = [
     { icon: LayoutDashboard, label: "Dashboard", href: "/" },
+    { icon: Users, label: "Clients", href: "/admin/clients" },
     { icon: List, label: "All Applications", href: "/admin/applications" },
     { icon: AlertTriangle, label: "Review Issues", href: "/admin/review" },
     { icon: ShieldCheck, label: "QA Check", href: "/admin/qa" },
   ];
 
-  const navItems = currentUser.role === "Admin" ? adminNavItems : applierNavItems;
+  const clientNavItems = [
+    { icon: LayoutDashboard, label: "Overview", href: "/" },
+    { icon: Calendar, label: "Interviews", href: "/client/interviews" },
+    { icon: FileText, label: "Documents", href: "/client/documents" },
+    { icon: Send, label: "Applications", href: "/client/applications" },
+  ];
+
+  const navItems = currentUser.role === "Admin" ? adminNavItems : 
+                   currentUser.role === "Client" ? clientNavItems : 
+                   applierNavItems;
 
   return (
     <div className="flex h-screen bg-black overflow-hidden font-sans relative">
@@ -43,6 +53,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             src={logoUrl} 
             alt="Jumpseat" 
             className="h-12 w-auto object-contain" 
+            style={{ filter: currentUser.role === "Client" ? "hue-rotate(0deg)" : "none" }}
           />
         </div>
 
@@ -84,7 +95,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 <span className={cn(
                   "text-[10px] px-1.5 py-0.5 rounded uppercase font-bold tracking-wider",
                   currentUser.role === "Reviewer" ? "bg-primary/20 text-primary" : 
-                  currentUser.role === "Admin" ? "bg-purple-500/20 text-purple-400" :
+                  currentUser.role === "Admin" ? "bg-red-500 text-white shadow-[0_0_10px_rgba(239,68,68,0.5)]" :
+                  currentUser.role === "Client" ? "bg-red-500 text-white shadow-[0_0_10px_rgba(239,68,68,0.5)]" :
                   "bg-white/10 text-muted-foreground"
                 )}>
                   {currentUser.role}

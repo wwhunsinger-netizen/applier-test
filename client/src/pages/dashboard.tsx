@@ -10,12 +10,17 @@ import { cn } from "@/lib/utils";
 import { HoverCardWrapper } from "@/components/hover-card-wrapper";
 import { useUser } from "@/lib/userContext";
 import AdminDashboardPage from "./admin/dashboard";
+import ClientOverviewPage from "./client/overview";
 
 export default function DashboardPage() {
   const { currentUser } = useUser();
 
   if (currentUser.role === "Admin") {
     return <AdminDashboardPage />;
+  }
+
+  if (currentUser.role === "Client") {
+    return <ClientOverviewPage />;
   }
 
   const percentComplete = (MOCK_STATS.dailyApps / MOCK_STATS.dailyGoal) * 100;
