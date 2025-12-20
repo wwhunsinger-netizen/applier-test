@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion, AnimatePresence } from "framer-motion";
-import { FileText, Linkedin, Check, Lightbulb, RotateCw, CheckCircle2 } from "lucide-react";
+import { FileText, Linkedin, Check, Lightbulb, RotateCw, CheckCircle2, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function ClientDocumentsPage() {
@@ -43,8 +43,13 @@ export default function ClientDocumentsPage() {
                     {!isFlipped ? (
                       <motion.div 
                         key="old-resume"
-                        initial={{ rotateY: 0, opacity: 1 }}
-                        exit={{ rotateY: 90, opacity: 0, transition: { duration: 0.3 } }}
+                        initial={{ rotateY: 0, opacity: 1, scale: 1 }}
+                        exit={{ 
+                          rotateY: 90, 
+                          opacity: 0, 
+                          scale: 0.8,
+                          transition: { duration: 0.4, ease: "easeIn" } 
+                        }}
                         className="w-full h-full bg-white text-black p-8 shadow-xl rounded-lg overflow-y-auto"
                       >
                          <h3 className="text-xl font-bold mb-4 border-b pb-2">Old Resume</h3>
@@ -57,10 +62,37 @@ export default function ClientDocumentsPage() {
                     ) : (
                       <motion.div 
                         key="new-resume"
-                        initial={{ rotateY: -90, opacity: 0 }}
-                        animate={{ rotateY: 0, opacity: 1, transition: { duration: 0.5, type: "spring" } }}
-                        className="w-full h-full bg-white text-black p-8 shadow-xl rounded-lg overflow-y-auto border-4 border-primary/20"
+                        initial={{ rotateY: -180 * 2, opacity: 0, scale: 0.5 }}
+                        animate={{ 
+                          rotateY: 0, 
+                          opacity: 1, 
+                          scale: [0.5, 1.1, 1], // Grow effect
+                          transition: { 
+                            duration: 1.5, // Longer duration for spins
+                            ease: "circOut",
+                            times: [0, 0.8, 1]
+                          } 
+                        }}
+                        className="w-full h-full bg-white text-black p-8 shadow-xl rounded-lg overflow-y-auto border-4 border-primary/20 relative"
                       >
+                         {/* Sparkle Effects */}
+                         <motion.div 
+                           initial={{ opacity: 0, scale: 0 }}
+                           animate={{ opacity: [0, 1, 0], scale: [0.5, 1.5, 0.5] }}
+                           transition={{ delay: 1.2, duration: 0.8 }}
+                           className="absolute -top-4 -right-4 text-yellow-400 z-10"
+                         >
+                           <Sparkles className="w-12 h-12 fill-yellow-400" />
+                         </motion.div>
+                         <motion.div 
+                           initial={{ opacity: 0, scale: 0 }}
+                           animate={{ opacity: [0, 1, 0], scale: [0.5, 1.2, 0.5] }}
+                           transition={{ delay: 1.4, duration: 0.8 }}
+                           className="absolute top-1/2 -left-6 text-yellow-400 z-10"
+                         >
+                           <Sparkles className="w-8 h-8 fill-yellow-400" />
+                         </motion.div>
+
                          <div className="flex justify-between items-start mb-6 border-b pb-4">
                            <h3 className="text-xl font-bold text-primary">✨ Improved Resume</h3>
                            {isApproved && <Badge className="bg-green-500">Approved</Badge>}
