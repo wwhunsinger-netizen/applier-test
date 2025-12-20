@@ -120,6 +120,22 @@ export const MOCK_CLIENT_INTERVIEWS = [
   }
 ];
 
+export interface Client {
+  id: string;
+  name: string;
+  email: string;
+  username: string;
+  created: string;
+  status: "active" | "action_needed";
+  commentsCount?: number;
+}
+
+export const MOCK_CLIENTS_LIST: Client[] = [
+  { id: "client-1", name: "John Smith", email: "john@email.com", username: "john.smith", created: "Dec 15, 2024", status: "action_needed", commentsCount: 2 },
+  { id: "client-2", name: "Sarah Connor", email: "sarah@connor.com", username: "sarah.c", created: "Jan 10, 2025", status: "active" },
+  { id: "client-3", name: "Michael Ross", email: "mike@ross.com", username: "mike.ross", created: "Feb 2, 2025", status: "active" },
+];
+
 
 export const MOCK_STATS: ApplierStats = {
   dailyApps: 47,

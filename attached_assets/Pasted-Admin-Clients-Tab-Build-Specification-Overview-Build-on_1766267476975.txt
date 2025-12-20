@@ -1,0 +1,236 @@
+Admin "Clients" Tab - Build Specification
+Overview
+Build only the Clients tab functionality for the admin dashboard. All other tabs (Dashboard, All Applications, Review Issues, QA Check) already exist.
+
+Clients Tab - Main View
+Page Header
+Clients
+[+ Add New Client] button (top right)
+Client List
+
+Display all clients as cards/rows
+Search bar at top: "Search clients..."
+
+Each Client Card:
+┌─────────────────────────────────────┐
+│ 🔴 [badge if action needed]         │
+│                                      │
+│ John Smith                           │
+│ john@email.com                       │
+│ Created: Dec 15, 2024                │
+│                                      │
+│ [Manage Client →]                   │
+└─────────────────────────────────────┘
+Red Badge Shows When:
+
+Client denied documents with comments
+Clicking badge or "Manage Client" opens Client Detail Page
+
+
+Add New Client
+Modal/Form:
+Add New Client
+
+Name: [________]
+Email: [________]
+
+Auto-generated credentials:
+Username: [auto-filled]
+Password: [auto-generated with show/hide]
+
+[Cancel] [Create Client]
+On Create:
+
+Show success message with credentials to copy
+Add client to list
+Done
+
+
+Client Detail Page
+Header
+← Back to Clients
+
+John Smith
+john@email.com
+
+[Delete Client]
+Tabs
+[Resume] [Cover Letters] [LinkedIn] [Interviews] [Applications]
+
+Resume Tab
+Two columns:
+Left: Old Resume
+Original Resume
+[Upload File] (.pdf, .doc, .docx)
+
+[If uploaded:]
+📄 resume_old.pdf
+[View] [Replace]
+Right: New Resume
+Improved Resume
+[Upload File]
+
+[If uploaded:]
+📄 resume_new.pdf
+Status: Pending Review / Approved / Needs Revision
+
+[If needs revision:]
+❌ Needs Revision
+[View Comments]
+
+Cover Letters Tab
+Same layout as Resume, but with 3 versions:
+Original Cover Letter
+[Upload File]
+
+─────────────
+
+Improved Cover Letters
+
+Version A: [Upload]
+Status: [Pending/Approved/Needs Revision]
+
+Version B: [Upload] (optional)
+Status: [Pending/Approved/Needs Revision]
+
+Version C: [Upload] (optional)
+Status: [Pending/Approved/Needs Revision]
+
+LinkedIn Tab
+Same as Cover Letters:
+Original LinkedIn (PDF)
+[Upload File]
+
+─────────────
+
+Improved LinkedIn PDFs
+
+Version A: [Upload PDF]
+Version B: [Upload PDF] (optional)
+Version C: [Upload PDF] (optional)
+
+Interviews Tab
+Top:
+[+ Add Interview] button
+Interview List:
+┌────────────────────────────────────┐
+│ ✅ Prep Doc Complete               │
+│                                     │
+│ Google - Product Manager           │
+│ Jan 5, 2025 at 2:00 PM            │
+│                                     │
+│ [Edit Interview] [Write Prep Doc] │
+└────────────────────────────────────┘
+Add Interview Form:
+Add Interview
+
+Company: [text field]
+Job Title: [text field]
+Date: [date picker]
+Time: [time picker]
+Format: [Phone/Video/Panel/In-Person dropdown]
+Interviewer(s): [text area]
+Job Link: [URL]
+
+[Cancel] [Create]
+Write Prep Doc Form:
+Prep Document
+
+Company Overview: [text area]
+Recent News: [text area]
+Role Breakdown: [text area]
+Interviewer Details: [text area]
+Tailored Questions: [text area]
+
+[Save Draft] [Publish]
+If Client Commented:
+💬 Client Comments
+[View Comments button]
+
+Modal shows:
+- Highlighted text
+- Client's comment
+- [Mark Reviewed]
+
+Applications Tab
+Display:
+
+List of all applications for this client
+Same tiles as shown elsewhere in dashboard
+
+Each tile has:
+Company Name
+Job Title
+Applied: [date]
+
+Status: [dropdown]
+- Applied
+- Rejected  
+- Interview Scheduled
+- Offer Received
+
+[View Job →]
+Admin can change status via dropdown.
+
+Technical Requirements
+Database Additions
+clients table:
+
+client_id
+name
+email
+username
+password_hash
+created_at
+
+client_documents table:
+
+doc_id
+client_id
+doc_type (resume/cover_letter/linkedin)
+version (old/new/A/B/C)
+file_url
+approval_status (pending/approved/needs_revision)
+
+client_comments table:
+
+comment_id
+client_id
+doc_id OR interview_id
+highlighted_text
+comment_text
+reviewed (boolean)
+
+interviews table:
+
+interview_id
+client_id
+company_name
+job_title
+interview_datetime
+format
+interviewer_names
+job_description_url
+prep_doc_status (none/draft/complete)
+
+interview_prep_docs table:
+
+prep_doc_id
+interview_id
+company_overview
+recent_news
+role_breakdown
+interviewer_details
+tailored_questions
+
+File Upload
+
+Accept .pdf, .doc, .docx
+Store in existing file storage system
+Show upload progress
+Allow file replacement
+
+Notifications
+
+Red badge count on client card = number of unreviewed comments
+Badge clears when admin clicks "Mark Reviewed"

@@ -16,11 +16,8 @@ import { UserProvider } from "@/lib/userContext";
 
 import { ApplicationsProvider } from "@/lib/applicationsContext";
 import AdminApplicationsPage from "@/pages/admin/applications";
-import AdminReviewPage from "@/pages/admin/review";
-import AdminQAPage from "@/pages/admin/qa";
-import ClientInterviewsPage from "@/pages/client/interviews";
-import ClientDocumentsPage from "@/pages/client/documents";
-import ClientApplicationsPage from "@/pages/client/applications";
+import AdminClientsPage from "@/pages/admin/clients";
+import AdminClientDetailPage from "@/pages/admin/clients/detail";
 
 function Router() {
   return (
@@ -37,7 +34,8 @@ function Router() {
         <Route path="/admin/applications" component={AdminApplicationsPage} />
         <Route path="/admin/review" component={AdminReviewPage} />
         <Route path="/admin/qa" component={AdminQAPage} />
-        <Route path="/admin/clients" component={() => <div className="p-8 text-center text-muted-foreground">Client Management (Coming Soon)</div>} />
+        <Route path="/admin/clients" component={AdminClientsPage} />
+        <Route path="/admin/clients/:id" component={AdminClientDetailPage} />
 
         {/* Client Routes */}
         <Route path="/client/interviews" component={ClientInterviewsPage} />
