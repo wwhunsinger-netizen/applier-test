@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { MOCK_USER_PERFORMANCE, UserPerformance } from "@/lib/adminData";
+import { MOCK_CLIENT_PERFORMANCE_SUMMARY } from "@/lib/mockData";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { HoverCardWrapper } from "@/components/hover-card-wrapper";
-import { Users, Zap, Trophy, AlertTriangle, TrendingUp, Mail } from "lucide-react";
+import { Users, Zap, Trophy, AlertTriangle, TrendingUp, Mail, Briefcase, Calendar, CheckCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { EmailDialog } from "@/components/admin/email-dialog";
 
@@ -180,6 +181,73 @@ export default function AdminDashboardPage() {
         </div>
       </div>
       
+      {/* Client Performance Section */}
+      <div>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold text-white">Client Performance</h2>
+          <Button variant="outline" size="sm">View All Clients</Button>
+        </div>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {MOCK_CLIENT_PERFORMANCE_SUMMARY.map((client) => (
+             <Card key={client.clientId} className="bg-[#111] border-white/10 hover:border-white/20 transition-colors group">
+               <CardContent className="p-6">
+                 <div className="flex items-center justify-between mb-6">
+                   <div className="flex items-center gap-4">
+                     <div className="relative">
+                       <img src={client.avatar} alt={client.name} className="h-12 w-12 rounded-full border border-white/10" />
+                       <span className={cn(
+                         "absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-[#111]",
+                         client.status === "Active" ? "bg-green-500" : "bg-yellow-500"
+                       )} />
+                     </div>
+                     <div>
+                       <div className="flex items-center gap-2">
+                         <h3 className="text-lg font-bold text-white">{client.name}</h3>
+                         <Badge variant="outline" className={cn(
+                           "text-[10px] px-1.5 py-0 h-5",
+                           client.plan === "Premium" ? "bg-primary/10 text-primary border-primary/20" : "bg-white/5 text-muted-foreground border-white/10"
+                         )}>
+                           {client.plan}
+                         </Badge>
+                       </div>
+                       <p className="text-xs text-muted-foreground">Last activity {client.lastActivity}</p>
+                     </div>
+                   </div>
+                   <Button variant="ghost" size="icon" className="opacity-0 group-hover:opacity-100 transition-opacity">
+                     <TrendingUp className="w-4 h-4 text-muted-foreground hover:text-white" />
+                   </Button>
+                 </div>
+
+                 <div className="grid grid-cols-3 gap-4">
+                   <div className="bg-white/5 rounded-lg p-3 text-center border border-white/5 group-hover:border-white/10 transition-colors">
+                     <div className="flex items-center justify-center gap-1.5 mb-1 text-muted-foreground">
+                       <Briefcase className="w-3.5 h-3.5" />
+                       <span className="text-xs font-medium">Applied</span>
+                     </div>
+                     <div className="text-xl font-bold text-white">{client.totalApps}</div>
+                   </div>
+                   <div className="bg-white/5 rounded-lg p-3 text-center border border-white/5 group-hover:border-white/10 transition-colors">
+                     <div className="flex items-center justify-center gap-1.5 mb-1 text-muted-foreground">
+                       <Calendar className="w-3.5 h-3.5" />
+                       <span className="text-xs font-medium">Interviews</span>
+                     </div>
+                     <div className="text-xl font-bold text-white">{client.interviews}</div>
+                   </div>
+                   <div className="bg-white/5 rounded-lg p-3 text-center border border-white/5 group-hover:border-white/10 transition-colors">
+                     <div className="flex items-center justify-center gap-1.5 mb-1 text-muted-foreground">
+                       <CheckCircle className="w-3.5 h-3.5" />
+                       <span className="text-xs font-medium">Offers</span>
+                     </div>
+                     <div className="text-xl font-bold text-green-400">{client.offers}</div>
+                   </div>
+                 </div>
+               </CardContent>
+             </Card>
+          ))}
+        </div>
+      </div>
+
       <EmailDialog 
         isOpen={isEmailOpen} 
         onClose={() => setIsEmailOpen(false)} 

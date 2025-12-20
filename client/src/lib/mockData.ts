@@ -137,6 +137,53 @@ export const MOCK_CLIENTS_LIST: Client[] = [
 ];
 
 
+export const MOCK_CLIENT_PERFORMANCE_SUMMARY = [
+  {
+    clientId: "client-1",
+    name: "John Smith",
+    avatar: "https://i.pravatar.cc/150?u=john",
+    plan: "Premium",
+    status: "Active",
+    totalApps: 142,
+    interviews: 8,
+    offers: 1,
+    lastActivity: "2h ago"
+  },
+  {
+    clientId: "client-2",
+    name: "Sarah Connor",
+    avatar: "https://i.pravatar.cc/150?u=sarah_c",
+    plan: "Standard",
+    status: "Active",
+    totalApps: 89,
+    interviews: 4,
+    offers: 0,
+    lastActivity: "1d ago"
+  },
+  {
+    clientId: "client-3",
+    name: "Michael Ross",
+    avatar: "https://i.pravatar.cc/150?u=mike",
+    plan: "Premium",
+    status: "Onboarding",
+    totalApps: 12,
+    interviews: 0,
+    offers: 0,
+    lastActivity: "30m ago"
+  },
+  {
+    clientId: "client-4",
+    name: "Emily Blunt",
+    avatar: "https://i.pravatar.cc/150?u=emily",
+    plan: "Standard",
+    status: "Active",
+    totalApps: 215,
+    interviews: 14,
+    offers: 2,
+    lastActivity: "5h ago"
+  }
+];
+
 export const MOCK_STATS: ApplierStats = {
   dailyApps: 47,
   dailyGoal: 100,
