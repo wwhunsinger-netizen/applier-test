@@ -247,8 +247,7 @@ export default function ClientDocumentsPage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ type: "spring", bounce: 0.5 }}
                 >
-                   <h1 className={cn("text-4xl font-bold flex items-center gap-2 mb-4 drop-shadow-lg text-white font-sans tracking-wide uppercase", config.text)}>
-                     {/* Removed Sparkles emoji here as requested */}
+                   <h1 className="text-4xl font-bold flex items-center gap-2 mb-4 drop-shadow-lg text-white font-sans tracking-wide uppercase">
                      It's a new {config.label}!
                    </h1>
                 </motion.div>
@@ -272,8 +271,7 @@ export default function ClientDocumentsPage() {
                animate={{ opacity: 1 }}
                className="mb-6 flex flex-col items-center relative w-full max-w-4xl pt-4" // Added padding to match reveal positioning
              >
-                <h2 className={cn("text-4xl font-bold flex items-center gap-2 mb-4 drop-shadow-lg text-white font-sans tracking-wide uppercase", config.text)}>
-                  <Sparkles className="w-8 h-8 fill-yellow-300 text-yellow-300" /> 
+                <h2 className="text-4xl font-bold flex items-center gap-2 mb-4 drop-shadow-lg text-white font-sans tracking-wide uppercase">
                   It's a new {config.label}!
                 </h2>
                 
