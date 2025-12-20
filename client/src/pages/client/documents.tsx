@@ -27,14 +27,25 @@ export default function ClientDocumentsPage() {
   const [revealPhase, setRevealPhase] = useState<"intro" | "float" | "distort" | "explode" | "reveal" | "settle">("intro");
   const [showLargeReview, setShowLargeReview] = useState(false);
   const [revisionStatus, setRevisionStatus] = useState<"idle" | "requested">("idle");
+  const [unlockedDocs, setUnlockedDocs] = useState<Record<DocType, boolean>>({
+    resume: false,
+    "cover-letter": false,
+    linkedin: false
+  });
   
-  // Reset states when changing tabs
+  // Reset states when changing tabs, but check if already unlocked
   useEffect(() => {
-    setIsFlipped(false);
-    setShowLargeReview(false);
-    setIsRevealing(false);
-    setRevealPhase("intro");
-  }, [activeTab]);
+    if (unlockedDocs[activeTab]) {
+      setIsFlipped(true);
+      setShowLargeReview(false);
+      setIsRevealing(false);
+    } else {
+      setIsFlipped(false);
+      setShowLargeReview(false);
+      setIsRevealing(false);
+      setRevealPhase("intro");
+    }
+  }, [activeTab, unlockedDocs]);
 
   const config = DOC_CONFIG[activeTab];
 
@@ -61,6 +72,7 @@ export default function ClientDocumentsPage() {
       setIsRevealing(false);
       setShowLargeReview(true); // Stay in large blurred mode
       setIsFlipped(true); // Ready for flip state behind scene
+      setUnlockedDocs(prev => ({ ...prev, [activeTab]: true }));
     }, 9000);
   };
 
@@ -69,6 +81,7 @@ export default function ClientDocumentsPage() {
     setShowLargeReview(true);
     setIsFlipped(true);
     setRevealPhase("intro"); // Reset for next time
+    setUnlockedDocs(prev => ({ ...prev, [activeTab]: true }));
   };
 
   const handleReviewClick = () => {
