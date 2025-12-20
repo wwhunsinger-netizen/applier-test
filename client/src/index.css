@@ -41,79 +41,70 @@
 }
 
 :root {
-  /* Dark mode - Deep Blue/Grey (Default) */
-  --background: 222 47% 11%;
-  --foreground: 210 40% 98%;
+  /* Jumpseat Dark Theme - Deep Space/Navy (No harsh blacks) */
+  --background: 224 71% 4%;     /* slate-950: Rich deep navy */
+  --foreground: 210 40% 98%;    /* slate-50 */
   
-  --card: 222 47% 14%; /* Slightly lighter than bg */
+  --card: 217 33% 17%;          /* slate-900: Distinctly lighter than bg */
   --card-foreground: 210 40% 98%;
   
-  --popover: 222 47% 14%;
+  --popover: 217 33% 17%;
   --popover-foreground: 210 40% 98%;
   
-  --primary: 217 91% 60%;
+  --primary: 213 94% 68%;       /* A brighter, electric blue for pop against dark */
   --primary-foreground: 222 47% 11%;
   
-  --secondary: 217 32% 17%;
+  --secondary: 215 25% 27%;     /* slate-800 */
   --secondary-foreground: 210 40% 98%;
   
-  --muted: 217 32% 17%;
-  --muted-foreground: 215 20% 65%;
+  --muted: 215 25% 27%;
+  --muted-foreground: 215 20% 75%; /* Lighter muted text for readability */
   
-  --accent: 217 32% 17%;
+  --accent: 199 89% 48%;        /* Cyan accent for "Tech" feel */
   --accent-foreground: 210 40% 98%;
-  
-  --destructive: 0 62.8% 30.6%;
-  --destructive-foreground: 210 40% 98%;
-
-  --success: 142 70% 50%;
-  --success-foreground: 222 47% 11%;
-
-  --warning: 48 96% 53%;
-  --warning-foreground: 222 47% 11%;
-  
-  --border: 217 32% 17%;
-  --input: 217 32% 17%;
-  --ring: 224 76% 48%;
-
-  --radius: 0.75rem;
-}
-
-.light {
-  /* Clean, professional light mode */
-  --background: 210 20% 98%;
-  --foreground: 222 47% 11%;
-  
-  --card: 0 0% 100%;
-  --card-foreground: 222 47% 11%;
-  
-  --popover: 0 0% 100%;
-  --popover-foreground: 222 47% 11%;
-  
-  --primary: 221 83% 53%; /* Vivid Blue */
-  --primary-foreground: 210 40% 98%;
-  
-  --secondary: 210 40% 96.1%;
-  --secondary-foreground: 222 47% 11.2%;
-  
-  --muted: 210 40% 96.1%;
-  --muted-foreground: 215 16% 47%;
-  
-  --accent: 210 40% 96.1%;
-  --accent-foreground: 222 47% 11.2%;
   
   --destructive: 0 84.2% 60.2%;
   --destructive-foreground: 210 40% 98%;
 
-  --success: 142 71% 45%;
+  --success: 150 100% 38%;      /* Vibrant Green */
   --success-foreground: 210 40% 98%;
   
-  --warning: 38 92% 50%;
+  --warning: 35 100% 55%;       /* Vibrant Orange/Yellow */
   --warning-foreground: 210 40% 98%;
   
-  --border: 214.3 31.8% 91.4%;
-  --input: 214.3 31.8% 91.4%;
-  --ring: 221 83% 53%;
+  --border: 215 25% 27%;        /* slate-800 */
+  --input: 215 25% 27%;
+  --ring: 213 94% 68%;
+  
+  --radius: 0.5rem;             /* Tighter radius for a more technical feel */
+}
+
+/* Force dark mode values by default since we are "Dark mode brother" */
+.light, .dark {
+  /* Same as root */
+  --background: 224 71% 4%;
+  --foreground: 210 40% 98%;
+  --card: 217 33% 17%;
+  --card-foreground: 210 40% 98%;
+  --popover: 217 33% 17%;
+  --popover-foreground: 210 40% 98%;
+  --primary: 213 94% 68%;
+  --primary-foreground: 222 47% 11%;
+  --secondary: 215 25% 27%;
+  --secondary-foreground: 210 40% 98%;
+  --muted: 215 25% 27%;
+  --muted-foreground: 215 20% 75%;
+  --accent: 199 89% 48%;
+  --accent-foreground: 210 40% 98%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 210 40% 98%;
+  --success: 150 100% 38%;
+  --success-foreground: 210 40% 98%;
+  --warning: 35 100% 55%;
+  --warning-foreground: 210 40% 98%;
+  --border: 215 25% 27%;
+  --input: 215 25% 27%;
+  --ring: 213 94% 68%;
 }
 
 @layer base {
@@ -130,7 +121,7 @@
 
 @layer utilities {
   .glass-card {
-    @apply bg-black/40 backdrop-blur-lg border border-white/10 shadow-lg;
+    @apply bg-slate-900/60 backdrop-blur-md border border-slate-700/50 shadow-xl;
   }
   
   .text-glow {
@@ -139,12 +130,7 @@
   
   .bg-grid-pattern {
     background-size: 40px 40px;
-    background-image: linear-gradient(to right, rgb(255 255 255 / 0.05) 1px, transparent 1px),
-      linear-gradient(to bottom, rgb(255 255 255 / 0.05) 1px, transparent 1px);
-  }
-  
-  .light .bg-grid-pattern {
-    background-image: linear-gradient(to right, rgb(0 0 0 / 0.05) 1px, transparent 1px),
-      linear-gradient(to bottom, rgb(0 0 0 / 0.05) 1px, transparent 1px);
+    background-image: linear-gradient(to right, rgb(255 255 255 / 0.03) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(255 255 255 / 0.03) 1px, transparent 1px);
   }
 }
