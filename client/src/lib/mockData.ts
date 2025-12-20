@@ -33,11 +33,31 @@ export interface LeaderboardEntry {
   isCurrentUser?: boolean;
 }
 
-export const CURRENT_USER = {
-  name: "Alex D.",
-  email: "alex@jumpseat.com",
-  avatar: "https://i.pravatar.cc/150?u=alex",
-};
+export const MOCK_USERS = [
+  {
+    id: "user-1",
+    name: "Alex D.",
+    email: "alex@jumpseat.com",
+    role: "Reviewer",
+    avatar: "https://i.pravatar.cc/150?u=alex"
+  },
+  {
+    id: "user-2",
+    name: "Sarah M.",
+    email: "sarah@jumpseat.com",
+    role: "Applier",
+    avatar: "https://i.pravatar.cc/150?u=sarah"
+  },
+  {
+    id: "user-3",
+    name: "Admin User",
+    email: "admin@jumpseat.com",
+    role: "Admin",
+    avatar: "https://i.pravatar.cc/150?u=admin"
+  }
+];
+
+export const CURRENT_USER = MOCK_USERS[0];
 
 export const MOCK_STATS: ApplierStats = {
   dailyApps: 47,

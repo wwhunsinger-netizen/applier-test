@@ -4,15 +4,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Loader2 } from "lucide-react";
+import { Loader2, User } from "lucide-react";
 import logoUrl from "@assets/Jumpseat_(17)_1766203547189.png";
 import LoadingScreen from "@/components/loading";
+import { MOCK_USERS } from "@/lib/mockData";
 
 export default function LoginPage() {
   const [, setLocation] = useLocation();
   const [isLoading, setIsLoading] = useState(false);
   const [showAppLoader, setShowAppLoader] = useState(false);
-  const [email, setEmail] = useState("applier1@test.com");
+  const [email, setEmail] = useState("alex@jumpseat.com");
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,6 +30,10 @@ export default function LoginPage() {
     setTimeout(() => {
       setLocation("/");
     }, 2000);
+  };
+
+  const fillCredentials = (userEmail: string) => {
+    setEmail(userEmail);
   };
 
   if (showAppLoader) {
@@ -86,6 +91,36 @@ export default function LoginPage() {
               )}
             </Button>
           </form>
+
+          {/* Demo Accounts */}
+          <div className="mt-8 pt-6 border-t border-white/5 space-y-3">
+            <p className="text-xs text-muted-foreground text-center mb-2">Demo Accounts (Click to fill)</p>
+            <div className="grid gap-2">
+              {MOCK_USERS.map((user) => (
+                <button
+                  key={user.id}
+                  type="button"
+                  onClick={() => fillCredentials(user.email)}
+                  className="flex items-center gap-3 p-2 rounded-md hover:bg-white/5 transition-colors text-left group w-full"
+                >
+                  <div className="h-8 w-8 rounded-full bg-white/10 flex items-center justify-center text-xs font-bold text-white overflow-hidden">
+                    {user.avatar ? (
+                      <img src={user.avatar} alt={user.name} className="h-full w-full object-cover" />
+                    ) : (
+                      <User className="h-4 w-4" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-white group-hover:text-primary transition-colors">{user.name}</span>
+                      <span className="text-[10px] bg-white/10 px-1.5 py-0.5 rounded text-muted-foreground">{user.role}</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>
