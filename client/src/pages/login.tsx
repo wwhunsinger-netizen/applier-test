@@ -8,9 +8,11 @@ import { Loader2, User } from "lucide-react";
 import logoUrl from "@assets/Jumpseat_(17)_1766203547189.png";
 import LoadingScreen from "@/components/loading";
 import { MOCK_USERS } from "@/lib/mockData";
+import { useUser } from "@/lib/userContext";
 
 export default function LoginPage() {
   const [, setLocation] = useLocation();
+  const { login } = useUser();
   const [isLoading, setIsLoading] = useState(false);
   const [showAppLoader, setShowAppLoader] = useState(false);
   const [email, setEmail] = useState("alex@jumpseat.com");
@@ -21,6 +23,9 @@ export default function LoginPage() {
     
     // Simulate network request
     await new Promise(resolve => setTimeout(resolve, 800));
+    
+    // Set user context
+    login(email);
     
     // Show full screen app loader
     setIsLoading(false);

@@ -12,6 +12,7 @@ import ReviewPage from "@/pages/review";
 import LeaderboardPage from "@/pages/leaderboard";
 import LoadingScreen from "@/components/loading";
 import { useState, useEffect } from "react";
+import { UserProvider } from "@/lib/userContext";
 
 function Router() {
   const [isLoading, setIsLoading] = useState(true);
@@ -47,8 +48,10 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <Toaster />
-        <Router />
+        <UserProvider>
+          <Toaster />
+          <Router />
+        </UserProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );

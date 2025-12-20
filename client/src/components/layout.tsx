@@ -3,11 +3,12 @@ import { cn } from "@/lib/utils";
 import { LayoutDashboard, Briefcase, Send, Trophy, User, LogOut } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { CURRENT_USER } from "@/lib/mockData";
+import { useUser } from "@/lib/userContext";
 import logoUrl from "@assets/Jumpseat_(17)_1766203547189.png";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
+  const { currentUser, logout } = useUser();
 
   // Don't show layout on login page
   if (location === "/login") {
@@ -65,18 +66,25 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <div className="p-4 border-t border-white/5 bg-white/5">
           <div className="flex items-center gap-3 mb-4">
             <Avatar className="h-9 w-9 border border-white/10">
-              <AvatarImage src={CURRENT_USER.avatar} />
-              <AvatarFallback>AD</AvatarFallback>
+              <AvatarImage src={currentUser.avatar} />
+              <AvatarFallback>{currentUser.name.substring(0, 2).toUpperCase()}</AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <p className="text-sm font-medium truncate text-white">{CURRENT_USER.name}</p>
-                <span className="text-[10px] bg-primary/20 text-primary px-1.5 py-0.5 rounded uppercase font-bold tracking-wider">Reviewer</span>
+                <p className="text-sm font-medium truncate text-white">{currentUser.name}</p>
+                <span className={cn(
+                  "text-[10px] px-1.5 py-0.5 rounded uppercase font-bold tracking-wider",
+                  currentUser.role === "Reviewer" ? "bg-primary/20 text-primary" : 
+                  currentUser.role === "Admin" ? "bg-purple-500/20 text-purple-400" :
+                  "bg-white/10 text-muted-foreground"
+                )}>
+                  {currentUser.role}
+                </span>
               </div>
-              <p className="text-xs text-muted-foreground truncate">{CURRENT_USER.email}</p>
+              <p className="text-xs text-muted-foreground truncate">{currentUser.email}</p>
             </div>
           </div>
-          <Link href="/login">
+          <Link href="/login" onClick={logout}>
             <Button variant="outline" size="sm" className="w-full justify-start text-muted-foreground hover:text-destructive hover:bg-destructive/10 hover:border-destructive/20 border-white/10 bg-transparent">
               <LogOut className="w-4 h-4 mr-2" />
               Sign Out
