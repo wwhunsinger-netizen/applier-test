@@ -7,16 +7,21 @@ export default function LoadingScreen() {
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
+    const startTime = Date.now();
+    const duration = 2000; // 2 seconds for full load
+
     const timer = setInterval(() => {
-      setProgress((oldProgress) => {
-        if (oldProgress === 100) {
-          clearInterval(timer);
-          return 100;
-        }
-        const diff = Math.random() * 10;
-        return Math.min(oldProgress + diff, 100);
-      });
-    }, 100);
+      const elapsed = Date.now() - startTime;
+      // Use an ease-out curve for a natural feel: 1 - (1 - t)^3
+      const t = Math.min(elapsed / duration, 1);
+      const easeOutProgress = (1 - Math.pow(1 - t, 3)) * 100;
+      
+      setProgress(easeOutProgress);
+
+      if (t >= 1) {
+        clearInterval(timer);
+      }
+    }, 10); // Update every 10ms for smooth 100fps animation
 
     return () => {
       clearInterval(timer);
