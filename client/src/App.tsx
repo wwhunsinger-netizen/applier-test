@@ -20,20 +20,6 @@ import AdminReviewPage from "@/pages/admin/review";
 import AdminQAPage from "@/pages/admin/qa";
 
 function Router() {
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    // Simulate initial app load
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 2000);
-    return () => clearTimeout(timer);
-  }, []);
-
-  if (isLoading) {
-    return <LoadingScreen />;
-  }
-
   return (
     <Layout>
       <Switch>
