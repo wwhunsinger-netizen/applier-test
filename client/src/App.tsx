@@ -37,7 +37,6 @@ function Router() {
         <Route path="/review/:id" component={ReviewPage} />
         <Route path="/leaderboard" component={LeaderboardPage} />
         <Route path="/applied" component={() => <div className="p-8 text-center text-muted-foreground">Applied Jobs History (Coming Soon)</div>} />
-        <Route path="/profile" component={() => <div className="p-8 text-center text-muted-foreground">User Profile (Coming Soon)</div>} />
         <Route component={NotFound} />
       </Switch>
     </Layout>

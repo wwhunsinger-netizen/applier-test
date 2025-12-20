@@ -19,7 +19,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { icon: Briefcase, label: "Review Queue", href: "/queue" },
     { icon: Send, label: "Applied", href: "/applied" },
     { icon: Trophy, label: "Leaderboard", href: "/leaderboard" },
-    { icon: User, label: "Profile", href: "/profile" },
   ];
 
   return (
