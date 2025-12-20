@@ -4,13 +4,14 @@ import { LayoutDashboard, Briefcase, Send, Trophy, User, LogOut } from "lucide-r
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { CURRENT_USER } from "@/lib/mockData";
+import logoUrl from "@assets/Its_not_a_career,_its_a_heist._(5)_1766203128601.png";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
 
   // Don't show layout on login page
   if (location === "/login") {
-    return <div className="min-h-screen bg-background">{children}</div>;
+    return <div className="min-h-screen bg-black">{children}</div>;
   }
 
   const navItems = [
@@ -22,16 +23,15 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   ];
 
   return (
-    <div className="flex h-screen bg-muted/30 overflow-hidden font-sans">
+    <div className="flex h-screen bg-black overflow-hidden font-sans">
       {/* Sidebar */}
-      <aside className="w-64 bg-card border-r border-border hidden md:flex flex-col z-20 shadow-sm">
-        <div className="p-6 border-b border-border/50">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold font-heading">
-              J
-            </div>
-            <span className="text-xl font-bold font-heading tracking-tight">Jumpseat</span>
-          </div>
+      <aside className="w-64 bg-[#050505] border-r border-white/5 hidden md:flex flex-col z-20 shadow-xl">
+        <div className="p-6 h-[88px] flex items-center border-b border-white/5">
+          <img 
+            src={logoUrl} 
+            alt="Jumpseat" 
+            className="h-12 w-auto object-contain -ml-1" 
+          />
         </div>
 
         <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
@@ -44,13 +44,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                     "flex items-center gap-3 px-4 py-3 rounded-md text-sm font-medium transition-all duration-200 group",
                     isActive
                       ? "bg-primary/10 text-primary shadow-sm"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                      : "text-muted-foreground hover:bg-white/5 hover:text-white"
                   )}
                 >
                   <item.icon
                     className={cn(
                       "w-5 h-5 transition-colors",
-                      isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
+                      isActive ? "text-primary" : "text-muted-foreground group-hover:text-white"
                     )}
                   />
                   {item.label}
@@ -60,19 +60,19 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           })}
         </nav>
 
-        <div className="p-4 border-t border-border/50 bg-muted/10">
+        <div className="p-4 border-t border-white/5 bg-white/5">
           <div className="flex items-center gap-3 mb-4">
-            <Avatar className="h-9 w-9 border border-border">
+            <Avatar className="h-9 w-9 border border-white/10">
               <AvatarImage src={CURRENT_USER.avatar} />
               <AvatarFallback>AD</AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{CURRENT_USER.name}</p>
+              <p className="text-sm font-medium truncate text-white">{CURRENT_USER.name}</p>
               <p className="text-xs text-muted-foreground truncate">{CURRENT_USER.email}</p>
             </div>
           </div>
           <Link href="/login">
-            <Button variant="outline" size="sm" className="w-full justify-start text-muted-foreground hover:text-destructive hover:bg-destructive/10 hover:border-destructive/20">
+            <Button variant="outline" size="sm" className="w-full justify-start text-muted-foreground hover:text-destructive hover:bg-destructive/10 hover:border-destructive/20 border-white/10 bg-transparent">
               <LogOut className="w-4 h-4 mr-2" />
               Sign Out
             </Button>
@@ -81,7 +81,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col min-w-0 overflow-hidden bg-background/50">
+      <main className="flex-1 flex flex-col min-w-0 overflow-hidden bg-black">
         <div className="flex-1 overflow-y-auto scroll-smooth">
           <div className="container max-w-6xl mx-auto p-4 md:p-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {children}
