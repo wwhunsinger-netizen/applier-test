@@ -19,6 +19,7 @@ export default function AdminClientDetailPage() {
 
   const [activeTab, setActiveTab] = useState("resume");
   const [isAddInterviewOpen, setIsAddInterviewOpen] = useState(false);
+  const [isCommentsOpen, setIsCommentsOpen] = useState(false);
 
   return (
     <div className="space-y-6">
@@ -78,7 +79,21 @@ export default function AdminClientDetailPage() {
             <Card className="bg-[#111] border-white/10">
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="text-lg">Improved Resume</CardTitle>
-                <Badge variant="outline" className="bg-yellow-500/10 text-yellow-500 border-yellow-500/20">Pending Review</Badge>
+                {client.status === 'action_needed' ? (
+                  <div className="flex items-center gap-2">
+                    <Badge variant="destructive" className="bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500/20">Needs Revision</Badge>
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      className="h-6 text-xs border-red-500/30 text-red-400 hover:text-red-300 hover:bg-red-500/10 hover:border-red-500/50"
+                      onClick={() => setIsCommentsOpen(true)}
+                    >
+                      View {client.commentsCount} Comments
+                    </Button>
+                  </div>
+                ) : (
+                  <Badge variant="outline" className="bg-yellow-500/10 text-yellow-500 border-yellow-500/20">Pending Review</Badge>
+                )}
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="p-8 border-2 border-dashed border-white/10 rounded-lg flex flex-col items-center justify-center text-center hover:bg-white/5 transition-colors cursor-pointer">
@@ -257,6 +272,41 @@ export default function AdminClientDetailPage() {
               <DialogFooter>
                 <Button variant="ghost" onClick={() => setIsAddInterviewOpen(false)}>Cancel</Button>
                 <Button onClick={() => setIsAddInterviewOpen(false)}>Create Interview</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {/* Comments Modal */}
+          <Dialog open={isCommentsOpen} onOpenChange={setIsCommentsOpen}>
+            <DialogContent className="bg-[#0a0a0a] border-white/10 text-white sm:max-w-[500px]">
+              <DialogHeader>
+                <DialogTitle>Client Comments - {client.name}</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="bg-white/5 p-4 rounded-lg border border-white/10">
+                  <div className="flex justify-between items-start mb-2">
+                    <span className="font-bold text-sm text-primary">Resume - Page 1</span>
+                    <span className="text-xs text-muted-foreground">Dec 16, 2:30 PM</span>
+                  </div>
+                  <p className="text-sm text-white/90">"The summary section feels a bit too long. Can we condense the second paragraph?"</p>
+                  <div className="mt-3 flex justify-end">
+                    <Button size="sm" variant="ghost" className="h-6 text-xs text-muted-foreground hover:text-white">Mark Resolved</Button>
+                  </div>
+                </div>
+                
+                <div className="bg-white/5 p-4 rounded-lg border border-white/10">
+                  <div className="flex justify-between items-start mb-2">
+                    <span className="font-bold text-sm text-primary">Resume - Skills</span>
+                    <span className="text-xs text-muted-foreground">Dec 16, 2:45 PM</span>
+                  </div>
+                  <p className="text-sm text-white/90">"Please add 'Next.js' to the frontend skills list. It's missing."</p>
+                  <div className="mt-3 flex justify-end">
+                    <Button size="sm" variant="ghost" className="h-6 text-xs text-muted-foreground hover:text-white">Mark Resolved</Button>
+                  </div>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button onClick={() => setIsCommentsOpen(false)} className="w-full">Close</Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
