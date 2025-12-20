@@ -77,7 +77,8 @@ export default function ClientDocumentsPage() {
       // Don't unmount the revealing component yet!
       // First turn on the underlying interactive component
       setIsFlipped(true); 
-      setUnlockedDocs(prev => ({ ...prev, [activeTab]: true }));
+      // NOTE: We do NOT set unlockedDocs here anymore. 
+      // We only set it when the user explicitly closes the review modal.
       setShowLargeReview(true);
       
       // Then turn off the animation overlay after a tiny buffer to allow the underlying one to render
@@ -100,6 +101,8 @@ export default function ClientDocumentsPage() {
 
   const handleReviewClick = () => {
     setShowLargeReview(false);
+    // Mark as unlocked ONLY when they close the review modal
+    setUnlockedDocs(prev => ({ ...prev, [activeTab]: true }));
   };
 
   const handleApprove = () => {
@@ -189,11 +192,13 @@ export default function ClientDocumentsPage() {
                          <div className="h-2 bg-gray-100 rounded w-5/6" />
                       </div>
                     ) : (
-                      <div className="space-y-4 w-3/4 opacity-20">
-                        <div className="h-4 bg-black rounded w-1/2" />
-                        <div className="h-2 bg-black rounded w-full" />
-                        <div className="h-2 bg-black rounded w-full" />
-                        <div className="h-2 bg-black rounded w-3/4" />
+                      <div className="space-y-4 w-3/4 opacity-40 blur-[1px]">
+                         <h3 className="text-xl font-bold text-center mb-4 text-gray-500">Old {config.label}</h3>
+                        <div className="h-4 bg-gray-300 rounded w-1/2 mx-auto" />
+                        <div className="h-2 bg-gray-200 rounded w-full" />
+                        <div className="h-2 bg-gray-200 rounded w-full" />
+                        <div className="h-2 bg-gray-200 rounded w-3/4" />
+                        <div className="h-2 bg-gray-200 rounded w-full mt-4" />
                       </div>
                     )}
 
@@ -243,7 +248,7 @@ export default function ClientDocumentsPage() {
                   transition={{ type: "spring", bounce: 0.5 }}
                 >
                    <h1 className={cn("text-4xl font-bold flex items-center gap-2 mb-4 drop-shadow-lg text-white font-sans tracking-wide uppercase", config.text)}>
-                     <Sparkles className="w-8 h-8 fill-yellow-300 text-yellow-300" />
+                     {/* Removed Sparkles emoji here as requested */}
                      It's a new {config.label}!
                    </h1>
                 </motion.div>
