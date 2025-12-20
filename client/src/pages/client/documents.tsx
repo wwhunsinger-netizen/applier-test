@@ -203,20 +203,31 @@ export default function ClientDocumentsPage() {
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-[40] flex flex-col items-center justify-center bg-black/80 backdrop-blur-xl p-8"
           >
+             <motion.div
+               initial={{ y: 50, opacity: 0 }}
+               animate={{ y: 0, opacity: 1 }}
+               className="mb-6 flex flex-col items-center relative w-full max-w-4xl"
+             >
+                <h2 className={cn("text-4xl font-bold flex items-center gap-2 mb-4", config.text)}>
+                  <Sparkles className="w-8 h-8 fill-current" /> 
+                  New {config.label} Unlocked
+                </h2>
+                
+                <Button 
+                   variant="secondary" 
+                   size="icon" 
+                   className="absolute -right-12 top-0 rounded-full w-10 h-10 bg-white/10 hover:bg-white/20 text-white border border-white/20" 
+                   onClick={handleReviewClick}
+                >
+                   <X className="w-5 h-5" />
+                </Button>
+             </motion.div>
+
              <motion.div 
                initial={{ scale: 0.8, opacity: 0 }}
                animate={{ scale: 1, opacity: 1 }}
-               className="relative w-full max-w-4xl h-[80vh] bg-white rounded-lg shadow-2xl overflow-hidden flex flex-col"
+               className="relative w-full max-w-4xl h-[70vh] bg-white rounded-lg shadow-2xl overflow-hidden flex flex-col"
              >
-                <div className={cn("p-4 flex justify-between items-center text-white", config.bg)}>
-                   <h2 className="text-2xl font-bold flex items-center gap-2">
-                     <Sparkles className="fill-yellow-300 text-yellow-300" /> 
-                     New {config.label} Unlocked
-                   </h2>
-                   <Button variant="ghost" size="icon" className="text-white hover:bg-white/20" onClick={handleReviewClick}>
-                      <X className="w-6 h-6" />
-                   </Button>
-                </div>
                 <div className="flex-1 p-12 overflow-y-auto">
                     {/* Simplified Content Preview */}
                     <div className="max-w-2xl mx-auto space-y-8 blur-[0.5px]">
