@@ -204,14 +204,11 @@ export default function AdminDashboardPage() {
                      <div>
                        <div className="flex items-center gap-2">
                          <h3 className="text-lg font-bold text-white">{client.name}</h3>
-                         <Badge variant="outline" className={cn(
-                           "text-[10px] px-1.5 py-0 h-5",
-                           client.plan === "Premium" ? "bg-primary/10 text-primary border-primary/20" : "bg-white/5 text-muted-foreground border-white/10"
-                         )}>
-                           {client.plan}
-                         </Badge>
+                         <span className="text-xs text-muted-foreground bg-white/5 px-1.5 py-0.5 rounded border border-white/10">
+                           Started {client.startDate}
+                         </span>
                        </div>
-                       <p className="text-xs text-muted-foreground">Last activity {client.lastActivity}</p>
+                       <p className="text-xs text-muted-foreground mt-0.5">Last activity {client.lastActivity}</p>
                      </div>
                    </div>
                    <Button variant="ghost" size="icon" className="opacity-0 group-hover:opacity-100 transition-opacity">
