@@ -26,11 +26,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     <div className="flex h-screen bg-black overflow-hidden font-sans">
       {/* Sidebar */}
       <aside className="w-64 bg-[#050505] border-r border-white/5 hidden md:flex flex-col z-20 shadow-xl">
-        <div className="p-6 h-[88px] flex items-center border-b border-white/5">
+        <div className="p-6 h-[88px] flex items-center justify-center border-b border-white/5">
           <img 
             src={logoUrl} 
             alt="Jumpseat" 
-            className="h-12 w-auto object-contain -ml-1" 
+            className="h-12 w-auto object-contain" 
           />
         </div>
 
