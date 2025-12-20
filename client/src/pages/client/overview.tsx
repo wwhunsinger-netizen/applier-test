@@ -103,28 +103,24 @@ export default function ClientOverviewPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Week Progress Card */}
         <Card className="bg-[#111] border-white/10">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <TrendingUp className="w-5 h-5 text-primary" />
+          <CardHeader className="p-4 pb-2">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <TrendingUp className="w-4 h-4 text-primary" />
               This Week's Progress
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="flex justify-between items-center border-b border-white/5 pb-4">
-               <span className="text-muted-foreground">Applications Sent</span>
-               <span className="text-xl font-bold text-white">{MOCK_CLIENT_WEEKLY_PROGRESS.appsSent}</span>
+          <CardContent className="p-4 space-y-3">
+            <div className="flex justify-between items-center border-b border-white/5 pb-2">
+               <span className="text-sm text-muted-foreground">Applications Sent</span>
+               <span className="text-lg font-bold text-white">{MOCK_CLIENT_WEEKLY_PROGRESS.appsSent}</span>
             </div>
-            <div className="flex justify-between items-center border-b border-white/5 pb-4">
-               <span className="text-muted-foreground">Response Rate</span>
-               <span className="text-xl font-bold text-green-400">{MOCK_CLIENT_WEEKLY_PROGRESS.responseRate}%</span>
+            <div className="flex justify-between items-center border-b border-white/5 pb-2">
+               <span className="text-sm text-muted-foreground">Response Rate</span>
+               <span className="text-lg font-bold text-green-400">{MOCK_CLIENT_WEEKLY_PROGRESS.responseRate}%</span>
             </div>
-            <div className="flex justify-between items-center border-b border-white/5 pb-4">
-               <span className="text-muted-foreground">Interviews Booked</span>
-               <span className="text-xl font-bold text-white">{MOCK_CLIENT_WEEKLY_PROGRESS.interviewsBooked}</span>
-            </div>
-            <div className="flex items-center gap-2 pt-2">
-              <Flame className="w-5 h-5 text-orange-500 animate-pulse" />
-              <span className="font-bold text-orange-500">Weekly Streak: {MOCK_CLIENT_WEEKLY_PROGRESS.weeklyStreak} weeks</span>
+            <div className="flex justify-between items-center pb-1">
+               <span className="text-sm text-muted-foreground">Interviews Booked</span>
+               <span className="text-lg font-bold text-white">{MOCK_CLIENT_WEEKLY_PROGRESS.interviewsBooked}</span>
             </div>
           </CardContent>
         </Card>
@@ -132,29 +128,29 @@ export default function ClientOverviewPage() {
         {/* Next Interview Card */}
         <Card className="bg-[#111] border-white/10 relative overflow-hidden group">
           <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
-            <Clock className="w-32 h-32" />
+            <Clock className="w-24 h-24" />
           </div>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Clock className="w-5 h-5 text-purple-400" />
+          <CardHeader className="p-4 pb-2">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Clock className="w-4 h-4 text-purple-400" />
               Next Interview
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6 relative z-10">
+          <CardContent className="p-4 space-y-3 relative z-10">
             <div>
-              <h3 className="text-2xl font-bold text-white">{nextInterview.company}</h3>
-              <p className="text-lg text-primary">{nextInterview.role}</p>
+              <h3 className="text-lg font-bold text-white">{nextInterview.company}</h3>
+              <p className="text-base text-primary">{nextInterview.role}</p>
             </div>
             
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Calendar className="w-4 h-4" />
+            <div className="flex items-center gap-2 text-muted-foreground text-sm">
+              <Calendar className="w-3.5 h-3.5" />
               <span>{format(new Date(nextInterview.date), "MMM d 'at' h:mm a")}</span>
-              <span className="bg-white/10 px-2 py-0.5 rounded text-xs text-white ml-2">In 3 days</span>
+              <span className="bg-white/10 px-1.5 py-0.5 rounded text-[10px] text-white ml-2">In 3 days</span>
             </div>
 
             <Link href="/client/interviews">
-              <Button className="w-full mt-2 bg-white/5 hover:bg-white/10 text-white border border-white/10">
-                View Prep Doc <ArrowRight className="w-4 h-4 ml-2" />
+              <Button size="sm" className="w-full mt-1 bg-white/5 hover:bg-white/10 text-white border border-white/10 h-8 text-xs">
+                View Prep Doc <ArrowRight className="w-3 h-3 ml-2" />
               </Button>
             </Link>
           </CardContent>
