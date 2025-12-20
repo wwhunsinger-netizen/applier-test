@@ -16,7 +16,7 @@ export default function QueuePage() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Application Queue</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Review Queue</h1>
           <p className="text-muted-foreground">53 jobs waiting for review</p>
         </div>
         <div className="flex items-center gap-2">
