@@ -86,10 +86,6 @@ export default function LoginPage() {
               )}
             </Button>
           </form>
-          
-          <div className="mt-6 text-center text-xs text-muted-foreground">
-            <p>Protected by Jumpseat Secure Auth</p>
-          </div>
         </CardContent>
       </Card>
     </div>
