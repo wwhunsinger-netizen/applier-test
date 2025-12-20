@@ -49,20 +49,34 @@ export interface LeaderboardEntry {
 export const MOCK_USERS = [
   {
     id: "user-1",
-    name: "Alex D.",
-    email: "alex@jumpseat.com",
-    role: "Reviewer",
-    avatar: "https://i.pravatar.cc/150?u=alex"
-  },
-  {
-    id: "user-2",
     name: "Sarah M.",
     email: "sarah@jumpseat.com",
     role: "Applier",
     avatar: "https://i.pravatar.cc/150?u=sarah"
   },
   {
+    id: "user-2",
+    name: "Michael B.",
+    email: "michael@jumpseat.com",
+    role: "Applier",
+    avatar: "https://i.pravatar.cc/150?u=michael"
+  },
+  {
     id: "user-3",
+    name: "Jessica T.",
+    email: "jessica@jumpseat.com",
+    role: "Applier",
+    avatar: "https://i.pravatar.cc/150?u=jessica"
+  },
+  {
+    id: "user-4",
+    name: "David K.",
+    email: "david@jumpseat.com",
+    role: "Applier",
+    avatar: "https://i.pravatar.cc/150?u=david"
+  },
+  {
+    id: "user-5",
     name: "Admin User",
     email: "admin@jumpseat.com",
     role: "Admin",

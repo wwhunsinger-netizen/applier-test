@@ -16,19 +16,6 @@ export interface UserPerformance {
 export const MOCK_USER_PERFORMANCE: UserPerformance[] = [
   {
     userId: "user-1",
-    name: "Alex D.",
-    avatar: "https://i.pravatar.cc/150?u=alex",
-    dailyApps: 47,
-    dailyGoal: 100,
-    weeklyApps: 487,
-    weeklyGoal: 700,
-    interviewRate: 6.2,
-    qaScore: 98,
-    status: "Active",
-    lastActive: "Now"
-  },
-  {
-    userId: "user-2",
     name: "Sarah M.",
     avatar: "https://i.pravatar.cc/150?u=sarah",
     dailyApps: 82,
@@ -37,14 +24,14 @@ export const MOCK_USER_PERFORMANCE: UserPerformance[] = [
     weeklyGoal: 700,
     interviewRate: 7.8,
     qaScore: 92,
-    status: "Idle",
-    lastActive: "15m ago"
+    status: "Active",
+    lastActive: "Now"
   },
   {
-    userId: "user-4", // New mock user
+    userId: "user-2",
     name: "Michael B.",
     avatar: "https://i.pravatar.cc/150?u=michael",
-    dailyApps: 24,
+    dailyApps: 47,
     dailyGoal: 100,
     weeklyApps: 340,
     weeklyGoal: 700,
@@ -54,7 +41,7 @@ export const MOCK_USER_PERFORMANCE: UserPerformance[] = [
     lastActive: "2m ago"
   },
   {
-    userId: "user-5", // New mock user
+    userId: "user-3",
     name: "Jessica T.",
     avatar: "https://i.pravatar.cc/150?u=jessica",
     dailyApps: 95,
@@ -63,6 +50,19 @@ export const MOCK_USER_PERFORMANCE: UserPerformance[] = [
     weeklyGoal: 700,
     interviewRate: 8.5,
     qaScore: 99,
+    status: "Idle",
+    lastActive: "15m ago"
+  },
+  {
+    userId: "user-4",
+    name: "David K.",
+    avatar: "https://i.pravatar.cc/150?u=david",
+    dailyApps: 15,
+    dailyGoal: 100,
+    weeklyApps: 120,
+    weeklyGoal: 700,
+    interviewRate: 2.1,
+    qaScore: 78,
     status: "Offline",
     lastActive: "3h ago"
   }

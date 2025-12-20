@@ -15,7 +15,7 @@ export default function LoginPage() {
   const { login } = useUser();
   const [isLoading, setIsLoading] = useState(false);
   const [showAppLoader, setShowAppLoader] = useState(false);
-  const [email, setEmail] = useState("alex@jumpseat.com");
+  const [email, setEmail] = useState("admin@jumpseat.com");
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
