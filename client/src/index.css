@@ -41,70 +41,70 @@
 }
 
 :root {
-  /* Jumpseat Dark Theme - Deep Space/Navy (No harsh blacks) */
-  --background: 224 71% 4%;     /* slate-950: Rich deep navy */
-  --foreground: 210 40% 98%;    /* slate-50 */
+  /* Jumpseat TRUE BLACK Aesthetic */
+  --background: 0 0% 0%;        /* #000000 Pure Black */
+  --foreground: 0 0% 98%;       /* #fafafa White text */
   
-  --card: 217 33% 17%;          /* slate-900: Distinctly lighter than bg */
-  --card-foreground: 210 40% 98%;
+  --card: 0 0% 7%;              /* #121212 Dark Gray Card */
+  --card-foreground: 0 0% 98%;
   
-  --popover: 217 33% 17%;
-  --popover-foreground: 210 40% 98%;
+  --popover: 0 0% 7%;
+  --popover-foreground: 0 0% 98%;
   
-  --primary: 213 94% 68%;       /* A brighter, electric blue for pop against dark */
-  --primary-foreground: 222 47% 11%;
+  --primary: 0 72% 51%;         /* #dc2626 Jumpseat Red */
+  --primary-foreground: 0 0% 98%;
   
-  --secondary: 215 25% 27%;     /* slate-800 */
-  --secondary-foreground: 210 40% 98%;
+  --secondary: 0 0% 15%;        /* #262626 Lighter Gray for secondary actions */
+  --secondary-foreground: 0 0% 98%;
   
-  --muted: 215 25% 27%;
-  --muted-foreground: 215 20% 75%; /* Lighter muted text for readability */
+  --muted: 0 0% 15%;
+  --muted-foreground: 0 0% 60%; /* #999999 Medium Gray text */
   
-  --accent: 199 89% 48%;        /* Cyan accent for "Tech" feel */
-  --accent-foreground: 210 40% 98%;
+  --accent: 0 0% 15%;           /* Dark gray hover states */
+  --accent-foreground: 0 0% 98%;
   
-  --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 210 40% 98%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 0 0% 98%;
 
-  --success: 150 100% 38%;      /* Vibrant Green */
-  --success-foreground: 210 40% 98%;
+  --success: 142 70% 50%;       /* Keep green for success states (money/checkmarks) */
+  --success-foreground: 0 0% 0%;
+
+  --warning: 35 100% 55%;       /* Keep orange for warnings */
+  --warning-foreground: 0 0% 0%;
   
-  --warning: 35 100% 55%;       /* Vibrant Orange/Yellow */
-  --warning-foreground: 210 40% 98%;
-  
-  --border: 215 25% 27%;        /* slate-800 */
-  --input: 215 25% 27%;
-  --ring: 213 94% 68%;
-  
-  --radius: 0.5rem;             /* Tighter radius for a more technical feel */
+  --border: 0 0% 15%;           /* #262626 Subtle borders */
+  --input: 0 0% 15%;
+  --ring: 0 72% 51%;            /* Red focus rings */
+
+  --radius: 0.5rem;
 }
 
-/* Force dark mode values by default since we are "Dark mode brother" */
+/* Force same dark theme everywhere */
 .light, .dark {
   /* Same as root */
-  --background: 224 71% 4%;
-  --foreground: 210 40% 98%;
-  --card: 217 33% 17%;
-  --card-foreground: 210 40% 98%;
-  --popover: 217 33% 17%;
-  --popover-foreground: 210 40% 98%;
-  --primary: 213 94% 68%;
-  --primary-foreground: 222 47% 11%;
-  --secondary: 215 25% 27%;
-  --secondary-foreground: 210 40% 98%;
-  --muted: 215 25% 27%;
-  --muted-foreground: 215 20% 75%;
-  --accent: 199 89% 48%;
-  --accent-foreground: 210 40% 98%;
-  --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 210 40% 98%;
-  --success: 150 100% 38%;
-  --success-foreground: 210 40% 98%;
+  --background: 0 0% 0%;
+  --foreground: 0 0% 98%;
+  --card: 0 0% 7%;
+  --card-foreground: 0 0% 98%;
+  --popover: 0 0% 7%;
+  --popover-foreground: 0 0% 98%;
+  --primary: 0 72% 51%;
+  --primary-foreground: 0 0% 98%;
+  --secondary: 0 0% 15%;
+  --secondary-foreground: 0 0% 98%;
+  --muted: 0 0% 15%;
+  --muted-foreground: 0 0% 60%;
+  --accent: 0 0% 15%;
+  --accent-foreground: 0 0% 98%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 0 0% 98%;
+  --success: 142 70% 50%;
+  --success-foreground: 0 0% 0%;
   --warning: 35 100% 55%;
-  --warning-foreground: 210 40% 98%;
-  --border: 215 25% 27%;
-  --input: 215 25% 27%;
-  --ring: 213 94% 68%;
+  --warning-foreground: 0 0% 0%;
+  --border: 0 0% 15%;
+  --input: 0 0% 15%;
+  --ring: 0 72% 51%;
 }
 
 @layer base {
@@ -121,7 +121,7 @@
 
 @layer utilities {
   .glass-card {
-    @apply bg-slate-900/60 backdrop-blur-md border border-slate-700/50 shadow-xl;
+    @apply bg-[#111111]/80 backdrop-blur-md border border-white/10 shadow-xl;
   }
   
   .text-glow {
@@ -130,7 +130,7 @@
   
   .bg-grid-pattern {
     background-size: 40px 40px;
-    background-image: linear-gradient(to right, rgb(255 255 255 / 0.03) 1px, transparent 1px),
-      linear-gradient(to bottom, rgb(255 255 255 / 0.03) 1px, transparent 1px);
+    background-image: linear-gradient(to right, rgb(255 255 255 / 0.05) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(255 255 255 / 0.05) 1px, transparent 1px);
   }
 }
