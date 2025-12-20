@@ -213,6 +213,9 @@ export default function ClientDocumentsPage() {
                      <Sparkles className="fill-yellow-300 text-yellow-300" /> 
                      New {config.label} Unlocked
                    </h2>
+                   <Button variant="ghost" size="icon" className="text-white hover:bg-white/20" onClick={handleReviewClick}>
+                      <X className="w-6 h-6" />
+                   </Button>
                 </div>
                 <div className="flex-1 p-12 overflow-y-auto">
                     {/* Simplified Content Preview */}
