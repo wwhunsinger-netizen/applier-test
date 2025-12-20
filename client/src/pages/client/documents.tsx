@@ -65,23 +65,37 @@ export default function ClientDocumentsPage() {
     // Animation Sequence
     setTimeout(() => setRevealPhase("float"), 2000);   // Text moves up, doc floats
     setTimeout(() => setRevealPhase("distort"), 4000); // Doc stretches
-    // Skip explode to avoid blank screen, go straight to reveal with confetti
-    setTimeout(() => setRevealPhase("reveal"), 7000);  // New doc appears with confetti
     
+    // Smooth transition to reveal
     setTimeout(() => {
-      setIsRevealing(false);
-      setShowLargeReview(true); // Stay in large blurred mode
-      setIsFlipped(true); // Ready for flip state behind scene
+      setRevealPhase("reveal");
+    }, 7000);
+    
+    // Final settle into interactive mode
+    // We delay slightly less than before to catch the end of the reveal animation
+    setTimeout(() => {
+      // Don't unmount the revealing component yet!
+      // First turn on the underlying interactive component
+      setIsFlipped(true); 
       setUnlockedDocs(prev => ({ ...prev, [activeTab]: true }));
+      setShowLargeReview(true);
+      
+      // Then turn off the animation overlay after a tiny buffer to allow the underlying one to render
+      setTimeout(() => {
+        setIsRevealing(false);
+      }, 100);
     }, 9000);
   };
 
   const handleSkipAnimation = () => {
-    setIsRevealing(false);
-    setShowLargeReview(true);
+    // Immediate state set
     setIsFlipped(true);
-    setRevealPhase("intro"); // Reset for next time
     setUnlockedDocs(prev => ({ ...prev, [activeTab]: true }));
+    setShowLargeReview(true);
+    
+    // Clear animation state
+    setIsRevealing(false);
+    setRevealPhase("intro"); 
   };
 
   const handleReviewClick = () => {
