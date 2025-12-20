@@ -3,7 +3,7 @@ import { MOCK_CLIENT_INTERVIEWS } from "@/lib/mockData";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Calendar as CalendarIcon, Clock, Video, Users, CheckCircle, ExternalLink, MapPin } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, Video, Users, CheckCircle, ExternalLink, MapPin, Download, FileText } from "lucide-react";
 import { format } from "date-fns";
 
 export default function ClientInterviewsPage() {
@@ -16,9 +16,6 @@ export default function ClientInterviewsPage() {
           <h1 className="text-3xl font-bold tracking-tight text-white">Interviews</h1>
           <p className="text-muted-foreground mt-1">Upcoming schedule and preparation.</p>
         </div>
-        <Button variant="outline" onClick={() => window.open('https://calendly.com/wyedoyoudothis/mock-interview', '_blank')}>
-          Schedule Mock Interview
-        </Button>
       </div>
 
       {/* Calendar Grid View - Simplified for Mock */}
@@ -68,51 +65,84 @@ export default function ClientInterviewsPage() {
 
       {/* Prep Doc Modal */}
       <Dialog open={!!selectedInterview} onOpenChange={(open) => !open && setSelectedInterview(null)}>
-        <DialogContent className="bg-[#0a0a0a] border-white/10 text-white max-w-4xl h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-bold flex items-center gap-2">
-              Prep: {selectedInterview?.role} @ {selectedInterview?.company}
-            </DialogTitle>
-            <div className="text-sm text-muted-foreground flex items-center gap-4 pt-1">
-              <span className="flex items-center gap-1"><CalendarIcon className="w-4 h-4" /> {selectedInterview && format(new Date(selectedInterview.date), "MMMM d, yyyy")}</span>
-              <span className="flex items-center gap-1"><Clock className="w-4 h-4" /> {selectedInterview && format(new Date(selectedInterview.date), "h:mm a")}</span>
-              <span className="flex items-center gap-1"><Video className="w-4 h-4" /> {selectedInterview?.format}</span>
+        <DialogContent className="bg-[#0a0a0a] border-white/10 text-white max-w-5xl h-[90vh] flex flex-col p-0 overflow-hidden">
+          <div className="p-6 border-b border-white/10 bg-[#111] flex justify-between items-center">
+            <div>
+              <DialogTitle className="text-2xl font-bold flex items-center gap-2">
+                Prep: {selectedInterview?.role} @ {selectedInterview?.company}
+              </DialogTitle>
+              <div className="text-sm text-muted-foreground flex items-center gap-4 pt-1">
+                <span className="flex items-center gap-1"><CalendarIcon className="w-4 h-4" /> {selectedInterview && format(new Date(selectedInterview.date), "MMMM d, yyyy")}</span>
+                <span className="flex items-center gap-1"><Clock className="w-4 h-4" /> {selectedInterview && format(new Date(selectedInterview.date), "h:mm a")}</span>
+                <span className="flex items-center gap-1"><Video className="w-4 h-4" /> {selectedInterview?.format}</span>
+              </div>
             </div>
-          </DialogHeader>
-
-          <div className="space-y-8 py-6">
-            {/* Mock Sections */}
-            <section className="space-y-3">
-              <h3 className="text-lg font-bold text-primary border-b border-white/10 pb-2">1. Company Overview</h3>
-              <p className="text-muted-foreground leading-relaxed">
-                {selectedInterview?.company} is a leading technology company focused on... (Mock content)
-                They recently announced a new initiative to...
-                <br /><br />
-                <strong>Culture Vibe:</strong> Fast-paced, innovative, collaborative.
-              </p>
-            </section>
-
-            <section className="space-y-3">
-              <h3 className="text-lg font-bold text-primary border-b border-white/10 pb-2">2. What This Role Actually Does</h3>
-              <ul className="list-disc list-inside text-muted-foreground space-y-2">
-                <li>Lead design initiatives for core products</li>
-                <li>Collaborate with PMs and Engineers</li>
-                <li>Mentor junior designers</li>
-              </ul>
-            </section>
-
-             <section className="space-y-3">
-              <h3 className="text-lg font-bold text-primary border-b border-white/10 pb-2">3. Questions That Show You Did Your Homework</h3>
-              <ul className="list-disc list-inside text-muted-foreground space-y-2">
-                <li>"I saw you recently launched X feature. How has user adoption been compared to expectations?"</li>
-                <li>"How does the design team balance speed vs quality in the current roadmap?"</li>
-              </ul>
-            </section>
+            <div className="flex gap-2">
+               <Button variant="outline" className="gap-2 border-white/10 hover:bg-white/5">
+                 <Download className="w-4 h-4" /> Download PDF
+               </Button>
+            </div>
           </div>
 
-          <div className="bg-white/5 -mx-6 -mb-6 p-4 border-t border-white/10 mt-auto flex justify-between items-center">
-            <span className="text-sm italic text-muted-foreground">We'll send a tailored thank-you email on your behalf after the interview.</span>
-            <Button size="sm" onClick={() => setSelectedInterview(null)}>Close Prep Doc</Button>
+          <div className="flex-1 bg-[#222] p-8 overflow-y-auto flex justify-center">
+            {/* Mock PDF View */}
+            <div className="bg-white text-black w-full max-w-[800px] shadow-2xl min-h-[1000px] p-12">
+               <div className="border-b-2 border-primary pb-6 mb-8 flex justify-between items-start">
+                 <div>
+                   <h1 className="text-3xl font-bold text-gray-900">Interview Prep Guide</h1>
+                   <p className="text-gray-500 mt-2 text-lg">{selectedInterview?.company} - {selectedInterview?.role}</p>
+                 </div>
+                 <div className="text-right text-sm text-gray-500">
+                   <p>Generated for {format(new Date(), "MMM d, yyyy")}</p>
+                   <p className="font-bold text-primary mt-1">CONFIDENTIAL</p>
+                 </div>
+               </div>
+
+               <div className="space-y-8 font-serif">
+                <section className="space-y-3">
+                  <h3 className="text-lg font-bold text-primary uppercase tracking-wider border-b border-gray-200 pb-1">1. Company Overview</h3>
+                  <p className="text-gray-800 leading-relaxed">
+                    {selectedInterview?.company} is a leading technology company focused on digital transformation.
+                    They recently announced a new initiative to expand their AI capabilities.
+                    <br /><br />
+                    <strong>Culture Vibe:</strong> Fast-paced, innovative, collaborative.
+                  </p>
+                </section>
+
+                <section className="space-y-3">
+                  <h3 className="text-lg font-bold text-primary uppercase tracking-wider border-b border-gray-200 pb-1">2. Role Responsibilities</h3>
+                  <ul className="list-disc list-inside text-gray-800 space-y-2">
+                    <li>Lead design initiatives for core products</li>
+                    <li>Collaborate with PMs and Engineers</li>
+                    <li>Mentor junior designers and establish design systems</li>
+                  </ul>
+                </section>
+
+                 <section className="space-y-3">
+                  <h3 className="text-lg font-bold text-primary uppercase tracking-wider border-b border-gray-200 pb-1">3. Strategic Questions</h3>
+                  <ul className="list-disc list-inside text-gray-800 space-y-2">
+                    <li>"I saw you recently launched X feature. How has user adoption been compared to expectations?"</li>
+                    <li>"How does the design team balance speed vs quality in the current roadmap?"</li>
+                    <li>"What is the biggest challenge the team is facing right now?"</li>
+                  </ul>
+                </section>
+                
+                <section className="mt-12 p-6 bg-gray-50 border border-gray-200 rounded-lg">
+                   <h4 className="font-bold text-gray-900 mb-2">Interviewer Profile</h4>
+                   <p className="text-gray-600 italic">"Sarah (VP of Design) values concise answers and data-driven design decisions. Be prepared to explain your 'why'."</p>
+                </section>
+               </div>
+            </div>
+          </div>
+
+          <div className="bg-[#111] p-4 border-t border-white/10 flex justify-between items-center shrink-0">
+            <span className="text-sm italic text-muted-foreground hidden md:block">We'll send a tailored thank-you email on your behalf after the interview.</span>
+            <div className="flex gap-3 w-full md:w-auto">
+               <Button variant="ghost" onClick={() => setSelectedInterview(null)}>Close</Button>
+               <Button className="gap-2 bg-primary hover:bg-primary/90 text-white" onClick={() => window.open('https://calendly.com/wyedoyoudothis/mock-interview', '_blank')}>
+                 <CalendarIcon className="w-4 h-4" /> Schedule Mock Interview
+               </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

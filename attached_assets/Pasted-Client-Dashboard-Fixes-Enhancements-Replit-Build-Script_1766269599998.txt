@@ -1,0 +1,386 @@
+Client Dashboard Fixes & Enhancements - Replit Build Script
+OVERVIEW TAB - Make It Less Boring
+Current State:
+Just 3 pills (Applications Sent, Rejections, Interviews) - feels empty
+Add These Elements:
+1. Welcome Message Enhancement
+Welcome back, [Client Name]
+[Motivational tagline that changes based on progress]
+
+Examples:
+- "Your next opportunity is one application away"
+- "Interviews are rolling in - keep the momentum!"
+- "We're working hard behind the scenes for you"
+2. Current Week Activity Card
+┌─────────────────────────────────────┐
+│ 📊 This Week's Progress             │
+│                                      │
+│ Applications Sent: 47                │
+│ Response Rate: 12%                   │
+│ Interviews Booked: 3                 │
+│                                      │
+│ Weekly Streak: 🔥 4 weeks           │
+└─────────────────────────────────────┘
+3. Recent Activity Feed
+┌─────────────────────────────────────┐
+│ 📌 Recent Activity                  │
+│                                      │
+│ • Applied to Google - PM role        │
+│   2 hours ago                        │
+│                                      │
+│ • Interview scheduled: Netflix       │
+│   Yesterday                          │
+│                                      │
+│ • 5 new applications sent            │
+│   Dec 19                             │
+│                                      │
+│ [View All Activity →]               │
+└─────────────────────────────────────┘
+4. Next Interview Countdown (if interviews scheduled)
+┌─────────────────────────────────────┐
+│ ⏰ Next Interview                   │
+│                                      │
+│ Google - Senior PM                   │
+│ In 3 days (Jan 5 at 2:00 PM)        │
+│                                      │
+│ [View Prep Doc →]                   │
+└─────────────────────────────────────┘
+5. Application Pipeline Visual
+┌─────────────────────────────────────┐
+│ 📈 Your Pipeline                    │
+│                                      │
+│ Applied ████████░░ 142               │
+│ Reviewing ██░░░░░░░░ 15              │
+│ Interviewing ███░░░░░░░ 8            │
+│ Offers █░░░░░░░░░░ 1                 │
+└─────────────────────────────────────┘
+Layout:
+[Welcome Message]
+
+[3 Metric Pills - keep mouseover functionality]
+
+[This Week Card] [Next Interview Card]
+
+[Activity Feed] [Pipeline Visual]
+
+INTERVIEWS TAB - Fixes
+Fix 1: Move "Schedule Mock Interview" Button
+Current: Button appears at top of page
+New: Button appears at bottom of prep doc modal
+Implementation:
+
+Remove top-level "Schedule Mock Interview" button
+Add button to bottom of prep doc modal:
+
+[Prep doc content here...]
+
+────────────────────────────────
+
+We'll send a tailored thank-you email on your behalf after the interview.
+
+[Close Prep Doc] [Schedule Mock Interview →]
+Fix 2: Prep Doc Display & Download
+Current: Text sections
+New: PDF viewer with download
+Admin Side:
+
+Form fields to fill out (Company Overview, Recent News, etc.)
+"Generate PDF" button creates formatted PDF from fields
+PDF auto-saved and linked to interview
+
+Client Side:
+
+Opens prep doc modal → shows PDF viewer
+Download button at top right
+Client can download and edit offline
+No in-app editing needed
+
+Recommendation for Your Workflow:
+Use form fields that generate PDF. Here's why:
+
+Faster for you to fill out structured fields than format a PDF manually
+Maintains consistency across all prep docs
+Easy to update/revise sections without recreating entire PDF
+Auto-generates professional formatting
+
+
+DOCUMENTS TAB - Major Fixes
+Fix 1: "Show Me" Button Animation
+Current: Boring reveal
+New: Pokémon evolution-style transformation
+Animation Sequence:
+
+Initial State: Old resume on left, "Your New Resume Is Ready" callout on right with "Show Me" button
+Click "Show Me":
+
+Background fades to dark overlay (80% opacity black)
+Old resume floats up to center screen, enlarges to fill viewport
+Everything else dims out
+
+
+Transformation (2-3 seconds, skippable):
+
+Resume glows with white border
+Starts "morphing" - paper stretches/warps with wave effect
+Glowing particles/sparkles swirl around document
+Flash of white light
+
+
+Reveal:
+
+New resume appears in same center position
+Sparkles/confetti burst
+Celebratory glow effect
+1 second pause
+
+
+Return:
+
+New resume floats down and shrinks back to normal position in viewer
+Background returns to normal
+Approve/Request Revisions buttons appear at bottom
+Skip button available throughout (ESC key or X in corner)
+
+
+
+Animation Library Suggestions:
+
+Use Framer Motion or GSAP for smooth animations
+Lottie for particle effects
+CSS transforms for the morphing effect
+
+Fix 2: Highlight & Comment Functionality
+Implementation:
+For Resume/Cover Letters/LinkedIn PDFs:
+
+Use PDF.js with annotation layer
+Client selects/highlights text
+Lightbulb icon (💡) appears next to selection
+Click lightbulb → text input appears: "Add your comment..."
+Submit → comment saved with highlighted text reference
+Highlights remain visible in yellow with comment indicators (speech bubble icon)
+
+Comment Display:
+[Highlighted text in yellow]
+💬 "This should say 8 engineers, not 5"
+All comments persist on document until:
+
+Client approves (then comments disappear, doc locks)
+OR client requests revisions (comments sent to admin)
+
+Fix 3: Request Revisions Flow
+When Client Clicks "Request Revisions":
+
+Confirmation modal:
+
+Request Revisions?
+
+Your comments will be sent to Wilson for review.
+You'll be notified when the updated document is ready.
+
+[Cancel] [Submit Revision Request]
+
+After submission:
+
+Document changes to "Awaiting Revisions" state
+Shows message:
+
+
+
+   ⏳ Revisions Requested
+   
+   Wilson is working on your updates.
+   You'll be notified when the new version is ready.
+   
+   Your Comments:
+   • "Change 5 to 8 engineers" (line 12)
+   • "Update revenue to 25%" (line 18)
+
+Document viewer is read-only (can view old resume, no interaction)
+No Approve/Deny buttons visible
+
+
+Admin side shows:
+
+Red badge on client card
+"Needs Revision" status on document
+All comments listed with highlighted sections
+Upload new version → client sees "Your Updated Resume Is Ready" notification
+
+
+
+Fix 4: Build Cover Letters Tab
+Exact same structure as Resume:
+Document Review - Cover Letters Tab
+
+[A] [B] [C] ← Pills at top (toggle between versions)
+
+─────────────────────────────────────
+
+Left Side (70%):
+Old Cover Letter (PDF viewer)
+
+Right Side (30%):
+┌───────────────────────────────┐
+│  ✨                           │
+│  Your New Cover Letter        │
+│  Is Ready                      │
+│                                │
+│  We've crafted three versions │
+│  optimized for different       │
+│  opportunities.                │
+│                                │
+│  [Show Me]                    │
+└───────────────────────────────┘
+After clicking "Show Me":
+
+Same Pokémon evolution animation
+Shows Version A by default
+Pills at top become active (can click B, C to toggle)
+Fast switching between versions (no animation, instant swap)
+Each version has independent highlight/comment capability
+Single "Approve All" button at bottom (approves A, B, C together)
+Single "Request Revisions" button (marks all as needing revision)
+
+Fix 5: Build LinkedIn Tab
+Same structure as Cover Letters:
+
+Old LinkedIn PDF → New LinkedIn PDF(s)
+A/B/C versions if multiple uploaded
+Same animation, highlight/comment, approve flow
+
+
+ADMIN SIDE - Prep Doc Workflow
+Interviews Tab > Write Prep Doc
+Interface:
+Create Interview Prep Document
+Google - Senior Product Manager
+
+────────────────────────────────
+
+Company Overview
+[Rich text editor]
+What they do, size, funding, culture (2-3 sentences)
+
+Recent News & Updates
+[Rich text editor]
+Last 90 days: launches, acquisitions, challenges
+
+What This Role Actually Does
+[Rich text editor]
+Day-to-day, team structure, success metrics
+
+About Your Interviewer(s)
+[Rich text editor - optional]
+Background, interests, rapport builders
+
+Questions That Show You Did Your Homework
+[Text area]
+3-5 tailored questions based on research
+
+────────────────────────────────
+
+Universal Questions (Auto-included)
+✓ What does success look like after 6 months?
+✓ What's the biggest challenge facing the team?
+✓ How does this role contribute to company priorities?
+✓ What do people who succeed here have in common?
+✓ What's your favorite part about working here?
+
+────────────────────────────────
+
+[Save Draft] [Generate & Publish PDF]
+On "Generate & Publish PDF":
+
+System creates formatted PDF with:
+
+Header (company, role, date/time, format, interviewer)
+All filled sections
+Professional layout with section breaks
+Jumpseat branding footer
+
+
+PDF saved and linked to interview
+Interview status → "Prep Doc Ready" ✅
+Client can now view/download from Interviews tab
+
+Admin Can:
+
+Edit form fields and regenerate PDF anytime
+Download PDF to preview before publishing
+View if client downloaded the PDF (optional tracking)
+
+
+TECHNICAL REQUIREMENTS
+Database Updates
+Add to client_documents table:
+sqlhighlighted_sections (JSONB)
+- stores array of {text, position, comment, timestamp}
+
+revision_status (enum)
+- 'pending_review' | 'approved' | 'awaiting_revision' | 'locked'
+Add to interviews table:
+sqlprep_doc_pdf_url (string)
+prep_doc_downloaded (boolean)
+prep_doc_downloaded_at (timestamp)
+```
+
+### **File Storage**
+- Generate PDFs server-side using library like PDFKit or Puppeteer
+- Store in existing file storage (S3/Cloudinary)
+- Return URL for client download
+
+### **Animation Libraries**
+```
+npm install framer-motion
+npm install react-pdf
+npm install @react-pdf-viewer/core
+```
+
+### **PDF Annotation**
+```
+npm install react-pdf-highlighter
+OR use PDF.js with custom annotation layer
+
+UX FLOWS SUMMARY
+Document Approval Flow:
+
+Client sees "Your New [Doc] Is Ready" → clicks "Show Me"
+Pokémon evolution animation (skippable)
+New doc appears with Approve/Request Revisions buttons
+Client can highlight and comment
+If Approve: Doc locks, advances to next doc type (Resume→Cover Letters→LinkedIn)
+If Request Revisions: Comments sent to admin, doc shows "Awaiting Revisions"
+Admin uploads new version → client gets notification → cycle repeats if needed
+Once ALL docs approved → entire Documents tab locks (read-only)
+
+Interview Prep Flow:
+
+Admin fills form fields in Clients > Interviews tab
+Clicks "Generate & Publish PDF"
+System creates formatted PDF, saves, marks interview as ready
+Client sees interview with "Prep Doc Ready" badge
+Client clicks interview → modal opens with PDF viewer
+Client can download PDF
+"Schedule Mock Interview" button at bottom links to Calendly
+No in-app editing needed
+
+
+PRIORITY ORDER FOR BUILD:
+Phase 1 (Critical Fixes):
+
+Fix "Show Me" button animation (Pokémon evolution)
+Implement highlight & comment functionality
+Fix "Request Revisions" → "Awaiting Revisions" flow
+Build Cover Letters tab (same as Resume)
+Build LinkedIn tab (same as Resume)
+
+Phase 2 (Important Enhancements):
+6. Move Mock Interview button to prep doc modal bottom
+7. Build admin prep doc form → PDF generator
+8. Replace prep doc text sections with PDF viewer + download
+Phase 3 (Polish):
+9. Enhance Overview tab with activity feed, pipeline visual, etc.
+10. Add mouseover details to Rejections/Interviews pills
+11. Lock Documents tab after all approvals
+12. Test full end-to-end flows

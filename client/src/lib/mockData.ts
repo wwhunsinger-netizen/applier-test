@@ -101,6 +101,27 @@ export const MOCK_CLIENT_STATS = {
   interviews: 8
 };
 
+export const MOCK_CLIENT_WEEKLY_PROGRESS = {
+  appsSent: 47,
+  responseRate: 12,
+  interviewsBooked: 3,
+  weeklyStreak: 4
+};
+
+export const MOCK_CLIENT_ACTIVITY_FEED = [
+  { id: 1, type: "applied", title: "Applied to Google - PM role", time: "2 hours ago" },
+  { id: 2, type: "interview", title: "Interview scheduled: Netflix", time: "Yesterday" },
+  { id: 3, type: "batch", title: "5 new applications sent", time: "Dec 19" },
+  { id: 4, type: "rejection", title: "Rejection from Amazon", time: "Dec 18" },
+];
+
+export const MOCK_CLIENT_PIPELINE = {
+  applied: 142,
+  reviewing: 15,
+  interviewing: 8,
+  offers: 1
+};
+
 export const MOCK_CLIENT_INTERVIEWS = [
   {
     id: "int-1",
