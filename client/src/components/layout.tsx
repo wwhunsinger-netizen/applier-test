@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, Briefcase, Send, Trophy, User, LogOut } from "lucide-react";
+import { LayoutDashboard, Briefcase, Send, Trophy, User, LogOut, ShieldCheck, List, AlertTriangle } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useUser } from "@/lib/userContext";
@@ -15,12 +15,21 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     return <div className="min-h-screen bg-black">{children}</div>;
   }
 
-  const navItems = [
+  const applierNavItems = [
     { icon: LayoutDashboard, label: "Dashboard", href: "/" },
     { icon: Briefcase, label: "Review Queue", href: "/queue" },
     { icon: Send, label: "Applied", href: "/applied" },
     { icon: Trophy, label: "Leaderboard", href: "/leaderboard" },
   ];
+
+  const adminNavItems = [
+    { icon: LayoutDashboard, label: "Dashboard", href: "/" },
+    { icon: List, label: "All Applications", href: "/admin/applications" },
+    { icon: AlertTriangle, label: "Review Issues", href: "/admin/review" },
+    { icon: ShieldCheck, label: "QA Check", href: "/admin/qa" },
+  ];
+
+  const navItems = currentUser.role === "Admin" ? adminNavItems : applierNavItems;
 
   return (
     <div className="flex h-screen bg-black overflow-hidden font-sans relative">

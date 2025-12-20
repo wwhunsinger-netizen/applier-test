@@ -1,5 +1,8 @@
 import { LucideIcon, Briefcase, CheckCircle, Clock, DollarSign, FileText, Trophy, User, XCircle, Zap } from "lucide-react";
 
+export type ApplicationStatus = "Pending" | "Applied" | "Interview" | "Offer" | "Rejected";
+export type QAStatus = "None" | "Approved" | "Rejected";
+
 export interface Job {
   id: string;
   role: string;
@@ -10,6 +13,16 @@ export interface Job {
   requirements: { text: string; met: boolean }[];
   description: string;
   client: string;
+}
+
+export interface Application {
+  id: string;
+  jobId: string;
+  applierId: string;
+  status: ApplicationStatus;
+  qaStatus: QAStatus;
+  appliedDate: string;
+  flaggedIssue?: string; // If populated, it appears in Admin Review
 }
 
 export interface ApplierStats {
@@ -124,6 +137,58 @@ export const MOCK_JOBS: Job[] = [
       { text: "10+ years experience", met: true },
     ],
   },
+  {
+    id: "job-4",
+    role: "Backend Developer",
+    company: "Cloud Systems",
+    location: "Austin, TX",
+    postedTime: "3 hours ago",
+    matchScore: 85,
+    client: "Jane Doe",
+    description: "Building scalable microservices...",
+    requirements: [
+      { text: "Go, Kubernetes", met: true },
+      { text: "Cloud Native", met: true },
+    ],
+  },
+  {
+    id: "job-5",
+    role: "Product Designer",
+    company: "Creative Studio",
+    location: "Remote",
+    postedTime: "5 hours ago",
+    matchScore: 78,
+    client: "Jane Doe",
+    description: "Leading design initiatives...",
+    requirements: [
+      { text: "Figma", met: true },
+      { text: "UI/UX", met: true },
+    ],
+  },
+  {
+    id: "job-6",
+    role: "DevOps Engineer",
+    company: "Infra Inc",
+    location: "Remote",
+    postedTime: "1 day ago",
+    matchScore: 92,
+    client: "John Smith",
+    description: "Automating deployment pipelines...",
+    requirements: [
+      { text: "CI/CD", met: true },
+      { text: "Terraform", met: true },
+    ],
+  }
+];
+
+// Initial mock applications
+export const MOCK_APPLICATIONS: Application[] = [
+  { id: "app-1", jobId: "job-1", applierId: "user-1", status: "Applied", qaStatus: "None", appliedDate: "2024-05-20" },
+  { id: "app-2", jobId: "job-2", applierId: "user-1", status: "Interview", qaStatus: "Approved", appliedDate: "2024-05-19" },
+  { id: "app-3", jobId: "job-3", applierId: "user-2", status: "Applied", qaStatus: "None", appliedDate: "2024-05-20" },
+  { id: "app-4", jobId: "job-4", applierId: "user-2", status: "Pending", qaStatus: "None", appliedDate: "2024-05-20", flaggedIssue: "Resume formatting error" },
+  { id: "app-5", jobId: "job-5", applierId: "user-1", status: "Offer", qaStatus: "Approved", appliedDate: "2024-05-15" },
+  { id: "app-6", jobId: "job-6", applierId: "user-2", status: "Applied", qaStatus: "None", appliedDate: "2024-05-18" },
 ];
 
 export const RESUME_COMPARISON = {

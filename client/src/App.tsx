@@ -14,6 +14,11 @@ import LoadingScreen from "@/components/loading";
 import { useState, useEffect } from "react";
 import { UserProvider } from "@/lib/userContext";
 
+import { ApplicationsProvider } from "@/lib/applicationsContext";
+import AdminApplicationsPage from "@/pages/admin/applications";
+import AdminReviewPage from "@/pages/admin/review";
+import AdminQAPage from "@/pages/admin/qa";
+
 function Router() {
   const [isLoading, setIsLoading] = useState(true);
 
@@ -38,6 +43,12 @@ function Router() {
         <Route path="/review/:id" component={ReviewPage} />
         <Route path="/leaderboard" component={LeaderboardPage} />
         <Route path="/applied" component={() => <div className="p-8 text-center text-muted-foreground">Applied Jobs History (Coming Soon)</div>} />
+        
+        {/* Admin Routes */}
+        <Route path="/admin/applications" component={AdminApplicationsPage} />
+        <Route path="/admin/review" component={AdminReviewPage} />
+        <Route path="/admin/qa" component={AdminQAPage} />
+
         <Route component={NotFound} />
       </Switch>
     </Layout>
@@ -48,10 +59,12 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <UserProvider>
-          <Toaster />
-          <Router />
-        </UserProvider>
+        <ApplicationsProvider>
+          <UserProvider>
+            <Toaster />
+            <Router />
+          </UserProvider>
+        </ApplicationsProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );
