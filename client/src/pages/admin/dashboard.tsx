@@ -1,12 +1,23 @@
-import { MOCK_USER_PERFORMANCE } from "@/lib/adminData";
+import { useState } from "react";
+import { MOCK_USER_PERFORMANCE, UserPerformance } from "@/lib/adminData";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { HoverCardWrapper } from "@/components/hover-card-wrapper";
-import { Users, Zap, Trophy, AlertTriangle, TrendingUp } from "lucide-react";
+import { Users, Zap, Trophy, AlertTriangle, TrendingUp, Mail } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { EmailDialog } from "@/components/admin/email-dialog";
 
 export default function AdminDashboardPage() {
+  const [selectedUser, setSelectedUser] = useState<UserPerformance | null>(null);
+  const [isEmailOpen, setIsEmailOpen] = useState(false);
+
+  const handleEmailClick = (user: UserPerformance) => {
+    setSelectedUser(user);
+    setIsEmailOpen(true);
+  };
+
   // Calculate aggregate stats
   const totalDailyApps = MOCK_USER_PERFORMANCE.reduce((acc, user) => acc + user.dailyApps, 0);
   const totalWeeklyApps = MOCK_USER_PERFORMANCE.reduce((acc, user) => acc + user.weeklyApps, 0);
@@ -90,7 +101,17 @@ export default function AdminDashboardPage() {
                       )} />
                     </div>
                     <div>
-                      <CardTitle className="text-base font-medium text-white">{user.name}</CardTitle>
+                      <div className="flex items-center gap-2">
+                        <CardTitle className="text-base font-medium text-white">{user.name}</CardTitle>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-6 w-6 text-muted-foreground hover:text-white hover:bg-white/10"
+                          onClick={() => handleEmailClick(user)}
+                        >
+                          <Mail className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
                       <p className="text-xs text-muted-foreground">{user.status} • {user.lastActive}</p>
                     </div>
                   </div>
@@ -100,7 +121,7 @@ export default function AdminDashboardPage() {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4 pt-4">
-                  {/* Progress Bar */}
+                  {/* Daily Progress Bar */}
                   <div className="space-y-1">
                     <div className="flex justify-between text-xs">
                       <span className="text-muted-foreground">Daily Goal ({user.dailyGoal})</span>
@@ -117,6 +138,21 @@ export default function AdminDashboardPage() {
                       indicatorClassName={cn(
                         user.dailyApps >= user.dailyGoal ? "bg-green-500" : "bg-primary"
                       )} 
+                    />
+                  </div>
+
+                  {/* Weekly Progress Bar */}
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-muted-foreground">Weekly Goal ({user.weeklyGoal})</span>
+                      <span className="text-white font-medium">
+                        {Math.round((user.weeklyApps / user.weeklyGoal) * 100)}%
+                      </span>
+                    </div>
+                    <Progress 
+                      value={(user.weeklyApps / user.weeklyGoal) * 100} 
+                      className="h-1.5 bg-white/5" 
+                      indicatorClassName="bg-blue-500" 
                     />
                   </div>
 
@@ -143,6 +179,12 @@ export default function AdminDashboardPage() {
           ))}
         </div>
       </div>
+      
+      <EmailDialog 
+        isOpen={isEmailOpen} 
+        onClose={() => setIsEmailOpen(false)} 
+        recipient={selectedUser} 
+      />
     </div>
   );
 }

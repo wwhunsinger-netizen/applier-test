@@ -6,6 +6,7 @@ export interface UserPerformance {
   dailyApps: number;
   dailyGoal: number;
   weeklyApps: number;
+  weeklyGoal: number;
   interviewRate: number;
   qaScore: number;
   status: "Active" | "Idle" | "Offline";
@@ -20,6 +21,7 @@ export const MOCK_USER_PERFORMANCE: UserPerformance[] = [
     dailyApps: 47,
     dailyGoal: 100,
     weeklyApps: 487,
+    weeklyGoal: 700,
     interviewRate: 6.2,
     qaScore: 98,
     status: "Active",
@@ -32,6 +34,7 @@ export const MOCK_USER_PERFORMANCE: UserPerformance[] = [
     dailyApps: 82,
     dailyGoal: 100,
     weeklyApps: 512,
+    weeklyGoal: 700,
     interviewRate: 7.8,
     qaScore: 92,
     status: "Idle",
@@ -44,6 +47,7 @@ export const MOCK_USER_PERFORMANCE: UserPerformance[] = [
     dailyApps: 24,
     dailyGoal: 100,
     weeklyApps: 340,
+    weeklyGoal: 700,
     interviewRate: 4.5,
     qaScore: 88,
     status: "Active",
@@ -56,6 +60,7 @@ export const MOCK_USER_PERFORMANCE: UserPerformance[] = [
     dailyApps: 95,
     dailyGoal: 100,
     weeklyApps: 620,
+    weeklyGoal: 700,
     interviewRate: 8.5,
     qaScore: 99,
     status: "Offline",
