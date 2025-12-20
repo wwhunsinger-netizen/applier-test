@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { Progress } from "@/components/ui/progress";
 import { useEffect, useState } from "react";
+import logoUrl from "@assets/Jumpseat_(18)_1766204186693.png";
 
 export default function LoadingScreen() {
   const [progress, setProgress] = useState(0);
@@ -37,9 +38,11 @@ export default function LoadingScreen() {
           transition={{ duration: 0.8, ease: "easeOut" }}
           className="mb-8"
         >
-          <div className="text-6xl font-serif italic font-bold text-white tracking-tighter" style={{ fontFamily: 'Georgia, serif' }}>
-            J
-          </div>
+          <img 
+            src={logoUrl} 
+            alt="Jumpseat" 
+            className="w-24 h-auto object-contain"
+          />
         </motion.div>
         
         {/* Progress Bar */}
