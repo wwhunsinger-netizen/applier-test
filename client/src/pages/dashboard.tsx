@@ -8,8 +8,16 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Zap, Clock, TrendingUp, CheckCircle2, AlertCircle, ArrowRight, Flame, Trophy, Briefcase } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { HoverCardWrapper } from "@/components/hover-card-wrapper";
+import { useUser } from "@/lib/userContext";
+import AdminDashboardPage from "./admin/dashboard";
 
 export default function DashboardPage() {
+  const { currentUser } = useUser();
+
+  if (currentUser.role === "Admin") {
+    return <AdminDashboardPage />;
+  }
+
   const percentComplete = (MOCK_STATS.dailyApps / MOCK_STATS.dailyGoal) * 100;
 
   return (
