@@ -69,7 +69,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               <AvatarFallback>AD</AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate text-white">{CURRENT_USER.name}</p>
+              <div className="flex items-center gap-2">
+                <p className="text-sm font-medium truncate text-white">{CURRENT_USER.name}</p>
+                <span className="text-[10px] bg-primary/20 text-primary px-1.5 py-0.5 rounded uppercase font-bold tracking-wider">Reviewer</span>
+              </div>
               <p className="text-xs text-muted-foreground truncate">{CURRENT_USER.email}</p>
             </div>
           </div>
