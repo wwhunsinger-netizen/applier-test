@@ -17,13 +17,36 @@ export default function ReviewPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [resumeText, setResumeText] = useState(RESUME_COMPARISON.ai_tailored);
 
-  // Simple timer
+  // Job ID derived from URL or prop in a real app, assuming job[0] for now
+  const jobId = MOCK_JOBS[0].id;
+
+  // Timer logic with simple persistence
   useEffect(() => {
-    const interval = setInterval(() => {
-      setTimer(t => t + 1);
-    }, 1000);
+    // Key for local storage
+    const storageKey = `jumpseat_timer_${jobId}`;
+    
+    // Check if we have a stored start time
+    const storedStart = localStorage.getItem(storageKey);
+    let startTime = storedStart ? parseInt(storedStart, 10) : Date.now();
+
+    // If no stored start time, set it now
+    if (!storedStart) {
+      localStorage.setItem(storageKey, startTime.toString());
+    }
+
+    // Update timer every second
+    const updateTimer = () => {
+      const now = Date.now();
+      const elapsedSeconds = Math.floor((now - startTime) / 1000);
+      setTimer(elapsedSeconds);
+    };
+
+    // Initial update
+    updateTimer();
+
+    const interval = setInterval(updateTimer, 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [jobId]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -35,6 +58,8 @@ export default function ReviewPage() {
     if (activeTab === "resume") {
       setActiveTab("cover-letter");
     } else {
+      // Clear timer on finish
+      localStorage.removeItem(`jumpseat_timer_${jobId}`);
       // Finish
       setLocation("/queue");
     }
