@@ -45,7 +45,6 @@ export default function AdminClientDetailPage() {
           <TabsTrigger value="cover-letters">Cover Letters</TabsTrigger>
           <TabsTrigger value="linkedin">LinkedIn</TabsTrigger>
           <TabsTrigger value="interviews">Interviews</TabsTrigger>
-          <TabsTrigger value="applications">Applications</TabsTrigger>
         </TabsList>
 
         {/* Resume Tab */}
@@ -261,49 +260,6 @@ export default function AdminClientDetailPage() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
-        </TabsContent>
-
-        {/* Applications Tab */}
-        <TabsContent value="applications" className="space-y-6">
-          <Card className="bg-[#111] border-white/10">
-            <CardHeader>
-              <CardTitle>Application History</CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="divide-y divide-white/5">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="p-4 flex flex-col md:flex-row items-center justify-between gap-4">
-                    <div className="flex items-center gap-4 w-full md:w-auto">
-                      <div className="h-10 w-10 rounded bg-white/10 flex items-center justify-center font-bold text-muted-foreground">
-                        {['G', 'N', 'A'][i-1]}
-                      </div>
-                      <div>
-                        <h4 className="font-bold text-white">{['Google', 'Netflix', 'Amazon'][i-1]}</h4>
-                        <p className="text-sm text-muted-foreground">Senior Engineer • Applied Dec {10+i}</p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
-                      <Select defaultValue="applied">
-                        <SelectTrigger className="w-[140px] h-8 bg-white/5 border-white/10 text-xs">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="applied">Applied</SelectItem>
-                          <SelectItem value="rejected">Rejected</SelectItem>
-                          <SelectItem value="interview">Interview</SelectItem>
-                          <SelectItem value="offer">Offer</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <Button size="icon" variant="ghost" className="h-8 w-8">
-                        <LinkIcon className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
         </TabsContent>
       </Tabs>
     </div>
