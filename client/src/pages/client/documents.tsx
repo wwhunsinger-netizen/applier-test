@@ -54,14 +54,14 @@ export default function ClientDocumentsPage() {
     // Animation Sequence
     setTimeout(() => setRevealPhase("float"), 2000);   // Text moves up, doc floats
     setTimeout(() => setRevealPhase("distort"), 4000); // Doc stretches
-    setTimeout(() => setRevealPhase("explode"), 7000); // Sparks fly
-    setTimeout(() => setRevealPhase("reveal"), 8500);  // New doc appears
+    // Skip explode to avoid blank screen, go straight to reveal with confetti
+    setTimeout(() => setRevealPhase("reveal"), 7000);  // New doc appears with confetti
     
     setTimeout(() => {
       setIsRevealing(false);
       setShowLargeReview(true); // Stay in large blurred mode
       setIsFlipped(true); // Ready for flip state behind scene
-    }, 10000);
+    }, 9000);
   };
 
   const handleReviewClick = () => {
@@ -112,7 +112,7 @@ export default function ClientDocumentsPage() {
 
               {/* Document Evolution */}
               <AnimatePresence>
-                {["float", "distort", "explode"].includes(revealPhase) && (
+                {["float", "distort", "reveal"].includes(revealPhase) && (
                   <motion.div
                     className="w-[300px] h-[400px] bg-white rounded shadow-2xl z-10 relative flex items-center justify-center"
                     initial={{ y: 0, scale: 1, filter: "brightness(1)" }}
@@ -124,7 +124,7 @@ export default function ClientDocumentsPage() {
                         rotate: [0, 5, -5, 10, -10, 0],
                         filter: ["brightness(2) hue-rotate(0deg)", "brightness(4) hue-rotate(90deg)"]
                       } :
-                      revealPhase === "explode" ? { scale: 0, opacity: 0 } : {}
+                      revealPhase === "reveal" ? { scale: 1.2, filter: "brightness(1)", rotate: 0 } : {}
                     }
                     transition={
                       revealPhase === "float" ? { duration: 2, ease: "easeInOut" } :
@@ -132,13 +132,25 @@ export default function ClientDocumentsPage() {
                       { duration: 0.5 }
                     }
                   >
-                    {/* Old Doc Content Placeholder */}
-                    <div className="space-y-4 w-3/4 opacity-20">
-                      <div className="h-4 bg-black rounded w-1/2" />
-                      <div className="h-2 bg-black rounded w-full" />
-                      <div className="h-2 bg-black rounded w-full" />
-                      <div className="h-2 bg-black rounded w-3/4" />
-                    </div>
+                    {/* Content Placeholder - Different for Old vs New */}
+                    {revealPhase === "reveal" ? (
+                      <div className="space-y-4 w-3/4 opacity-80">
+                         <h3 className={cn("text-xl font-bold text-center mb-4", config.text)}>New {config.label}</h3>
+                         <div className="h-4 bg-gray-200 rounded w-1/2 mx-auto" />
+                         <div className="h-2 bg-gray-100 rounded w-full" />
+                         <div className="h-2 bg-gray-100 rounded w-full" />
+                         <div className="h-2 bg-gray-100 rounded w-3/4" />
+                         <div className="h-2 bg-gray-100 rounded w-full mt-4" />
+                         <div className="h-2 bg-gray-100 rounded w-5/6" />
+                      </div>
+                    ) : (
+                      <div className="space-y-4 w-3/4 opacity-20">
+                        <div className="h-4 bg-black rounded w-1/2" />
+                        <div className="h-2 bg-black rounded w-full" />
+                        <div className="h-2 bg-black rounded w-full" />
+                        <div className="h-2 bg-black rounded w-3/4" />
+                      </div>
+                    )}
 
                     {/* Glowing Aura */}
                     <motion.div 
@@ -150,27 +162,28 @@ export default function ClientDocumentsPage() {
                 )}
               </AnimatePresence>
 
-              {/* Phase 3: Particles / Explosion */}
-              {["distort", "explode"].includes(revealPhase) && (
-                 <div className="absolute inset-0 pointer-events-none">
-                    {[...Array(30)].map((_, i) => (
+              {/* Phase 3: Particles / Explosion - Celebrate the New Doc */}
+              {["reveal"].includes(revealPhase) && (
+                 <div className="absolute inset-0 pointer-events-none z-20">
+                    {[...Array(50)].map((_, i) => (
                       <motion.div
                         key={i}
-                        className={cn("absolute rounded-full", config.bg)}
+                        className={cn("absolute rounded-full", i % 2 === 0 ? config.bg : "bg-white")}
                         initial={{ 
                           left: "50%", 
                           top: "50%", 
-                          width: Math.random() * 10, 
-                          height: Math.random() * 10,
+                          width: Math.random() * 12, 
+                          height: Math.random() * 12,
                           opacity: 1
                         }}
                         animate={{ 
-                          x: (Math.random() - 0.5) * 1000, 
-                          y: (Math.random() - 0.5) * 1000,
+                          x: (Math.random() - 0.5) * 1500, 
+                          y: (Math.random() - 0.5) * 1500,
                           opacity: 0,
-                          scale: 0
+                          scale: 0,
+                          rotate: Math.random() * 360
                         }}
-                        transition={{ duration: 2, ease: "easeOut", delay: Math.random() * 0.5 }}
+                        transition={{ duration: 2.5, ease: "easeOut", delay: Math.random() * 0.2 }}
                       />
                     ))}
                  </div>
@@ -208,9 +221,9 @@ export default function ClientDocumentsPage() {
                animate={{ y: 0, opacity: 1 }}
                className="mb-6 flex flex-col items-center relative w-full max-w-4xl"
              >
-                <h2 className={cn("text-4xl font-bold flex items-center gap-2 mb-4", config.text)}>
-                  <Sparkles className="w-8 h-8 fill-current" /> 
-                  New {config.label} Unlocked
+                <h2 className={cn("text-4xl font-bold flex items-center gap-2 mb-4 drop-shadow-lg text-white font-sans tracking-wide uppercase")}>
+                  <Sparkles className="w-8 h-8 fill-yellow-300 text-yellow-300" /> 
+                  It's a new {config.label}!
                 </h2>
                 
                 <Button 
