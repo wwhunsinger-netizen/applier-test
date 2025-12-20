@@ -41,46 +41,7 @@
 }
 
 :root {
-  /* Clean, professional light mode */
-  --background: 210 20% 98%;
-  --foreground: 222 47% 11%;
-  
-  --card: 0 0% 100%;
-  --card-foreground: 222 47% 11%;
-  
-  --popover: 0 0% 100%;
-  --popover-foreground: 222 47% 11%;
-  
-  --primary: 221 83% 53%; /* Vivid Blue */
-  --primary-foreground: 210 40% 98%;
-  
-  --secondary: 210 40% 96.1%;
-  --secondary-foreground: 222 47% 11.2%;
-  
-  --muted: 210 40% 96.1%;
-  --muted-foreground: 215 16% 47%;
-  
-  --accent: 210 40% 96.1%;
-  --accent-foreground: 222 47% 11.2%;
-  
-  --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 210 40% 98%;
-
-  --success: 142 71% 45%;
-  --success-foreground: 210 40% 98%;
-  
-  --warning: 38 92% 50%;
-  --warning-foreground: 210 40% 98%;
-
-  --border: 214.3 31.8% 91.4%;
-  --input: 214.3 31.8% 91.4%;
-  --ring: 221 83% 53%;
-  
-  --radius: 0.75rem;
-}
-
-.dark {
-  /* Dark mode - Deep Blue/Grey */
+  /* Dark mode - Deep Blue/Grey (Default) */
   --background: 222 47% 11%;
   --foreground: 210 40% 98%;
   
@@ -114,6 +75,45 @@
   --border: 217 32% 17%;
   --input: 217 32% 17%;
   --ring: 224 76% 48%;
+
+  --radius: 0.75rem;
+}
+
+.light {
+  /* Clean, professional light mode */
+  --background: 210 20% 98%;
+  --foreground: 222 47% 11%;
+  
+  --card: 0 0% 100%;
+  --card-foreground: 222 47% 11%;
+  
+  --popover: 0 0% 100%;
+  --popover-foreground: 222 47% 11%;
+  
+  --primary: 221 83% 53%; /* Vivid Blue */
+  --primary-foreground: 210 40% 98%;
+  
+  --secondary: 210 40% 96.1%;
+  --secondary-foreground: 222 47% 11.2%;
+  
+  --muted: 210 40% 96.1%;
+  --muted-foreground: 215 16% 47%;
+  
+  --accent: 210 40% 96.1%;
+  --accent-foreground: 222 47% 11.2%;
+  
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 210 40% 98%;
+
+  --success: 142 71% 45%;
+  --success-foreground: 210 40% 98%;
+  
+  --warning: 38 92% 50%;
+  --warning-foreground: 210 40% 98%;
+  
+  --border: 214.3 31.8% 91.4%;
+  --input: 214.3 31.8% 91.4%;
+  --ring: 221 83% 53%;
 }
 
 @layer base {
@@ -130,7 +130,7 @@
 
 @layer utilities {
   .glass-card {
-    @apply bg-white/70 dark:bg-black/40 backdrop-blur-lg border border-white/20 dark:border-white/10 shadow-lg;
+    @apply bg-black/40 backdrop-blur-lg border border-white/10 shadow-lg;
   }
   
   .text-glow {
@@ -139,12 +139,12 @@
   
   .bg-grid-pattern {
     background-size: 40px 40px;
-    background-image: linear-gradient(to right, rgb(0 0 0 / 0.05) 1px, transparent 1px),
-      linear-gradient(to bottom, rgb(0 0 0 / 0.05) 1px, transparent 1px);
-  }
-  
-  .dark .bg-grid-pattern {
     background-image: linear-gradient(to right, rgb(255 255 255 / 0.05) 1px, transparent 1px),
       linear-gradient(to bottom, rgb(255 255 255 / 0.05) 1px, transparent 1px);
+  }
+  
+  .light .bg-grid-pattern {
+    background-image: linear-gradient(to right, rgb(0 0 0 / 0.05) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(0 0 0 / 0.05) 1px, transparent 1px);
   }
 }

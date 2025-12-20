@@ -47,7 +47,7 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required 
-                className="bg-white/50 backdrop-blur-sm"
+                className="bg-background/50 backdrop-blur-sm"
               />
             </div>
             <div className="space-y-2">
@@ -57,7 +57,7 @@ export default function LoginPage() {
                 type="password" 
                 defaultValue="password123"
                 required 
-                className="bg-white/50 backdrop-blur-sm"
+                className="bg-background/50 backdrop-blur-sm"
               />
             </div>
             <Button className="w-full mt-2 font-semibold shadow-lg shadow-primary/20" type="submit" disabled={isLoading}>
