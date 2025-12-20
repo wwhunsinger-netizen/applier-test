@@ -14,7 +14,12 @@ export default function ClientInterviewsPage() {
       <div className="flex justify-between items-end">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-white">Interviews</h1>
-          <p className="text-muted-foreground mt-1">Upcoming schedule and preparation.</p>
+          <p className="text-muted-foreground mt-1 flex items-center gap-2">
+            Upcoming schedule from your calendar.
+            <span className="text-xs bg-green-500/10 text-green-500 px-2 py-0.5 rounded border border-green-500/20 flex items-center gap-1">
+              <CheckCircle className="w-3 h-3" /> Synced with Google Calendar
+            </span>
+          </p>
         </div>
       </div>
 

@@ -182,14 +182,23 @@ export default function AdminClientDetailPage() {
 
         {/* Interviews Tab */}
         <TabsContent value="interviews" className="space-y-6">
-          <div className="flex justify-between items-center">
-            <h3 className="text-xl font-bold text-white">Scheduled Interviews</h3>
-            <Button onClick={() => setIsAddInterviewOpen(true)}>
-              <Plus className="w-4 h-4 mr-2" /> Add Interview
-            </Button>
+          <div className="flex justify-between items-center bg-white/5 p-4 rounded-lg border border-white/10">
+             <div>
+               <h3 className="font-medium text-white flex items-center gap-2">
+                 <img src="https://upload.wikimedia.org/wikipedia/commons/a/a5/Google_Calendar_icon_%282020%29.svg" alt="Google Calendar" className="w-5 h-5" />
+                 Interview Sync
+               </h3>
+               <p className="text-sm text-muted-foreground mt-1">Automatically syncing with client's Google Calendar ({client.email})</p>
+             </div>
+             <div className="flex items-center gap-2 text-sm text-green-400 bg-green-400/10 px-3 py-1.5 rounded-full border border-green-400/20">
+               <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+               Connected
+             </div>
           </div>
 
           <div className="space-y-4">
+            <h3 className="text-xl font-bold text-white">Upcoming Interviews (Synced)</h3>
+
             {/* Mock Interview Item */}
             <Card className="bg-[#111] border-white/10">
               <CardContent className="p-0">
@@ -211,107 +220,52 @@ export default function AdminClientDetailPage() {
                     </div>
                   </div>
                   <div className="flex gap-2 w-full md:w-auto">
-                    <Button variant="outline" className="flex-1 md:flex-none">Edit Interview</Button>
-                    <Button className="flex-1 md:flex-none bg-white text-black hover:bg-white/90">Edit Prep Doc</Button>
+                    <Button className="flex-1 md:flex-none bg-white text-black hover:bg-white/90">
+                      <FileText className="w-4 h-4 mr-2" />
+                      Edit Prep Doc
+                    </Button>
                   </div>
                 </div>
               </CardContent>
             </Card>
           </div>
-
-          {/* Add Interview Modal */}
-          <Dialog open={isAddInterviewOpen} onOpenChange={setIsAddInterviewOpen}>
-            <DialogContent className="bg-[#0a0a0a] border-white/10 text-white sm:max-w-[600px]">
-              <DialogHeader>
-                <DialogTitle>Add New Interview</DialogTitle>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Company</Label>
-                    <Input className="bg-white/5 border-white/10" placeholder="e.g. Google" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Job Title</Label>
-                    <Input className="bg-white/5 border-white/10" placeholder="e.g. Product Manager" />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Date</Label>
-                    <Input type="date" className="bg-white/5 border-white/10" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Time</Label>
-                    <Input type="time" className="bg-white/5 border-white/10" />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label>Format</Label>
-                  <Select>
-                    <SelectTrigger className="bg-white/5 border-white/10">
-                      <SelectValue placeholder="Select format" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="phone">Phone Screen</SelectItem>
-                      <SelectItem value="video">Video Call</SelectItem>
-                      <SelectItem value="panel">Panel Interview</SelectItem>
-                      <SelectItem value="onsite">In-Person</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Interviewer(s)</Label>
-                  <Input className="bg-white/5 border-white/10" placeholder="Names and titles..." />
-                </div>
-                <div className="space-y-2">
-                  <Label>Job Posting Link</Label>
-                  <Input className="bg-white/5 border-white/10" placeholder="https://..." />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="ghost" onClick={() => setIsAddInterviewOpen(false)}>Cancel</Button>
-                <Button onClick={() => setIsAddInterviewOpen(false)}>Create Interview</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-
-          {/* Comments Modal */}
-          <Dialog open={isCommentsOpen} onOpenChange={setIsCommentsOpen}>
-            <DialogContent className="bg-[#0a0a0a] border-white/10 text-white sm:max-w-[500px]">
-              <DialogHeader>
-                <DialogTitle>Client Comments - {client.name}</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="bg-white/5 p-4 rounded-lg border border-white/10">
-                  <div className="flex justify-between items-start mb-2">
-                    <span className="font-bold text-sm text-primary">Resume - Page 1</span>
-                    <span className="text-xs text-muted-foreground">Dec 16, 2:30 PM</span>
-                  </div>
-                  <p className="text-sm text-white/90">"The summary section feels a bit too long. Can we condense the second paragraph?"</p>
-                  <div className="mt-3 flex justify-end">
-                    <Button size="sm" variant="ghost" className="h-6 text-xs text-muted-foreground hover:text-white">Mark Resolved</Button>
-                  </div>
-                </div>
-                
-                <div className="bg-white/5 p-4 rounded-lg border border-white/10">
-                  <div className="flex justify-between items-start mb-2">
-                    <span className="font-bold text-sm text-primary">Resume - Skills</span>
-                    <span className="text-xs text-muted-foreground">Dec 16, 2:45 PM</span>
-                  </div>
-                  <p className="text-sm text-white/90">"Please add 'Next.js' to the frontend skills list. It's missing."</p>
-                  <div className="mt-3 flex justify-end">
-                    <Button size="sm" variant="ghost" className="h-6 text-xs text-muted-foreground hover:text-white">Mark Resolved</Button>
-                  </div>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button onClick={() => setIsCommentsOpen(false)} className="w-full">Close</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
         </TabsContent>
       </Tabs>
+
+      {/* Comments Modal */}
+      <Dialog open={isCommentsOpen} onOpenChange={setIsCommentsOpen}>
+        <DialogContent className="bg-[#0a0a0a] border-white/10 text-white sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Client Comments - {client.name}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="bg-white/5 p-4 rounded-lg border border-white/10">
+              <div className="flex justify-between items-start mb-2">
+                <span className="font-bold text-sm text-primary">Resume - Page 1</span>
+                <span className="text-xs text-muted-foreground">Dec 16, 2:30 PM</span>
+              </div>
+              <p className="text-sm text-white/90">"The summary section feels a bit too long. Can we condense the second paragraph?"</p>
+              <div className="mt-3 flex justify-end">
+                <Button size="sm" variant="ghost" className="h-6 text-xs text-muted-foreground hover:text-white">Mark Resolved</Button>
+              </div>
+            </div>
+            
+            <div className="bg-white/5 p-4 rounded-lg border border-white/10">
+              <div className="flex justify-between items-start mb-2">
+                <span className="font-bold text-sm text-primary">Resume - Skills</span>
+                <span className="text-xs text-muted-foreground">Dec 16, 2:45 PM</span>
+              </div>
+              <p className="text-sm text-white/90">"Please add 'Next.js' to the frontend skills list. It's missing."</p>
+              <div className="mt-3 flex justify-end">
+                <Button size="sm" variant="ghost" className="h-6 text-xs text-muted-foreground hover:text-white">Mark Resolved</Button>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setIsCommentsOpen(false)} className="w-full">Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
