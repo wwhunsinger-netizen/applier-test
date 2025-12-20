@@ -207,15 +207,16 @@ export default function ClientDocumentsPage() {
                  </div>
               )}
 
-              {/* Phase 4: Reveal Text */}
+              {/* Phase 4: Reveal Text - Moved to Top to match final modal */}
               {revealPhase === "reveal" && (
                 <motion.div
-                  className="z-30 text-center"
-                  initial={{ scale: 0, opacity: 0 }}
-                  animate={{ scale: 1.2, opacity: 1 }}
+                  className="absolute top-12 flex flex-col items-center z-50 w-full"
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
                   transition={{ type: "spring", bounce: 0.5 }}
                 >
-                   <h1 className={cn("text-6xl font-bold mb-4 drop-shadow-[0_0_15px_rgba(255,255,255,0.8)]", config.text)}>
+                   <h1 className={cn("text-4xl font-bold flex items-center gap-2 mb-4 drop-shadow-lg text-white font-sans tracking-wide uppercase", config.text)}>
+                     <Sparkles className="w-8 h-8 fill-yellow-300 text-yellow-300" />
                      It's a new {config.label}!
                    </h1>
                 </motion.div>
@@ -225,21 +226,21 @@ export default function ClientDocumentsPage() {
         )}
       </AnimatePresence>
 
-      {/* Large Review Mode (Post-Evolution) */}
+      {/* Large Review Mode (Post-Evolution) - Merged into animation flow */}
       <AnimatePresence>
         {showLargeReview && (
           <motion.div 
-            initial={{ opacity: 0 }}
+            initial={{ opacity: 1 }} // Start visible to avoid flicker
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[40] flex flex-col items-center justify-center bg-black/80 backdrop-blur-xl p-8"
+            className="fixed inset-0 z-[40] flex flex-col items-center justify-center bg-black/95 backdrop-blur-xl p-8"
           >
              <motion.div
-               initial={{ y: 50, opacity: 0 }}
-               animate={{ y: 0, opacity: 1 }}
-               className="mb-6 flex flex-col items-center relative w-full max-w-4xl"
+               initial={{ opacity: 1 }} // No animation needed as it matches reveal phase
+               animate={{ opacity: 1 }}
+               className="mb-6 flex flex-col items-center relative w-full max-w-4xl pt-4" // Added padding to match reveal positioning
              >
-                <h2 className={cn("text-4xl font-bold flex items-center gap-2 mb-4 drop-shadow-lg text-white font-sans tracking-wide uppercase")}>
+                <h2 className={cn("text-4xl font-bold flex items-center gap-2 mb-4 drop-shadow-lg text-white font-sans tracking-wide uppercase", config.text)}>
                   <Sparkles className="w-8 h-8 fill-yellow-300 text-yellow-300" /> 
                   It's a new {config.label}!
                 </h2>
@@ -255,7 +256,7 @@ export default function ClientDocumentsPage() {
              </motion.div>
 
              <motion.div 
-               initial={{ scale: 0.8, opacity: 0 }}
+               initial={{ scale: 1, opacity: 1 }} // Match the end state of reveal
                animate={{ scale: 1, opacity: 1 }}
                className="relative w-full max-w-4xl h-[70vh] bg-white rounded-lg shadow-2xl overflow-hidden flex flex-col"
              >
