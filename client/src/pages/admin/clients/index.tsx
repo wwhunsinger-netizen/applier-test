@@ -10,8 +10,11 @@ import { Badge } from "@/components/ui/badge";
 import { Search, Plus, User, AlertCircle, ArrowRight, Eye, EyeOff, Copy, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+import { useToast } from "@/hooks/use-toast";
+
 export default function AdminClientsPage() {
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
   const [searchTerm, setSearch] = useState("");
   const [isAddClientOpen, setIsAddClientOpen] = useState(false);
   const [clients, setClients] = useState<Client[]>(MOCK_CLIENTS_LIST);
@@ -54,6 +57,15 @@ export default function AdminClientsPage() {
 
     setClients([...clients, newClient]);
     setIsCreated(true);
+  };
+
+  const handleCopyInvite = () => {
+    const inviteText = `Welcome to Jumpseat!\n\nHere are your login details:\nUsername: ${newClientEmail.split('@')[0]}\nPassword: ${generatedPassword}\n\nLog in at: ${window.location.origin}/login`;
+    navigator.clipboard.writeText(inviteText);
+    toast({
+      title: "Invite Copied",
+      description: "Login credentials copied to clipboard.",
+    });
   };
 
   const resetForm = () => {
@@ -225,7 +237,12 @@ export default function AdminClientsPage() {
                 <Button onClick={handleCreateClient} className="bg-primary text-white">Create Client</Button>
               </div>
             ) : (
-              <Button onClick={resetForm} className="w-full">Done</Button>
+              <div className="flex gap-2 w-full">
+                <Button variant="outline" className="flex-1 bg-white/5 border-white/10 hover:bg-white/10 text-white" onClick={handleCopyInvite}>
+                  <Copy className="w-4 h-4 mr-2" /> Copy Invite
+                </Button>
+                <Button onClick={resetForm} className="flex-1">Done</Button>
+              </div>
             )}
           </DialogFooter>
         </DialogContent>
