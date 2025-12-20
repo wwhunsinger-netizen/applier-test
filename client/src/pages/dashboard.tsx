@@ -17,7 +17,7 @@ export default function DashboardPage() {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold tracking-tight text-white">Dashboard</h1>
-        <p className="text-muted-foreground mt-1">Ready to crush your goals today, Alex?</p>
+        <p className="text-muted-foreground mt-1">Welcome back, Alex. Your command center is ready.</p>
       </div>
 
       {/* Hero Stats Card */}
