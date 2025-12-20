@@ -64,6 +64,13 @@ export default function ClientDocumentsPage() {
     }, 9000);
   };
 
+  const handleSkipAnimation = () => {
+    setIsRevealing(false);
+    setShowLargeReview(true);
+    setIsFlipped(true);
+    setRevealPhase("intro"); // Reset for next time
+  };
+
   const handleReviewClick = () => {
     setShowLargeReview(false);
   };
@@ -92,6 +99,17 @@ export default function ClientDocumentsPage() {
           >
             <div className="relative w-full h-full flex flex-col items-center justify-center overflow-hidden">
               
+              {/* Skip Animation Button */}
+              <div className="absolute top-8 right-8 z-[60]">
+                <Button 
+                  variant="outline" 
+                  className="text-white border-white/20 hover:bg-white/10"
+                  onClick={handleSkipAnimation}
+                >
+                  Skip Animation
+                </Button>
+              </div>
+
               {/* Phase 1 & 2: Text */}
               <AnimatePresence>
                 {["intro", "float", "distort"].includes(revealPhase) && (
