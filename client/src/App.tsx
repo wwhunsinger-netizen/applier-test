@@ -10,8 +10,24 @@ import DashboardPage from "@/pages/dashboard";
 import QueuePage from "@/pages/queue";
 import ReviewPage from "@/pages/review";
 import LeaderboardPage from "@/pages/leaderboard";
+import LoadingScreen from "@/components/loading";
+import { useState, useEffect } from "react";
 
 function Router() {
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Simulate initial app load
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (isLoading) {
+    return <LoadingScreen />;
+  }
+
   return (
     <Layout>
       <Switch>

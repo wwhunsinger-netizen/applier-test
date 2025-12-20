@@ -134,3 +134,17 @@
       linear-gradient(to bottom, rgb(255 255 255 / 0.05) 1px, transparent 1px);
   }
 }
+
+/* Global cursor pointer for interactive elements */
+html body button, 
+html body a, 
+html body [role="button"], 
+html body input[type="submit"], 
+html body input[type="button"], 
+html body input[type="checkbox"], 
+html body input[type="radio"], 
+html body select, 
+html body .cursor-pointer,
+html body [onClick] {
+  cursor: pointer !important;
+}
