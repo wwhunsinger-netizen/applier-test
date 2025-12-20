@@ -96,7 +96,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   "text-[10px] px-1.5 py-0.5 rounded uppercase font-bold tracking-wider",
                   currentUser.role === "Reviewer" ? "bg-primary/20 text-primary" : 
                   currentUser.role === "Admin" ? "bg-red-500 text-white shadow-[0_0_10px_rgba(239,68,68,0.5)]" :
-                  currentUser.role === "Client" ? "bg-red-500 text-white shadow-[0_0_10px_rgba(239,68,68,0.5)]" :
+                  currentUser.role === "Client" ? "bg-purple-500 text-white shadow-[0_0_10px_rgba(168,85,247,0.5)]" :
                   "bg-white/10 text-muted-foreground"
                 )}>
                   {currentUser.role}
