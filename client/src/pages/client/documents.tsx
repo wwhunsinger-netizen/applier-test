@@ -288,22 +288,20 @@ export default function ClientDocumentsPage() {
                        </div>
                     </div>
                 </div>
+                
+                {/* Fixed Review Button at the bottom of the modal content */}
+                <div className="p-6 border-t bg-gray-50 flex justify-center">
+                   <Button 
+                     size="lg" 
+                     className={cn("h-12 px-8 text-lg font-bold shadow-lg hover:scale-105 transition-transform", config.bg, "text-white")}
+                     onClick={handleReviewClick}
+                   >
+                     Review {config.label}
+                   </Button>
+                </div>
              </motion.div>
              
-             <motion.div 
-               initial={{ y: 50, opacity: 0 }}
-               animate={{ y: 0, opacity: 1 }}
-               transition={{ delay: 0.5 }}
-               className="mt-8"
-             >
-               <Button 
-                 size="lg" 
-                 className={cn("h-16 px-12 text-2xl font-bold shadow-[0_0_30px_rgba(255,255,255,0.3)] hover:scale-105 transition-transform", config.bg, "text-white")}
-                 onClick={handleReviewClick}
-               >
-                 Review {config.label}
-               </Button>
-             </motion.div>
+             {/* Removing the floating bottom button since we moved it inside */}
           </motion.div>
         )}
       </AnimatePresence>
