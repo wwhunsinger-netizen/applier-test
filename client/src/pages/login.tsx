@@ -9,6 +9,7 @@ import logoUrl from "@assets/Jumpseat_(17)_1766203547189.png";
 import LoadingScreen from "@/components/loading";
 import { MOCK_USERS } from "@/lib/mockData";
 import { useUser } from "@/lib/userContext";
+import { cn } from "@/lib/utils";
 
 export default function LoginPage() {
   const [, setLocation] = useLocation();
@@ -118,7 +119,10 @@ export default function LoginPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium text-white group-hover:text-primary transition-colors">{user.name}</span>
-                      <span className="text-[10px] bg-white/10 px-1.5 py-0.5 rounded text-muted-foreground">{user.role}</span>
+                      <span className={cn(
+                        "text-[10px] px-1.5 py-0.5 rounded",
+                        user.role === "Admin" ? "bg-red-500/20 text-red-500 font-bold tracking-wide" : "bg-white/10 text-muted-foreground"
+                      )}>{user.role}</span>
                     </div>
                     <p className="text-xs text-muted-foreground truncate">{user.email}</p>
                   </div>
