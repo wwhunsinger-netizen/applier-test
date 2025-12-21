@@ -784,7 +784,6 @@ export default function ClientDocumentsPage() {
                                   alt="No cover letter?" 
                                   className="max-w-full max-h-[500px] object-contain opacity-80 hover:opacity-100 transition-opacity"
                                 />
-                                <p className="mt-8 text-xl font-medium text-gray-500">No cover letter uploaded</p>
                               </div>
                             ) : (
                              <div className="space-y-6 font-serif text-gray-500 blur-[0.5px]">
