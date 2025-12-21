@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Document, Page, pdfjs } from 'react-pdf';
 import { toast } from "sonner";
+import noCoverLetterImg from "@assets/No_cover_letter_1766359371139.png";
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   'pdfjs-dist/build/pdf.worker.min.mjs',
@@ -775,7 +776,17 @@ export default function ClientDocumentsPage() {
                          )}
                          
                          <div className={cn(unlockedDocs[activeTab] ? "mt-16" : "")}>
-                           {activeTab === 'resume' ? OLD_RESUME_CONTENT : (
+                           {activeTab === 'resume' ? OLD_RESUME_CONTENT : 
+                            activeTab === 'cover-letter' ? (
+                              <div className="flex flex-col items-center justify-center h-full min-h-[600px] w-full">
+                                <img 
+                                  src={noCoverLetterImg} 
+                                  alt="No cover letter?" 
+                                  className="max-w-full max-h-[500px] object-contain opacity-80 hover:opacity-100 transition-opacity"
+                                />
+                                <p className="mt-8 text-xl font-medium text-gray-500">No cover letter uploaded</p>
+                              </div>
+                            ) : (
                              <div className="space-y-6 font-serif text-gray-500 blur-[0.5px]">
                                <p>John Doe <br/> Software Developer</p>
                                <div className="h-4 bg-gray-200 rounded w-3/4"></div>
