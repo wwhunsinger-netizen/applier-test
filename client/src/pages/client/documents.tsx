@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Document, Page, pdfjs } from 'react-pdf';
+import { toast } from "sonner";
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   'pdfjs-dist/build/pdf.worker.min.mjs',
@@ -51,10 +52,20 @@ export default function ClientDocumentsPage() {
         const result = reader.result as string;
         if (type === 'before') {
           setBeforePdfUrl(result);
-          localStorage.setItem("beforePdfUrl", result);
+          try {
+            localStorage.setItem("beforePdfUrl", result);
+          } catch (e) {
+            console.error("Storage quota exceeded", e);
+            toast.error("File too large to save for next visit, but loaded for this session.");
+          }
         } else {
           setAfterPdfUrl(result);
-          localStorage.setItem("afterPdfUrl", result);
+          try {
+            localStorage.setItem("afterPdfUrl", result);
+          } catch (e) {
+            console.error("Storage quota exceeded", e);
+            toast.error("File too large to save for next visit, but loaded for this session.");
+          }
         }
       };
       reader.readAsDataURL(file);
