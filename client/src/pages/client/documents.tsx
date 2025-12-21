@@ -8,7 +8,6 @@ import { FileText, Linkedin, Check, Lightbulb, RotateCw, CheckCircle2, Sparkles,
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import stockImage from '@assets/stock_images/resume_with_red_pen__da311fea.jpg'
 
 type DocType = "resume" | "cover-letter" | "linkedin";
 
@@ -117,14 +116,108 @@ export default function ClientDocumentsPage() {
     }
   };
 
-  // Replace OLD_RESUME_CONTENT with an image based approach
+  // Reconstruct OLD_RESUME_CONTENT with HTML and Red Pen Markups
   const OLD_RESUME_CONTENT = (
-    <div className="w-full h-full flex items-start justify-center bg-gray-100 overflow-y-auto p-8 rounded-lg">
-      <img 
-        src={stockImage} 
-        alt="Original Resume with Markups" 
-        className="max-w-full shadow-lg border border-gray-300"
-      />
+    <div className="w-full bg-gray-200 p-8 min-h-full flex flex-col items-center gap-8 overflow-y-auto">
+      <div className="w-[8.5in] min-h-[11in] bg-white shadow-xl p-[1in] text-sm relative font-serif text-gray-800">
+        {/* Red Pen Markups Overlay */}
+        <div className="absolute inset-0 pointer-events-none z-10 opacity-90 mix-blend-multiply">
+           {/* Circle around Name */}
+           <svg className="absolute top-[0.8in] left-[3.5in] w-[300px] h-[60px]" viewBox="0 0 300 60">
+             <path d="M10,30 Q150,-10 290,30 Q150,70 10,30" fill="none" stroke="red" strokeWidth="2" strokeDasharray="400" strokeDashoffset="0" style={{filter: 'url(#rough)'}} />
+           </svg>
+           
+           {/* Cross out email */}
+           <svg className="absolute top-[1.4in] left-[1in] w-[200px] h-[20px]" viewBox="0 0 200 20">
+             <path d="M0,10 L200,10" fill="none" stroke="red" strokeWidth="2" />
+           </svg>
+           <div className="absolute top-[1.2in] left-[0.5in] text-red-600 font-handwriting transform -rotate-12 text-lg font-bold">Format?</div>
+
+           {/* Big Question Mark on Experience */}
+           <div className="absolute top-[3in] right-[1in] text-red-600 font-handwriting text-4xl font-bold">?</div>
+           
+           {/* Underline Skills */}
+           <svg className="absolute bottom-[2in] left-[1in] w-[400px] h-[20px]" viewBox="0 0 400 20">
+             <path d="M0,5 Q200,15 400,5" fill="none" stroke="red" strokeWidth="2" />
+           </svg>
+           <div className="absolute bottom-[2.2in] left-[0.5in] text-red-600 font-handwriting transform -rotate-6">Expand this!</div>
+        </div>
+
+        <div className="text-center mb-6">
+          <h2 className="text-xl font-bold uppercase">Dimas Gonzales</h2>
+          <p>dimas.o.gonzales@gmail.com | +1 (832) 493-3416 | United States</p>
+          <p className="mt-4 text-xs text-gray-600 text-left">
+            Senior Data Engineer with deep expertise in banking and insurance sectors. Specializes in building scalable cloud data platforms (AWS, Azure, Snowflake) and automating high-volume ELT pipelines. Proven track record of reducing infrastructure costs, minimizing data latency, and enforcing strict governance standards.
+          </p>
+        </div>
+
+        <div>
+          <h3 className="font-bold border-b border-gray-400 mb-2 uppercase text-xs tracking-wider">Education</h3>
+          <div className="flex justify-between font-bold">
+            <span>Texas A&M University</span>
+            <span>Aug 2012 - May 2017</span>
+          </div>
+          <p>Bachelor of Science in Computer Engineering</p>
+        </div>
+
+        <div>
+          <h3 className="font-bold border-b border-gray-400 mb-2 mt-4 uppercase text-xs tracking-wider">Experience</h3>
+          
+          <div className="mb-4">
+            <div className="flex justify-between font-bold">
+              <span>GEICO - Senior Software Engineer</span>
+              <span>Aug 2024 - present</span>
+            </div>
+            <ul className="list-disc list-inside mt-1 space-y-1 text-gray-600 text-xs">
+              <li>Lead engineer for the Billing data warehouse, designing scalable solutions.</li>
+              <li>Architected micro-batching ELT pipelines using dbt, Spark, Airflow.</li>
+              <li>Implemented Snowflake zero-copy solution with Apache Iceberg.</li>
+            </ul>
+          </div>
+
+          <div className="mb-4">
+            <div className="flex justify-between font-bold">
+              <span>Texas Capital Bank - Data Architect</span>
+              <span>Feb 2022 - Aug 2024</span>
+            </div>
+            <ul className="list-disc list-inside mt-1 space-y-1 text-gray-600 text-xs">
+              <li>Led strategic design and modernization of enterprise cloud data platform.</li>
+              <li>Established RFC process for data modeling standardization.</li>
+            </ul>
+          </div>
+
+          <div className="mb-4">
+            <div className="flex justify-between font-bold">
+              <span>Master Engineer</span>
+              <span>Feb 2022 - Aug 2023</span>
+            </div>
+            <ul className="list-disc list-inside mt-1 space-y-1 text-gray-600 text-xs">
+              <li>Tech Lead for 8-person team building cloud data lake.</li>
+              <li>Architected Terraform IaC solutions reducing setup time by 40%.</li>
+            </ul>
+          </div>
+
+           <div className="mb-4">
+            <div className="flex justify-between font-bold">
+              <span>Tiger Analytics - Senior Data Engineer</span>
+              <span>Jul 2021 - Feb 2022</span>
+            </div>
+            <ul className="list-disc list-inside mt-1 space-y-1 text-gray-600 text-xs">
+              <li>Migrated 37 manual batch jobs to automated CI/CD pipelines.</li>
+              <li>Optimized data models to enhance warehouse performance.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div>
+           <h3 className="font-bold border-b border-gray-400 mb-2 mt-4 uppercase text-xs tracking-wider">Technical Skills</h3>
+           <ul className="list-disc list-inside text-xs text-gray-600">
+             <li>Cloud & Infrastructure: AWS, Azure, Terraform, Docker</li>
+             <li>Modern Data Stack: Snowflake, dbt, SQL, Apache Iceberg</li>
+             <li>Big Data: Spark, Python, Kafka</li>
+           </ul>
+        </div>
+      </div>
     </div>
   );
 
@@ -547,22 +640,6 @@ export default function ClientDocumentsPage() {
                              <h3 className={cn("text-xl font-bold flex items-center gap-2", config.text)}>
                                ✨ Improved {config.label}
                              </h3>
-                             {activeTab !== 'linkedin' && (
-                               <div className="flex bg-white border rounded-lg p-1">
-                                 {["A", "B", "C"].map(ver => (
-                                   <button
-                                     key={ver}
-                                     onClick={() => setActiveVersion(ver)}
-                                     className={cn(
-                                       "px-3 py-1 rounded-md text-sm font-medium transition-colors",
-                                       activeVersion === ver ? "bg-primary text-white" : "text-gray-500 hover:bg-gray-100"
-                                     )}
-                                   >
-                                     Ver {ver}
-                                   </button>
-                                 ))}
-                               </div>
-                             )}
                            </div>
                            <div className="flex items-center gap-2">
                               {isApproved && <Badge className="bg-green-500 gap-1"><CheckCircle2 className="w-3 h-3" /> Approved</Badge>}
