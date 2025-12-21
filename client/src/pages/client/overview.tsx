@@ -48,6 +48,15 @@ export default function ClientOverviewPage() {
   const isNewClient = currentUser.email === "newclient@jumpseat.com";
   const stats = isNewClient ? { totalApps: 0 } : MOCK_CLIENT_STATS;
   
+  // Check completion status from localStorage
+  const [isCriteriaCompleted, setIsCriteriaCompleted] = useState(false);
+
+  useEffect(() => {
+    if (localStorage.getItem('jobCriteriaCompleted') === 'true') {
+      setIsCriteriaCompleted(true);
+    }
+  }, []);
+  
   const nextInterview = MOCK_CLIENT_INTERVIEWS.find(i => new Date(i.date) > new Date()) || MOCK_CLIENT_INTERVIEWS[0];
 
   if (stats.totalApps === 0) {
@@ -78,9 +87,20 @@ export default function ClientOverviewPage() {
               </Card>
             </Link>
 
-            <Link href="/client/job-criteria">
-              <Card className="bg-[#111] border-white/10 hover:border-primary/50 transition-all cursor-pointer group h-full">
-                <CardContent className="p-8 flex flex-col items-center gap-4">
+            <Link href={isCriteriaCompleted ? "#" : "/client/job-criteria"}>
+              <Card className={cn(
+                "bg-[#111] border-white/10 transition-all h-full relative overflow-hidden",
+                isCriteriaCompleted ? "opacity-80" : "hover:border-primary/50 cursor-pointer group"
+              )}>
+                {isCriteriaCompleted && (
+                  <div className="absolute inset-0 bg-green-500/10 z-0 flex items-center justify-center">
+                    <div className="bg-green-500/20 p-4 rounded-full backdrop-blur-sm border border-green-500/30">
+                        <CheckCircle2 className="w-12 h-12 text-green-500" />
+                    </div>
+                  </div>
+                )}
+                
+                <CardContent className={cn("p-8 flex flex-col items-center gap-4 relative z-10", isCriteriaCompleted && "opacity-40")}>
                   <div className="w-16 h-16 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-500 group-hover:scale-110 transition-transform">
                     <ClipboardCheck className="w-8 h-8" />
                   </div>

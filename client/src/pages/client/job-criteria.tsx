@@ -45,14 +45,57 @@ export default function ClientJobCriteriaPage() {
     }
   };
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+
+  // Check if all jobs have been reviewed
+  const allReviewed = jobs.every(job => approvedJobs.includes(job.id) || rejectedJobs[job.id]);
+
+  const handleSubmit = () => {
+    setIsSubmitting(true);
+    
+    // Simulate API call/processing time
+    setTimeout(() => {
+      setIsSubmitting(false);
+      setIsSubmitted(true);
+      // Save completion state to localStorage for the Overview page to detect
+      localStorage.setItem('jobCriteriaCompleted', 'true');
+      toast.success("Job criteria submitted successfully!");
+    }, 1500);
+  };
+
+  if (isSubmitted) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center text-center space-y-6 animate-in fade-in zoom-in duration-500">
+        <div className="w-24 h-24 rounded-full bg-green-500/10 flex items-center justify-center text-green-500 mb-4 animate-in bounce-in duration-1000 delay-300">
+          <CheckCircle2 className="w-12 h-12" />
+        </div>
+        <h2 className="text-3xl font-bold text-white">All Set!</h2>
+        <p className="text-muted-foreground text-lg max-w-md">
+          Thanks for your feedback. We'll use this to calibrate your job search and start applying to the best matches.
+        </p>
+        <Button 
+          className="mt-8 bg-white/10 hover:bg-white/20 text-white"
+          onClick={() => window.location.href = '/'}
+        >
+          Return to Dashboard
+        </Button>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-8 pb-20 max-w-4xl mx-auto">
+    <div className="space-y-8 pb-32 max-w-4xl mx-auto relative">
       <div>
         <h1 className="text-3xl font-bold tracking-tight text-white">Confirm Job Criteria</h1>
         <p className="text-muted-foreground mt-1">Review sample jobs to help us calibrate your search.</p>
       </div>
 
-      <div className="space-y-4">
+      <motion.div 
+        className="space-y-4"
+        animate={isSubmitting ? { opacity: 0, height: 0, overflow: "hidden" } : { opacity: 1, height: "auto" }}
+        transition={{ duration: 0.5 }}
+      >
         {jobs.map((job) => {
           const isRejected = !!rejectedJobs[job.id];
           const isApproved = approvedJobs.includes(job.id);
@@ -192,7 +235,29 @@ export default function ClientJobCriteriaPage() {
             </motion.div>
           );
         })}
-      </div>
+      </motion.div>
+
+      {/* Submit Button - Fixed Bottom */}
+      <AnimatePresence>
+        {allReviewed && !isSubmitting && (
+          <motion.div
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            className="fixed bottom-10 left-0 right-0 flex justify-center z-50 pointer-events-none"
+          >
+            <div className="pointer-events-auto">
+              <Button 
+                size="lg" 
+                onClick={handleSubmit}
+                className="bg-purple-600 hover:bg-purple-700 text-white px-12 py-6 text-lg font-bold rounded-full shadow-2xl shadow-purple-500/20 transform hover:scale-105 transition-all"
+              >
+                Submit Criteria
+              </Button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Reject Comment Dialog */}
       <Dialog open={!!rejectingJobId} onOpenChange={(open) => !open && setRejectingJobId(null)}>
