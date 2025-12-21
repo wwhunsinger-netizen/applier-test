@@ -4,10 +4,16 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion, AnimatePresence } from "framer-motion";
-import { FileText, Linkedin, Check, Lightbulb, RotateCw, CheckCircle2, Sparkles, MessageSquare, X, ArrowLeft } from "lucide-react";
+import { FileText, Linkedin, Check, Lightbulb, RotateCw, CheckCircle2, Sparkles, MessageSquare, X, ArrowLeft, Upload } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Document, Page, pdfjs } from 'react-pdf';
+
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.min.mjs',
+  import.meta.url,
+).toString();
 
 type DocType = "resume" | "cover-letter" | "linkedin";
 
@@ -33,6 +39,19 @@ export default function ClientDocumentsPage() {
     linkedin: false
   });
   
+  // Dev State for PDF Uploads
+  const [beforePdfUrl, setBeforePdfUrl] = useState<string | null>(null);
+  const [afterPdfUrl, setAfterPdfUrl] = useState<string | null>(null);
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'before' | 'after') => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const url = URL.createObjectURL(file);
+      if (type === 'before') setBeforePdfUrl(url);
+      else setAfterPdfUrl(url);
+    }
+  };
+
   // Reset states when changing tabs, but check if already unlocked
   useEffect(() => {
     if (unlockedDocs[activeTab]) {
@@ -571,8 +590,38 @@ export default function ClientDocumentsPage() {
       </AnimatePresence>
 
       <div>
-        <h1 className="text-3xl font-bold tracking-tight text-white">Document Review</h1>
-        <p className="text-muted-foreground mt-1">Approve your tailored application materials.</p>
+        <div className="flex justify-between items-start">
+           <div>
+             <h1 className="text-3xl font-bold tracking-tight text-white">Document Review</h1>
+             <p className="text-muted-foreground mt-1">Approve your tailored application materials.</p>
+           </div>
+           
+           {/* Dev Tools: File Uploaders */}
+           <div className="flex gap-4">
+              <div className="relative">
+                 <input 
+                   type="file" 
+                   accept="application/pdf" 
+                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                   onChange={(e) => handleFileUpload(e, 'before')}
+                 />
+                 <Button variant="outline" className="border-white/10 hover:bg-white/10 text-gray-400 gap-2">
+                   <Upload className="w-4 h-4" /> Upload Old PDF
+                 </Button>
+              </div>
+              <div className="relative">
+                 <input 
+                   type="file" 
+                   accept="application/pdf" 
+                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                   onChange={(e) => handleFileUpload(e, 'after')}
+                 />
+                 <Button variant="outline" className="border-white/10 hover:bg-white/10 text-gray-400 gap-2">
+                   <Upload className="w-4 h-4" /> Upload New PDF
+                 </Button>
+              </div>
+           </div>
+        </div>
       </div>
 
       <div className="flex-1 min-h-0 flex flex-col">
