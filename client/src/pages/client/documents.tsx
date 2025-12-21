@@ -118,8 +118,8 @@ export default function ClientDocumentsPage() {
 
   // Reconstruct OLD_RESUME_CONTENT with HTML and Red Pen Markups
   const OLD_RESUME_CONTENT = (
-    <div className="w-full bg-gray-200 p-8 min-h-full flex flex-col items-center gap-8 overflow-y-auto">
-      <div className="w-[8.5in] min-h-[11in] bg-white shadow-xl p-[1in] text-sm relative font-serif text-gray-800">
+    <div className="w-full min-h-full flex flex-col items-center gap-8 pb-20">
+      <div className="w-[8.5in] min-h-[11in] bg-white shadow-xl p-[1in] text-sm relative font-serif text-gray-800 shrink-0">
         {/* Red Pen Markups Overlay */}
         <div className="absolute inset-0 pointer-events-none z-10 opacity-90 mix-blend-multiply">
            {/* Circle around Name */}
@@ -225,9 +225,9 @@ export default function ClientDocumentsPage() {
 
 // Update the NEW_RESUME_CONTENT structure to look like a PDF viewer
   const NEW_RESUME_CONTENT = (
-    <div className="w-full bg-gray-200 p-8 min-h-full flex flex-col items-center gap-8 overflow-y-auto">
+    <div className="w-full min-h-full flex flex-col items-center gap-8 pb-20">
       {/* Page 1 */}
-      <div className="w-[8.5in] min-h-[11in] bg-white shadow-xl p-[1in] text-sm relative">
+      <div className="w-[8.5in] min-h-[11in] bg-white shadow-xl p-[1in] text-sm relative shrink-0">
           <div 
             className="text-center border-b pb-6 hover:bg-yellow-50/50 transition-colors rounded p-2 relative group cursor-pointer"
             onClick={(e) => handleTextClick(e, "10%")}
@@ -339,7 +339,7 @@ export default function ClientDocumentsPage() {
 
 
   return (
-    <div className="space-y-6 h-[calc(100vh-8rem)] flex flex-col relative">
+    <div className="space-y-6 h-[calc(100vh-6rem)] flex flex-col relative overflow-hidden">
       {/* Evolution Animation Overlay */}
       <AnimatePresence>
         {isRevealing && (
@@ -647,17 +647,17 @@ export default function ClientDocumentsPage() {
                            </div>
                          </div>
                          
-                         <div className="flex-1 overflow-y-auto p-0 bg-gray-200 relative cursor-text">
+                         <div className="flex-1 overflow-y-auto p-8 bg-gray-200 relative cursor-text scroll-smooth">
                            {/* Hint Overlay for Comments */}
                            {!isApproved && revisionStatus !== 'requested' && comments.length === 0 && (
-                             <div className="absolute top-4 right-4 z-50 bg-blue-50 text-blue-600 px-3 py-2 rounded text-xs border border-blue-200 animate-pulse">
+                             <div className="sticky top-4 left-full -ml-[250px] z-50 bg-blue-50 text-blue-600 px-3 py-2 rounded text-xs border border-blue-200 animate-pulse shadow-sm w-fit">
                                <Lightbulb className="w-3 h-3 inline mr-1" />
                                Click any section to add a comment
                              </div>
                            )}
 
                            {activeTab === 'resume' ? NEW_RESUME_CONTENT : (
-                             <div className="p-12 space-y-8 font-serif text-sm leading-relaxed max-w-[800px] mx-auto bg-white min-h-full">
+                             <div className="space-y-8 font-serif text-sm leading-relaxed max-w-[800px] mx-auto bg-white min-h-[11in] p-[1in] shadow-xl text-gray-800">
                                {/* Default placeholder content for other document types */}
                                <div 
                                  className="text-center border-b pb-6 hover:bg-yellow-50/50 transition-colors rounded p-2 relative group"
