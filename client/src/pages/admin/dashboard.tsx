@@ -6,7 +6,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { HoverCardWrapper } from "@/components/hover-card-wrapper";
-import { Users, Zap, Trophy, AlertTriangle, TrendingUp, Mail, Briefcase, Calendar, CheckCircle } from "lucide-react";
+import { Users, Zap, Trophy, AlertTriangle, TrendingUp, Mail, Briefcase, Calendar, CheckCircle, DollarSign } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { EmailDialog } from "@/components/admin/email-dialog";
 
@@ -216,7 +216,7 @@ export default function AdminDashboardPage() {
                    </Button>
                  </div>
 
-                 <div className="grid grid-cols-3 gap-4">
+                 <div className="grid grid-cols-4 gap-4">
                    <div className="bg-white/5 rounded-lg p-3 text-center border border-white/5 group-hover:border-white/10 transition-colors">
                      <div className="flex items-center justify-center gap-1.5 mb-1 text-muted-foreground">
                        <Briefcase className="w-3.5 h-3.5" />
@@ -237,6 +237,13 @@ export default function AdminDashboardPage() {
                        <span className="text-xs font-medium">Offers</span>
                      </div>
                      <div className="text-xl font-bold text-green-400">{client.offers}</div>
+                   </div>
+                   <div className="bg-white/5 rounded-lg p-3 text-center border border-white/5 group-hover:border-white/10 transition-colors">
+                     <div className="flex items-center justify-center gap-1.5 mb-1 text-muted-foreground">
+                       <DollarSign className="w-3.5 h-3.5" />
+                       <span className="text-xs font-medium">Spend</span>
+                     </div>
+                     <div className="text-xl font-bold text-white">${client.spend?.toLocaleString()}</div>
                    </div>
                  </div>
                </CardContent>

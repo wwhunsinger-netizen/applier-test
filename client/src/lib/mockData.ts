@@ -168,7 +168,8 @@ export const MOCK_CLIENT_PERFORMANCE_SUMMARY = [
     totalApps: 142,
     interviews: 8,
     offers: 1,
-    lastActivity: "2h ago"
+    lastActivity: "2h ago",
+    spend: 2130
   },
   {
     clientId: "client-2",
@@ -179,7 +180,8 @@ export const MOCK_CLIENT_PERFORMANCE_SUMMARY = [
     totalApps: 89,
     interviews: 4,
     offers: 0,
-    lastActivity: "1d ago"
+    lastActivity: "1d ago",
+    spend: 1335
   },
   {
     clientId: "client-3",
@@ -190,7 +192,8 @@ export const MOCK_CLIENT_PERFORMANCE_SUMMARY = [
     totalApps: 12,
     interviews: 0,
     offers: 0,
-    lastActivity: "30m ago"
+    lastActivity: "30m ago",
+    spend: 180
   },
   {
     clientId: "client-4",
@@ -201,7 +204,8 @@ export const MOCK_CLIENT_PERFORMANCE_SUMMARY = [
     totalApps: 215,
     interviews: 14,
     offers: 2,
-    lastActivity: "5h ago"
+    lastActivity: "5h ago",
+    spend: 3225
   }
 ];
 
