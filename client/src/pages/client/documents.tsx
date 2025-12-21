@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion, AnimatePresence } from "framer-motion";
-import { FileText, Linkedin, Check, Lightbulb, RotateCw, CheckCircle2, Sparkles, MessageSquare, X, ArrowLeft, Upload } from "lucide-react";
+import { FileText, Linkedin, Check, Lightbulb, RotateCw, CheckCircle2, Sparkles, MessageSquare, X, ArrowLeft, ArrowRight, Upload } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -748,10 +748,10 @@ export default function ClientDocumentsPage() {
                               <Button 
                                 variant="ghost" 
                                 size="sm" 
-                                className="text-gray-600 hover:text-gray-900 hover:bg-gray-200 gap-2 border border-gray-300"
+                                className="text-gray-600 hover:text-gray-900 hover:bg-gray-200 gap-2"
                                 onClick={() => setIsFlipped(true)}
                               >
-                                View New Version <CheckCircle2 className="w-4 h-4" />
+                                View New Version <ArrowRight className="w-4 h-4" />
                               </Button>
                            </div>
                          )}
