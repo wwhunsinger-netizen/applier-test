@@ -1030,11 +1030,7 @@ export default function ClientDocumentsPage() {
                                </div>
                                <div>
                                  <h3 className="text-xl font-bold text-white">Approved!</h3>
-                                 <p className="text-sm text-muted-foreground mt-2">This document is locked and ready for applications.</p>
                                </div>
-                               <Button variant="outline" className="w-full border-white/10 opacity-50 cursor-not-allowed">
-                                 Locked
-                               </Button>
                             </>
                           )
                         )
