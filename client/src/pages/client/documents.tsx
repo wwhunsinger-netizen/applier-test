@@ -872,15 +872,17 @@ export default function ClientDocumentsPage() {
                                <Sparkles className="w-4 h-4" />
                                Improved {config.label}
                              </div>
-                             <Button 
-                               variant="ghost" 
-                               size="sm" 
-                               className="text-gray-400 hover:text-white hover:bg-white/10 gap-2"
-                               onClick={() => setIsFlipped(false)}
-                             >
-                               <ArrowLeft className="w-4 h-4" />
-                               Go Back
-                             </Button>
+                             {activeTab !== 'cover-letter' && (
+                               <Button 
+                                 variant="ghost" 
+                                 size="sm" 
+                                 className="text-gray-400 hover:text-white hover:bg-white/10 gap-2"
+                                 onClick={() => setIsFlipped(false)}
+                               >
+                                 <ArrowLeft className="w-4 h-4" />
+                                 Go Back
+                               </Button>
+                             )}
                            </div>
                            <div className="flex items-center gap-2">
                               {isApproved && <Badge className="bg-green-500 gap-1"><CheckCircle2 className="w-3 h-3" /> Approved</Badge>}
@@ -933,7 +935,7 @@ export default function ClientDocumentsPage() {
                           </div>
                           <div>
                             <h3 className="text-xl font-bold text-white">
-                              {unlockedDocs[activeTab] ? "This is your old resume" : `Your New ${config.label} Is Ready`}
+                              {unlockedDocs[activeTab] ? `This is your old ${config.label.toLowerCase()}` : `Your New ${config.label} Is Ready`}
                             </h3>
                             <p className="text-sm text-muted-foreground mt-2">
                               {activeTab === 'resume' ? "We've crafted a high-impact resume optimized for ATS." : 
