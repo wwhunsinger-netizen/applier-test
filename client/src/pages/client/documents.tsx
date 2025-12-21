@@ -116,6 +116,153 @@ export default function ClientDocumentsPage() {
     }
   };
 
+
+  const OLD_RESUME_CONTENT = (
+    <div className="space-y-6 font-serif text-gray-800 text-sm">
+      <div className="text-center mb-6">
+        <h2 className="text-xl font-bold uppercase">Dimas Gonzales</h2>
+        <p>dimas.o.gonzales@gmail.com | +1 (832) 493-3416 | United States</p>
+      </div>
+
+      <div>
+        <h3 className="font-bold border-b border-gray-400 mb-2 uppercase text-xs tracking-wider">Education</h3>
+        <div className="flex justify-between font-bold">
+          <span>Texas A&M University</span>
+          <span>Aug 2012 - May 2017</span>
+        </div>
+        <p>Bachelor of Science in Computer Engineering</p>
+      </div>
+
+      <div>
+        <h3 className="font-bold border-b border-gray-400 mb-2 mt-4 uppercase text-xs tracking-wider">Experience</h3>
+        
+        <div className="mb-4">
+          <div className="flex justify-between font-bold">
+            <span>GEICO - Senior Software Engineer</span>
+            <span>Aug 2024 - present</span>
+          </div>
+          <ul className="list-disc list-inside mt-1 space-y-1 text-gray-600 text-xs">
+            <li>Lead engineer for the Billing data warehouse, designing scalable solutions.</li>
+            <li>Architected micro-batching ELT pipelines using dbt, Spark, Airflow.</li>
+            <li>Implemented Snowflake zero-copy solution with Apache Iceberg.</li>
+          </ul>
+        </div>
+
+        <div className="mb-4">
+          <div className="flex justify-between font-bold">
+            <span>Texas Capital Bank - Data Architect</span>
+            <span>Feb 2022 - Aug 2024</span>
+          </div>
+          <ul className="list-disc list-inside mt-1 space-y-1 text-gray-600 text-xs">
+            <li>Led strategic design and modernization of enterprise cloud data platform.</li>
+            <li>Established RFC process for data modeling standardization.</li>
+          </ul>
+        </div>
+
+        <div className="mb-4">
+          <div className="flex justify-between font-bold">
+            <span>Master Engineer</span>
+            <span>Feb 2022 - Aug 2023</span>
+          </div>
+          <ul className="list-disc list-inside mt-1 space-y-1 text-gray-600 text-xs">
+            <li>Tech Lead for 8-person team building cloud data lake.</li>
+            <li>Architected Terraform IaC solutions reducing setup time by 40%.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
+
+  const NEW_RESUME_CONTENT = (
+    <div className="space-y-6 font-serif text-sm leading-relaxed max-w-[800px] mx-auto">
+      <div 
+        className="text-center border-b pb-6 hover:bg-yellow-50/50 transition-colors rounded p-2 relative group cursor-pointer"
+        onClick={(e) => handleTextClick(e, "10%")}
+      >
+        <h1 className="text-3xl font-bold uppercase tracking-wide text-gray-900">Dimas Gonzales</h1>
+        <p className="text-gray-600 mt-2">Dimas@gmail.com | LinkedIn | Dallas, Texas</p>
+        <div className="hidden group-hover:block absolute right-2 top-2 text-gray-400">
+          <MessageSquare className="w-4 h-4" />
+        </div>
+      </div>
+      
+      <div 
+        className="hover:bg-yellow-50/50 transition-colors rounded p-2 relative group cursor-pointer"
+        onClick={(e) => handleTextClick(e, "25%")}
+      >
+        <h4 className="font-bold uppercase text-xs tracking-wider text-gray-500 mb-4 border-b border-gray-200 pb-1">Work Experience (10+ Years Software Engineer)</h4>
+        
+        <div className="mb-6">
+          <div className="flex justify-between font-bold text-gray-800">
+            <span>Senior Software Engineer</span>
+            <span>June 2024 – Present</span>
+          </div>
+          <div className="italic text-gray-600 mb-2">Geico (Remote)</div>
+          <ul className="list-disc list-inside space-y-2 text-gray-800">
+            <li>Lead Engineer for the Billing Data Warehouse team.</li>
+            <li>Enforced data quality and governance using SodaCL and DataHub, integrating automated lineage and RBAC for PII protection with Apache Ranger.</li>
+            <li>Architected micro-batching ELT pipelines using dbt, Apache Spark, and Airflow, establishing 30 minute data freshness.</li>
+            <li>Implemented a custom Snowflake 'zero-copy' solution with Apache Iceberg on Azure Data Lake.</li>
+            <li>Automated testing and deployment via Azure DevOps CI/CD pipelines.</li>
+          </ul>
+          <p className="text-xs text-gray-500 mt-2 font-mono">Tech Stack: Snowflake, Airflow, Apache Spark/Ranger, Azure DevOps, SodaCL, DataHub</p>
+        </div>
+        <div className="hidden group-hover:block absolute right-2 top-2 text-gray-400">
+          <MessageSquare className="w-4 h-4" />
+        </div>
+      </div>
+
+      <div 
+        className="hover:bg-yellow-50/50 transition-colors rounded p-2 relative group cursor-pointer"
+        onClick={(e) => handleTextClick(e, "50%")}
+      >
+        <div className="mb-6">
+          <div className="flex justify-between font-bold text-gray-800">
+            <span>Data Architect</span>
+            <span>Feb 2022 - June 2024</span>
+          </div>
+          <div className="italic text-gray-600 mb-2">Texas Capital Bank (Remote)</div>
+          <ul className="list-disc list-inside space-y-2 text-gray-800">
+            <li>Promoted to Data Architect to lead a larger migration of legacy warehouses to modern cloud architecture.</li>
+            <li>Established an RFC process to standardize data modeling and architectural decisions, improving code quality and reducing technical debt.</li>
+          </ul>
+          <p className="text-xs text-gray-500 mt-2 font-mono">Tech Stack: Terraform IaC, Cloud Architecture</p>
+        </div>
+        
+        <div className="mb-6">
+          <div className="flex justify-between font-bold text-gray-800">
+            <span>Master Engineer</span>
+            <span>Feb 2022 - Aug 2023</span>
+          </div>
+          <ul className="list-disc list-inside space-y-2 text-gray-800">
+            <li>Prior to promotion, served as tech lead for three major migrations to AWS/Snowflake.</li>
+            <li>Team won the 'BullDog' CTO award for platform excellence.</li>
+            <li>Governance implementations cut monthly compute spend by 16% and reduced environment setup time by 40%+.</li>
+          </ul>
+        </div>
+        <div className="hidden group-hover:block absolute right-2 top-2 text-gray-400">
+          <MessageSquare className="w-4 h-4" />
+        </div>
+      </div>
+
+      <div 
+        className="hover:bg-yellow-50/50 transition-colors rounded p-2 relative group cursor-pointer"
+        onClick={(e) => handleTextClick(e, "75%")}
+      >
+        <h4 className="font-bold uppercase text-xs tracking-wider text-gray-500 mb-4 border-b border-gray-200 pb-1">Capabilities & Curiosities</h4>
+        <ul className="list-disc list-inside space-y-1 text-gray-800">
+          <li><strong>Cloud & Infrastructure:</strong> AWS (EMR, S3, ECS), Azure (Data Lake, DevOps), Terraform, Docker</li>
+          <li><strong>Data & Streaming:</strong> Snowflake, SQL, Apache Iceberg, Spark, Python, Kafka, Airflow</li>
+          <li><strong>Skills:</strong> Business Agile, Project Management, Public Speaking, Technical Leadership</li>
+          <li><strong>For Fun:</strong> Videography, Competitive Ping-pong, Weightlifting, Psychological-Thriller Movies</li>
+        </ul>
+        <div className="hidden group-hover:block absolute right-2 top-2 text-gray-400">
+          <MessageSquare className="w-4 h-4" />
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="space-y-6 h-[calc(100vh-8rem)] flex flex-col relative">
       {/* Evolution Animation Overlay */}
@@ -293,16 +440,41 @@ export default function ClientDocumentsPage() {
                 <div className="flex-1 p-12 overflow-y-auto">
                     {/* Simplified Content Preview */}
                     <div className="max-w-2xl mx-auto space-y-8 blur-[0.5px]">
-                       <div className="text-center pb-8 border-b">
-                         <h1 className="text-4xl font-bold text-gray-900">John Doe</h1>
-                         <p className="text-xl text-gray-600 mt-2">Senior Software Engineer</p>
-                       </div>
-                       <div className="space-y-4">
-                         <div className="h-6 bg-gray-200 rounded w-1/3" />
-                         <div className="h-4 bg-gray-100 rounded w-full" />
-                         <div className="h-4 bg-gray-100 rounded w-full" />
-                         <div className="h-4 bg-gray-100 rounded w-5/6" />
-                       </div>
+                       {activeTab === 'resume' ? (
+                          <div className="space-y-4 text-gray-800">
+                            <div className="text-center pb-8 border-b">
+                              <h1 className="text-4xl font-bold text-gray-900">Dimas Gonzales</h1>
+                              <p className="text-xl text-gray-600 mt-2">Senior Software Engineer</p>
+                            </div>
+                            <div className="space-y-4">
+                              <h4 className="font-bold uppercase text-xs tracking-wider text-gray-500 border-b border-gray-200 pb-1">Work Experience</h4>
+                              <div className="mb-2">
+                                <div className="flex justify-between font-bold">
+                                  <span>Senior Software Engineer</span>
+                                  <span>2024 - Present</span>
+                                </div>
+                                <div className="italic text-gray-600">Geico (Remote)</div>
+                              </div>
+                              <ul className="list-disc list-inside space-y-2 text-sm text-gray-700">
+                                <li>Lead Engineer for the Billing Data Warehouse team.</li>
+                                <li>Enforced data quality and governance using SodaCL and DataHub.</li>
+                              </ul>
+                            </div>
+                          </div>
+                       ) : (
+                          <>
+                           <div className="text-center pb-8 border-b">
+                             <h1 className="text-4xl font-bold text-gray-900">John Doe</h1>
+                             <p className="text-xl text-gray-600 mt-2">Senior Software Engineer</p>
+                           </div>
+                           <div className="space-y-4">
+                             <div className="h-6 bg-gray-200 rounded w-1/3" />
+                             <div className="h-4 bg-gray-100 rounded w-full" />
+                             <div className="h-4 bg-gray-100 rounded w-full" />
+                             <div className="h-4 bg-gray-100 rounded w-5/6" />
+                           </div>
+                          </>
+                       )}
                     </div>
                 </div>
                 
@@ -356,13 +528,15 @@ export default function ClientDocumentsPage() {
                         className="w-full h-full bg-white text-black p-12 shadow-xl rounded-lg overflow-y-auto"
                       >
                          <h3 className="text-xl font-bold mb-8 border-b pb-2 text-gray-400">Old {config.label}</h3>
-                         <div className="space-y-6 font-serif text-gray-500 blur-[0.5px]">
-                           <p>John Doe <br/> Software Developer</p>
-                           <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                           <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                           <div className="h-4 bg-gray-200 rounded w-5/6"></div>
-                           <p>[Old content placeholder...]</p>
-                         </div>
+                         {activeTab === 'resume' ? OLD_RESUME_CONTENT : (
+                           <div className="space-y-6 font-serif text-gray-500 blur-[0.5px]">
+                             <p>John Doe <br/> Software Developer</p>
+                             <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                             <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                             <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+                             <p>[Old content placeholder...]</p>
+                           </div>
+                         )}
                       </motion.div>
                     ) : (
                       <motion.div 
@@ -423,60 +597,25 @@ export default function ClientDocumentsPage() {
                              </div>
                            )}
 
-                           <div className="space-y-8 font-serif text-sm leading-relaxed max-w-[800px] mx-auto">
-                             <div 
-                               className="text-center border-b pb-6 hover:bg-yellow-50/50 transition-colors rounded p-2 relative group"
-                               onClick={(e) => handleTextClick(e, "10%")}
-                             >
-                               <h1 className="text-3xl font-bold uppercase tracking-wide text-gray-900">John Doe</h1>
-                               <p className="text-gray-600 mt-2">Senior Software Engineer | Full Stack Specialist</p>
-                               <div className="hidden group-hover:block absolute right-2 top-2 text-gray-400">
-                                 <MessageSquare className="w-4 h-4" />
-                               </div>
-                             </div>
-                             
-                             <div 
-                               className="hover:bg-yellow-50/50 transition-colors rounded p-2 relative group"
-                               onClick={(e) => handleTextClick(e, "30%")}
-                             >
-                               <h4 className="font-bold uppercase text-xs tracking-wider text-gray-500 mb-4 border-b border-gray-200 pb-1">Professional Experience</h4>
-                               <div className="mb-6">
-                                 <div className="flex justify-between font-bold text-gray-800">
-                                   <span>Senior Developer</span>
-                                   <span>2020 - Present</span>
+                           {activeTab === 'resume' ? NEW_RESUME_CONTENT : (
+                             <div className="space-y-8 font-serif text-sm leading-relaxed max-w-[800px] mx-auto">
+                               {/* Default placeholder content for other document types */}
+                               <div 
+                                 className="text-center border-b pb-6 hover:bg-yellow-50/50 transition-colors rounded p-2 relative group"
+                                 onClick={(e) => handleTextClick(e, "10%")}
+                               >
+                                 <h1 className="text-3xl font-bold uppercase tracking-wide text-gray-900">John Doe</h1>
+                                 <p className="text-gray-600 mt-2">Senior Software Engineer | Full Stack Specialist</p>
+                                 <div className="hidden group-hover:block absolute right-2 top-2 text-gray-400">
+                                   <MessageSquare className="w-4 h-4" />
                                  </div>
-                                 <div className="italic text-gray-600 mb-2">TechCorp Inc.</div>
-                                 <ul className="list-disc list-inside space-y-2 text-gray-800">
-                                   <li>Architected scalable microservices using React and Node.js, improving system latency by 40%.</li>
-                                   <li>Led a team of 5 developers in modernizing the legacy codebase, resulting in a 20% reduction in technical debt.</li>
-                                   <li>Implemented CI/CD pipelines reducing deployment time from 1 hour to 10 minutes.</li>
-                                 </ul>
                                </div>
-                               <div className="hidden group-hover:block absolute right-2 top-2 text-gray-400">
-                                 <MessageSquare className="w-4 h-4" />
+                               {/* ... other default content ... */}
+                               <div className="p-4 text-center text-gray-400 italic">
+                                 [Content for {config.label} goes here]
                                </div>
                              </div>
-
-                             <div 
-                               className="hover:bg-yellow-50/50 transition-colors rounded p-2 relative group"
-                               onClick={(e) => handleTextClick(e, "60%")}
-                             >
-                               <div className="mb-6">
-                                 <div className="flex justify-between font-bold text-gray-800">
-                                   <span>Software Engineer</span>
-                                   <span>2018 - 2020</span>
-                                 </div>
-                                 <div className="italic text-gray-600 mb-2">StartUp Flow</div>
-                                 <ul className="list-disc list-inside space-y-2 text-gray-800">
-                                   <li>Developed responsive frontend features using React and Redux.</li>
-                                   <li>Collaborated with UX designers to implement pixel-perfect interfaces.</li>
-                                 </ul>
-                               </div>
-                               <div className="hidden group-hover:block absolute right-2 top-2 text-gray-400">
-                                 <MessageSquare className="w-4 h-4" />
-                               </div>
-                             </div>
-                           </div>
+                           )}
                          </div>
                       </motion.div>
                     )}
