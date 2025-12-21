@@ -29,7 +29,11 @@ const DOC_CONFIG = {
 export default function ClientDocumentsPage() {
   const [activeTab, setActiveTab] = useState<DocType>("resume");
   const [isFlipped, setIsFlipped] = useState(false);
-  const [isApproved, setIsApproved] = useState(false);
+  const [approvedDocs, setApprovedDocs] = useState<Record<DocType, boolean>>({
+    resume: false,
+    "cover-letter": false,
+    linkedin: false
+  });
   const [activeVersion, setActiveVersion] = useState("A");
   const [comments, setComments] = useState<{id: number, text: string, top: string}[]>([]);
   const [isRevealing, setIsRevealing] = useState(false);
@@ -92,6 +96,7 @@ export default function ClientDocumentsPage() {
   }, [activeTab, unlockedDocs]);
 
   const config = DOC_CONFIG[activeTab];
+  const isApproved = approvedDocs[activeTab];
 
   // Mock highlight logic
   const handleTextClick = (e: React.MouseEvent, top: string) => {
@@ -179,7 +184,7 @@ export default function ClientDocumentsPage() {
   };
 
   const handleApprove = () => {
-    setIsApproved(true);
+    setApprovedDocs(prev => ({ ...prev, [activeTab]: true }));
     setComments([]); 
   };
 
@@ -197,6 +202,7 @@ export default function ClientDocumentsPage() {
       setAfterPdfUrl(null);
       setComments([]);
       setUnlockedDocs({ resume: false, "cover-letter": false, linkedin: false });
+      setApprovedDocs({ resume: false, "cover-letter": false, linkedin: false });
       setIsFlipped(false);
       setShowLargeReview(false);
       setRevisionStatus("idle");
