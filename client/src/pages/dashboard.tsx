@@ -25,16 +25,16 @@ export default function DashboardPage() {
     if (minutes >= 0 && minutes < 4 * 60) {
       setGreeting({
         text: "Hello, night owl",
-        style: "font-serif text-3xl font-normal tracking-wide flex items-center gap-2",
-        icon: <Sparkles className="w-6 h-6 text-[#FF9E7D] inline-block" />
+        style: "text-muted-foreground mt-1",
+        icon: null
       });
     } 
     // 4AM to 7:30AM (450 minutes)
     else if (minutes >= 4 * 60 && minutes <= 7 * 60 + 30) {
       setGreeting({
         text: "Early Bird gets the worm",
-        style: "font-serif text-3xl font-normal tracking-wide flex items-center gap-2",
-        icon: <Sun className="w-6 h-6 text-yellow-400 inline-block" />
+        style: "text-muted-foreground mt-1",
+        icon: null
       });
     }
     // Default

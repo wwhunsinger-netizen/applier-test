@@ -22,16 +22,16 @@ export default function ClientOverviewPage() {
     if (minutes >= 0 && minutes < 4 * 60) {
       setGreeting({
         text: "Hello, night owl",
-        style: "font-serif text-5xl font-normal tracking-wide",
-        icon: <Sparkles className="w-10 h-10 text-[#FF9E7D] mr-4 inline-block mb-2" /> // Color picked from screenshot approximation
+        style: "text-3xl font-bold tracking-tight",
+        icon: null
       });
     } 
     // 4AM to 7:30AM (450 minutes)
     else if (minutes >= 4 * 60 && minutes <= 7 * 60 + 30) {
       setGreeting({
         text: "Early Bird gets the worm",
-        style: "font-serif text-5xl font-normal tracking-wide",
-        icon: <Sun className="w-10 h-10 text-yellow-400 mr-4 inline-block mb-2" />
+        style: "text-3xl font-bold tracking-tight",
+        icon: null
       });
     }
     // Default
