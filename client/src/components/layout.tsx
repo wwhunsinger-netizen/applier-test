@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, Briefcase, Send, Trophy, User, LogOut, ShieldCheck, List, AlertTriangle, Users, FileText, Calendar } from "lucide-react";
+import { LayoutDashboard, Briefcase, Send, Trophy, User, LogOut, ShieldCheck, List, AlertTriangle, Users, FileText, Calendar, ClipboardCheck } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useUser } from "@/lib/userContext";
@@ -32,6 +32,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   const clientNavItems = [
     { icon: LayoutDashboard, label: "Overview", href: "/" },
+    { icon: ClipboardCheck, label: "Job Criteria", href: "/client/job-criteria" },
     { icon: Calendar, label: "Interviews", href: "/client/interviews" },
     { icon: FileText, label: "Documents", href: "/client/documents" },
     { icon: Send, label: "Applications", href: "/client/applications" },

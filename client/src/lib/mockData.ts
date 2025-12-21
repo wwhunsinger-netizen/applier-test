@@ -88,6 +88,13 @@ export const MOCK_USERS = [
     email: "client@jumpseat.com",
     role: "Client",
     avatar: "https://i.pravatar.cc/150?u=client"
+  },
+  {
+    id: "user-7",
+    name: "New Client",
+    email: "newclient@jumpseat.com",
+    role: "Client",
+    avatar: "https://i.pravatar.cc/150?u=newclient"
   }
 ];
 

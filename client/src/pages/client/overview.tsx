@@ -1,6 +1,6 @@
 import { MOCK_CLIENT_STATS, MOCK_CLIENT_WEEKLY_PROGRESS, MOCK_CLIENT_ACTIVITY_FEED, MOCK_CLIENT_PIPELINE, MOCK_CLIENT_INTERVIEWS } from "@/lib/mockData";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Send, XCircle, Calendar, ChevronDown, ChevronUp, TrendingUp, Clock, CheckCircle2, ArrowRight, Flame, Sparkles, Sun } from "lucide-react";
+import { Send, XCircle, Calendar, ChevronDown, ChevronUp, TrendingUp, Clock, CheckCircle2, ArrowRight, Flame, Sparkles, Sun, ClipboardCheck, FileText } from "lucide-react";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -44,7 +44,58 @@ export default function ClientOverviewPage() {
     }
   }, [currentUser]);
   
+  // Use mock stats unless it's the new test user which should have 0 stats
+  const isNewClient = currentUser.email === "newclient@jumpseat.com";
+  const stats = isNewClient ? { totalApps: 0 } : MOCK_CLIENT_STATS;
+  
   const nextInterview = MOCK_CLIENT_INTERVIEWS.find(i => new Date(i.date) > new Date()) || MOCK_CLIENT_INTERVIEWS[0];
+
+  if (stats.totalApps === 0) {
+    return (
+      <div className="space-y-8 pb-10 min-h-[60vh] flex flex-col items-center justify-center text-center">
+        <motion.div
+           initial={{ opacity: 0, y: 20 }}
+           animate={{ opacity: 1, y: 0 }}
+           className="space-y-8 max-w-2xl"
+        >
+          <div>
+            <h1 className="text-4xl font-bold text-white mb-2">Finish Onboarding</h1>
+            <p className="text-muted-foreground text-lg">You're almost there! Complete these steps to start your job search.</p>
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-2">
+            <Link href="/client/documents">
+              <Card className="bg-[#111] border-white/10 hover:border-primary/50 transition-all cursor-pointer group h-full">
+                <CardContent className="p-8 flex flex-col items-center gap-4">
+                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                    <FileText className="w-8 h-8" />
+                  </div>
+                  <div className="space-y-2">
+                    <h3 className="text-xl font-bold text-white">Review Documents</h3>
+                    <p className="text-sm text-muted-foreground">Approve your resume and cover letter templates.</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+
+            <Link href="/client/job-criteria">
+              <Card className="bg-[#111] border-white/10 hover:border-primary/50 transition-all cursor-pointer group h-full">
+                <CardContent className="p-8 flex flex-col items-center gap-4">
+                  <div className="w-16 h-16 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-500 group-hover:scale-110 transition-transform">
+                    <ClipboardCheck className="w-8 h-8" />
+                  </div>
+                  <div className="space-y-2">
+                    <h3 className="text-xl font-bold text-white">Review Job Criteria</h3>
+                    <p className="text-sm text-muted-foreground">Confirm the types of jobs we should apply to.</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 pb-10">

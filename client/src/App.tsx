@@ -24,6 +24,8 @@ import ClientInterviewsPage from "@/pages/client/interviews";
 import ClientDocumentsPage from "@/pages/client/documents";
 import ClientApplicationsPage from "@/pages/client/applications";
 
+import ClientJobCriteriaPage from "@/pages/client/job-criteria";
+
 function Router() {
   return (
     <Layout>
@@ -46,6 +48,7 @@ function Router() {
         <Route path="/client/interviews" component={ClientInterviewsPage} />
         <Route path="/client/documents" component={ClientDocumentsPage} />
         <Route path="/client/applications" component={ClientApplicationsPage} />
+        <Route path="/client/job-criteria" component={ClientJobCriteriaPage} />
 
         <Route component={NotFound} />
       </Switch>
