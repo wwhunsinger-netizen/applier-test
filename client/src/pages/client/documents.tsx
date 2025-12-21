@@ -736,15 +736,37 @@ export default function ClientDocumentsPage() {
                         exit={{ opacity: 0, scale: 0.9 }}
                         className="absolute inset-0 bg-white text-black p-12 shadow-xl rounded-lg overflow-y-auto"
                       >
-                         {activeTab === 'resume' ? OLD_RESUME_CONTENT : (
-                           <div className="space-y-6 font-serif text-gray-500 blur-[0.5px]">
-                             <p>John Doe <br/> Software Developer</p>
-                             <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                             <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                             <div className="h-4 bg-gray-200 rounded w-5/6"></div>
-                             <p>[Old content placeholder...]</p>
+                         {/* Header for Old Resume when unlocked */}
+                         {unlockedDocs[activeTab] && (
+                           <div className="absolute top-0 left-0 right-0 bg-gray-100 border-b border-gray-200 p-4 flex justify-between items-center z-10">
+                              <div className="flex items-center gap-4">
+                                <div className="bg-gray-500 text-white px-4 py-1 rounded font-bold uppercase tracking-wider text-sm flex items-center gap-2">
+                                  <FileText className="w-4 h-4" />
+                                  Original Version
+                                </div>
+                              </div>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="text-gray-600 hover:text-gray-900 hover:bg-gray-200 gap-2 border border-gray-300"
+                                onClick={() => setIsFlipped(true)}
+                              >
+                                View New Version <CheckCircle2 className="w-4 h-4" />
+                              </Button>
                            </div>
                          )}
+                         
+                         <div className={cn(unlockedDocs[activeTab] ? "mt-16" : "")}>
+                           {activeTab === 'resume' ? OLD_RESUME_CONTENT : (
+                             <div className="space-y-6 font-serif text-gray-500 blur-[0.5px]">
+                               <p>John Doe <br/> Software Developer</p>
+                               <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                               <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                               <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+                               <p>[Old content placeholder...]</p>
+                             </div>
+                           )}
+                         </div>
                       </motion.div>
                     ) : (
                       <motion.div 
@@ -834,7 +856,9 @@ export default function ClientDocumentsPage() {
                             <Sparkles className="w-8 h-8" />
                           </div>
                           <div>
-                            <h3 className="text-xl font-bold text-white">Your New {config.label} Is Ready</h3>
+                            <h3 className="text-xl font-bold text-white">
+                              {unlockedDocs[activeTab] ? "This is your old resume" : `Your New ${config.label} Is Ready`}
+                            </h3>
                             <p className="text-sm text-muted-foreground mt-2">
                               {activeTab === 'resume' ? "We've crafted a high-impact resume optimized for ATS." : 
                                activeTab === 'cover-letter' ? "Three versions tailored for different role types." : 
