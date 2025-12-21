@@ -40,15 +40,24 @@ export default function ClientDocumentsPage() {
   });
   
   // Dev State for PDF Uploads
-  const [beforePdfUrl, setBeforePdfUrl] = useState<string | null>(null);
-  const [afterPdfUrl, setAfterPdfUrl] = useState<string | null>(null);
+  const [beforePdfUrl, setBeforePdfUrl] = useState<string | null>(() => localStorage.getItem("beforePdfUrl"));
+  const [afterPdfUrl, setAfterPdfUrl] = useState<string | null>(() => localStorage.getItem("afterPdfUrl"));
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'before' | 'after') => {
     const file = e.target.files?.[0];
     if (file) {
-      const url = URL.createObjectURL(file);
-      if (type === 'before') setBeforePdfUrl(url);
-      else setAfterPdfUrl(url);
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        if (type === 'before') {
+          setBeforePdfUrl(result);
+          localStorage.setItem("beforePdfUrl", result);
+        } else {
+          setAfterPdfUrl(result);
+          localStorage.setItem("afterPdfUrl", result);
+        }
+      };
+      reader.readAsDataURL(file);
     }
   };
 
