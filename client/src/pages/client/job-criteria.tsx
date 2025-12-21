@@ -47,6 +47,13 @@ export default function ClientJobCriteriaPage() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  
+  // Initialize state from localStorage
+  useState(() => {
+    if (localStorage.getItem('jobCriteriaCompleted') === 'true') {
+      setIsSubmitted(true);
+    }
+  });
 
   // Check if all jobs have been reviewed
   const allReviewed = jobs.every(job => approvedJobs.includes(job.id) || rejectedJobs[job.id]);
@@ -66,16 +73,38 @@ export default function ClientJobCriteriaPage() {
 
   if (isSubmitted) {
     return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center text-center space-y-6 animate-in fade-in zoom-in duration-500">
-        <div className="w-24 h-24 rounded-full bg-green-500/10 flex items-center justify-center text-green-500 mb-4 animate-in bounce-in duration-1000 delay-300">
-          <CheckCircle2 className="w-12 h-12" />
+      <div className="min-h-[60vh] flex flex-col items-center justify-center text-center space-y-8 animate-in fade-in zoom-in duration-500">
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.2 }}
+        >
+          <div className="w-32 h-32 rounded-full bg-green-500/20 flex items-center justify-center text-green-500 mb-4 relative">
+             <motion.div
+               initial={{ pathLength: 0 }}
+               animate={{ pathLength: 1 }}
+               transition={{ duration: 0.8, delay: 0.5, ease: "easeOut" }}
+             >
+                <CheckCircle2 className="w-16 h-16" strokeWidth={3} />
+             </motion.div>
+             <motion.div
+               className="absolute inset-0 rounded-full border-4 border-green-500/30"
+               initial={{ scale: 0.8, opacity: 0 }}
+               animate={{ scale: 1.2, opacity: 0 }}
+               transition={{ duration: 1.5, repeat: Infinity, delay: 0.5 }}
+             />
+          </div>
+        </motion.div>
+        
+        <div className="space-y-2">
+            <h2 className="text-4xl font-bold text-white">All Set!</h2>
+            <p className="text-muted-foreground text-lg max-w-md mx-auto">
+            Thanks for your feedback. We'll use this to calibrate your job search and start applying to the best matches.
+            </p>
         </div>
-        <h2 className="text-3xl font-bold text-white">All Set!</h2>
-        <p className="text-muted-foreground text-lg max-w-md">
-          Thanks for your feedback. We'll use this to calibrate your job search and start applying to the best matches.
-        </p>
+        
         <Button 
-          className="mt-8 bg-white/10 hover:bg-white/20 text-white"
+          className="mt-8 bg-white/10 hover:bg-white/20 text-white px-8"
           onClick={() => window.location.href = '/'}
         >
           Return to Dashboard
@@ -252,7 +281,7 @@ export default function ClientJobCriteriaPage() {
                 onClick={handleSubmit}
                 className="bg-purple-600 hover:bg-purple-700 text-white px-12 py-6 text-lg font-bold rounded-full shadow-2xl shadow-purple-500/20 transform hover:scale-105 transition-all"
               >
-                Submit Criteria
+                Submit
               </Button>
             </div>
           </motion.div>
