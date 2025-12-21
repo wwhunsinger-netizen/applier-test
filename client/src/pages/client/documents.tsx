@@ -8,6 +8,7 @@ import { FileText, Linkedin, Check, Lightbulb, RotateCw, CheckCircle2, Sparkles,
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import stockImage from '@assets/stock_images/resume_with_red_pen__da311fea.jpg'
 
 type DocType = "resume" | "cover-letter" | "linkedin";
 
@@ -116,12 +117,7 @@ export default function ClientDocumentsPage() {
     }
   };
 
-
-import stockImage from '@assets/stock_images/resume_with_red_pen__da311fea.jpg'
-
-// ... existing imports ...
-
-// Replace OLD_RESUME_CONTENT with an image based approach
+  // Replace OLD_RESUME_CONTENT with an image based approach
   const OLD_RESUME_CONTENT = (
     <div className="w-full h-full flex items-start justify-center bg-gray-100 overflow-y-auto p-8 rounded-lg">
       <img 
@@ -530,7 +526,7 @@ import stockImage from '@assets/stock_images/resume_with_red_pen__da311fea.jpg'
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ duration: 0.5 }}
-                        className={cn("w-full h-full bg-white text-black shadow-2xl rounded-lg overflow-hidden border-4 relative flex flex-col", config.border)}
+                        className={cn("w-full h-full bg-white text-black shadow-2xl rounded-lg overflow-hidden relative flex flex-col")}
                       >
                          {/* Comments Overlay */}
                          {comments.map(comment => (
@@ -574,17 +570,17 @@ import stockImage from '@assets/stock_images/resume_with_red_pen__da311fea.jpg'
                            </div>
                          </div>
                          
-                         <div className="flex-1 overflow-y-auto p-12 relative cursor-text">
+                         <div className="flex-1 overflow-y-auto p-0 bg-gray-200 relative cursor-text">
                            {/* Hint Overlay for Comments */}
                            {!isApproved && revisionStatus !== 'requested' && comments.length === 0 && (
-                             <div className="absolute top-4 right-4 bg-blue-50 text-blue-600 px-3 py-2 rounded text-xs border border-blue-200 animate-pulse">
+                             <div className="absolute top-4 right-4 z-50 bg-blue-50 text-blue-600 px-3 py-2 rounded text-xs border border-blue-200 animate-pulse">
                                <Lightbulb className="w-3 h-3 inline mr-1" />
                                Click any section to add a comment
                              </div>
                            )}
 
                            {activeTab === 'resume' ? NEW_RESUME_CONTENT : (
-                             <div className="space-y-8 font-serif text-sm leading-relaxed max-w-[800px] mx-auto">
+                             <div className="p-12 space-y-8 font-serif text-sm leading-relaxed max-w-[800px] mx-auto bg-white min-h-full">
                                {/* Default placeholder content for other document types */}
                                <div 
                                  className="text-center border-b pb-6 hover:bg-yellow-50/50 transition-colors rounded p-2 relative group"
