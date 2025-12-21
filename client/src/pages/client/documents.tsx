@@ -729,6 +729,7 @@ export default function ClientDocumentsPage() {
                    <Upload className="w-4 h-4" /> {beforePdfUrl ? "Old PDF Loaded" : "Upload Old PDF"}
                  </Button>
                  <input 
+                   key={beforePdfUrl ? "loaded" : "empty"} // Key forces re-render when state changes
                    type="file" 
                    accept="application/pdf" 
                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
@@ -741,6 +742,7 @@ export default function ClientDocumentsPage() {
                    <Upload className="w-4 h-4" /> {afterPdfUrl ? "New PDF Loaded" : "Upload New PDF"}
                  </Button>
                  <input 
+                   key={afterPdfUrl ? "loaded" : "empty"} // Key forces re-render when state changes
                    type="file" 
                    accept="application/pdf" 
                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
