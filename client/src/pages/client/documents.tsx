@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -40,6 +40,8 @@ export default function ClientDocumentsPage() {
     linkedin: false
   });
   
+  const animationTimeouts = useRef<NodeJS.Timeout[]>([]);
+
   // Dev State for PDF Uploads
   const [beforePdfUrl, setBeforePdfUrl] = useState<string | null>(() => localStorage.getItem("beforePdfUrl"));
   const [afterPdfUrl, setAfterPdfUrl] = useState<string | null>(() => localStorage.getItem("afterPdfUrl"));
@@ -101,18 +103,22 @@ export default function ClientDocumentsPage() {
     setIsRevealing(true);
     setRevealPhase("intro");
     
+    // Clear any existing timeouts just in case
+    animationTimeouts.current.forEach(clearTimeout);
+    animationTimeouts.current = [];
+    
     // Animation Sequence
-    setTimeout(() => setRevealPhase("float"), 2000);   // Text moves up, doc floats
-    setTimeout(() => setRevealPhase("distort"), 4000); // Doc stretches
+    const t1 = setTimeout(() => setRevealPhase("float"), 2000);   // Text moves up, doc floats
+    const t2 = setTimeout(() => setRevealPhase("distort"), 4000); // Doc stretches
     
     // Smooth transition to reveal
-    setTimeout(() => {
+    const t3 = setTimeout(() => {
       setRevealPhase("reveal");
     }, 7000);
     
     // Final settle into interactive mode
     // We delay slightly less than before to catch the end of the reveal animation
-    setTimeout(() => {
+    const t4 = setTimeout(() => {
       // Don't unmount the revealing component yet!
       // First turn on the underlying interactive component
       setIsFlipped(true); 
@@ -121,16 +127,26 @@ export default function ClientDocumentsPage() {
       setShowLargeReview(true);
       
       // Then turn off the animation overlay after a tiny buffer to allow the underlying one to render
-      setTimeout(() => {
+      const t5 = setTimeout(() => {
         setIsRevealing(false);
       }, 100);
+      animationTimeouts.current.push(t5);
     }, 9000);
+
+    animationTimeouts.current.push(t1, t2, t3, t4);
   };
 
   const handleSkipAnimation = () => {
+    // Clear all pending animation timeouts
+    animationTimeouts.current.forEach(clearTimeout);
+    animationTimeouts.current = [];
+
     // Immediate state set
     setIsFlipped(true);
-    setUnlockedDocs(prev => ({ ...prev, [activeTab]: true }));
+    // Don't unlock yet, let them unlock via the large review modal like normal flow
+    // But wait, if we skip, we usually want to jump straight to the review.
+    // The large review modal "Review" button sets unlockedDocs to true.
+    // So we just show the large review.
     setShowLargeReview(true);
     
     // Clear animation state
@@ -479,14 +495,42 @@ export default function ClientDocumentsPage() {
                   >
                     {/* Content Placeholder - Different for Old vs New */}
                     {revealPhase === "reveal" ? (
-                      <div className="space-y-4 w-3/4 opacity-80">
-                         <h3 className={cn("text-xl font-bold text-center mb-4", config.text)}>New {config.label}</h3>
-                         <div className="h-4 bg-gray-200 rounded w-1/2 mx-auto" />
-                         <div className="h-2 bg-gray-100 rounded w-full" />
-                         <div className="h-2 bg-gray-100 rounded w-full" />
-                         <div className="h-2 bg-gray-100 rounded w-3/4" />
-                         <div className="h-2 bg-gray-100 rounded w-full mt-4" />
-                         <div className="h-2 bg-gray-100 rounded w-5/6" />
+                      <div className="space-y-4 w-3/4 opacity-90 scale-95 origin-top pt-4">
+                         <h3 className={cn("text-xl font-bold text-center mb-6", config.text)}>New {config.label}</h3>
+                         
+                         {/* Header Section */}
+                         <div className="flex flex-col items-center space-y-2 mb-6">
+                           <div className="h-6 bg-gray-800 rounded w-2/3" />
+                           <div className="h-3 bg-gray-300 rounded w-1/2" />
+                         </div>
+
+                         {/* Experience Blocks */}
+                         <div className="space-y-6">
+                           <div className="space-y-2">
+                             <div className="flex justify-between">
+                               <div className="h-4 bg-gray-700 rounded w-1/3" />
+                               <div className="h-4 bg-gray-300 rounded w-1/4" />
+                             </div>
+                             <div className="h-3 bg-gray-200 rounded w-full" />
+                             <div className="h-3 bg-gray-200 rounded w-full" />
+                             <div className="h-3 bg-gray-200 rounded w-5/6" />
+                           </div>
+
+                           <div className="space-y-2">
+                             <div className="flex justify-between">
+                               <div className="h-4 bg-gray-700 rounded w-1/3" />
+                               <div className="h-4 bg-gray-300 rounded w-1/4" />
+                             </div>
+                             <div className="h-3 bg-gray-200 rounded w-full" />
+                             <div className="h-3 bg-gray-200 rounded w-4/5" />
+                           </div>
+
+                           <div className="space-y-2">
+                             <div className="h-4 bg-gray-700 rounded w-1/4 mb-2" />
+                             <div className="h-3 bg-gray-200 rounded w-full" />
+                             <div className="h-3 bg-gray-200 rounded w-full" />
+                           </div>
+                         </div>
                       </div>
                     ) : (
                       <div className="space-y-4 w-3/4 opacity-40 blur-[1px]">
@@ -797,8 +841,8 @@ export default function ClientDocumentsPage() {
                                "An optimized LinkedIn profile to attract recruiters."}
                             </p>
                           </div>
-                          <Button size="lg" className={cn("w-full font-bold text-lg h-12 shadow-lg hover:scale-105 transition-transform", config.bg, "text-white")} onClick={handleImprove}>
-                            ✨ Show Me
+                          <Button size="lg" className={cn("w-full font-bold text-lg h-12 shadow-lg hover:scale-105 transition-transform", config.bg, "text-white")} onClick={unlockedDocs[activeTab] ? () => setIsFlipped(true) : handleImprove}>
+                            {unlockedDocs[activeTab] ? "View Improved Version" : "✨ Show Me"}
                           </Button>
                         </>
                       ) : (
