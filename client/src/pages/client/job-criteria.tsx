@@ -74,8 +74,8 @@ export default function ClientJobCriteriaPage() {
               >
                 {/* Rejected Overlay Line */}
                 {isRejected && (
-                  <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
-                    <div className="bg-red-500/10 backdrop-blur-sm border border-red-500/50 text-red-500 px-6 py-2 rounded-full font-bold text-lg transform -rotate-2 shadow-xl">
+                  <div className="absolute top-6 left-0 right-0 flex items-center justify-center z-20 pointer-events-none">
+                    <div className="bg-red-500/10 backdrop-blur-sm border border-red-500/50 text-red-500 px-6 py-2 rounded-full font-bold text-lg transform -rotate-2 shadow-xl max-w-[80%] text-center truncate">
                       {rejectedJobs[job.id]}
                     </div>
                   </div>
@@ -204,9 +204,15 @@ export default function ClientJobCriteriaPage() {
             <Textarea 
               placeholder="E.g., Seniority too high, tech stack irrelevant, location..."
               value={rejectionComment}
-              onChange={(e) => setRejectionComment(e.target.value)}
+              onChange={(e) => setRejectionComment(e.target.value.slice(0, 140))}
               className="bg-black/50 border-white/10 min-h-[100px]"
             />
+            <div className="flex justify-between items-center text-xs text-muted-foreground">
+                <span>Maximum 140 characters</span>
+                <span className={rejectionComment.length >= 140 ? "text-red-500" : ""}>
+                    {rejectionComment.length}/140
+                </span>
+            </div>
             <DialogFooter>
               <Button variant="ghost" onClick={() => setRejectingJobId(null)}>Cancel</Button>
               <Button onClick={confirmReject} disabled={!rejectionComment.trim()}>Submit Feedback</Button>

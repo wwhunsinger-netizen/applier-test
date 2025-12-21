@@ -59,8 +59,8 @@ export default function ClientOverviewPage() {
            className="space-y-8 max-w-2xl"
         >
           <div>
-            <h1 className="text-4xl font-bold text-white mb-2">Finish Onboarding</h1>
-            <p className="text-muted-foreground text-lg">You're almost there! Complete these steps to start your job search.</p>
+            <h1 className="text-4xl font-bold text-white mb-2">Welcome, {currentUser.name.split(' ')[0]}!</h1>
+            <p className="text-muted-foreground text-lg">Finish the following onboarding steps so we can start applying.</p>
           </div>
 
           <div className="grid gap-6 md:grid-cols-2">
