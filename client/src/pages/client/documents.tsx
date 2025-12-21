@@ -135,9 +135,25 @@ export default function ClientDocumentsPage() {
     }
   };
 
+  // PDF Viewer Component
+  const PDFViewer = ({ url, scale = 1.0 }: { url: string, scale?: number }) => (
+    <Document 
+      file={url} 
+      className="flex flex-col gap-8 items-center"
+      loading={<div className="text-gray-500 animate-pulse">Loading PDF...</div>}
+      error={<div className="text-red-500">Failed to load PDF. Please try again.</div>}
+    >
+      <Page pageNumber={1} scale={scale} renderTextLayer={false} renderAnnotationLayer={false} className="shadow-xl" width={816} />
+      <Page pageNumber={2} scale={scale} renderTextLayer={false} renderAnnotationLayer={false} className="shadow-xl" width={816} />
+    </Document>
+  );
+
   // Reconstruct OLD_RESUME_CONTENT with HTML and Red Pen Markups
   const OLD_RESUME_CONTENT = (
     <div className="w-full min-h-full flex flex-col items-center gap-8 pb-20">
+      {beforePdfUrl ? (
+         <PDFViewer url={beforePdfUrl} scale={1.0} />
+      ) : (
       <div className="w-[8.5in] min-h-[11in] bg-white shadow-xl p-[1in] text-sm relative font-serif text-gray-800 shrink-0">
         {/* Red Pen Markups Overlay */}
         <div className="absolute inset-0 pointer-events-none z-10 opacity-90 mix-blend-multiply">
@@ -237,6 +253,7 @@ export default function ClientDocumentsPage() {
            </ul>
         </div>
       </div>
+      )}
     </div>
   );
 
@@ -245,6 +262,10 @@ export default function ClientDocumentsPage() {
 // Update the NEW_RESUME_CONTENT structure to look like a PDF viewer
   const NEW_RESUME_CONTENT = (
     <div className="w-full min-h-full flex flex-col items-center gap-8 pb-20">
+      {afterPdfUrl ? (
+        <PDFViewer url={afterPdfUrl} scale={1.0} />
+      ) : (
+        <>
       {/* Page 1 */}
       <div className="w-[8.5in] min-h-[11in] bg-white shadow-xl p-[1in] text-sm relative shrink-0">
           <div 
@@ -350,6 +371,8 @@ export default function ClientDocumentsPage() {
             </div>
           </div>
       </div>
+      </>
+      )}
     </div>
   );
 
@@ -598,27 +621,29 @@ export default function ClientDocumentsPage() {
            
            {/* Dev Tools: File Uploaders */}
            <div className="flex gap-4">
-              <div className="relative">
-                 <input 
-                   type="file" 
-                   accept="application/pdf" 
-                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                   onChange={(e) => handleFileUpload(e, 'before')}
-                 />
-                 <Button variant="outline" className="border-white/10 hover:bg-white/10 text-gray-400 gap-2">
+              <div className="relative group">
+                 <Button variant="outline" className="border-white/10 hover:bg-white/10 text-gray-400 gap-2 relative z-10">
                    <Upload className="w-4 h-4" /> Upload Old PDF
                  </Button>
-              </div>
-              <div className="relative">
                  <input 
                    type="file" 
                    accept="application/pdf" 
-                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                   onChange={(e) => handleFileUpload(e, 'after')}
+                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
+                   onChange={(e) => handleFileUpload(e, 'before')}
+                   title="Upload Old PDF"
                  />
-                 <Button variant="outline" className="border-white/10 hover:bg-white/10 text-gray-400 gap-2">
+              </div>
+              <div className="relative group">
+                 <Button variant="outline" className="border-white/10 hover:bg-white/10 text-gray-400 gap-2 relative z-10">
                    <Upload className="w-4 h-4" /> Upload New PDF
                  </Button>
+                 <input 
+                   type="file" 
+                   accept="application/pdf" 
+                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
+                   onChange={(e) => handleFileUpload(e, 'after')}
+                   title="Upload New PDF"
+                 />
               </div>
            </div>
         </div>
