@@ -129,29 +129,19 @@ export default function ClientDocumentsPage() {
     // Animation Sequence
     const t1 = setTimeout(() => setRevealPhase("float"), 2000);   // Text moves up, doc floats
     const t2 = setTimeout(() => setRevealPhase("distort"), 4000); // Doc stretches
+    const t3 = setTimeout(() => setRevealPhase("explode"), 6500); // New Phase: Explosion/Flash
     
     // Smooth transition to reveal
-    const t3 = setTimeout(() => {
-      setRevealPhase("reveal");
-    }, 7000);
-    
-    // Final settle into interactive mode
-    // We delay slightly less than before to catch the end of the reveal animation
     const t4 = setTimeout(() => {
-      // Don't unmount the revealing component yet!
-      // First turn on the underlying interactive component
+      // Direct jump to end state logic
       setIsFlipped(true); 
-      // NOTE: We do NOT set unlockedDocs here anymore. 
-      // We only set it when the user explicitly closes the review modal.
       setShowLargeReview(true);
       
-      // Then turn off the animation overlay after a tiny buffer to allow the underlying one to render
-      const t5 = setTimeout(() => {
-        setIsRevealing(false);
-      }, 100);
-      animationTimeouts.current.push(t5);
-    }, 9000);
-
+      // Close animation overlay
+      setIsRevealing(false);
+    }, 8000); // Increased total time slightly to accommodate explode
+    
+    // Store timeouts to clear later
     animationTimeouts.current.push(t1, t2, t3, t4);
   };
 
@@ -487,27 +477,10 @@ export default function ClientDocumentsPage() {
                 </Button>
               </div>
 
-              {/* Phase 1 & 2: Text */}
-              <AnimatePresence>
-                {["intro", "float", "distort"].includes(revealPhase) && (
-                  <motion.h2
-                    className={cn("text-4xl md:text-6xl font-bold text-white tracking-widest uppercase z-20 absolute", config.text)}
-                    initial={{ y: 0, scale: 0.8, opacity: 0 }}
-                    animate={
-                      revealPhase === "intro" ? { y: 0, scale: 1, opacity: 1 } :
-                      { y: -300, scale: 0.8, opacity: 0.8 }
-                    }
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 1 }}
-                  >
-                    What? Your {config.label} is evolving!
-                  </motion.h2>
-                )}
-              </AnimatePresence>
 
               {/* Document Evolution */}
               <AnimatePresence>
-                {["float", "distort", "reveal"].includes(revealPhase) && (
+                {["intro", "float", "distort", "explode"].includes(revealPhase) && (
                   <motion.div
                     className="w-[300px] h-[400px] bg-white rounded shadow-2xl z-10 relative flex items-center justify-center"
                     initial={{ y: 0, scale: 1, filter: "brightness(1)" }}
@@ -518,17 +491,22 @@ export default function ClientDocumentsPage() {
                         scaleX: [1, 0.6, 1.4, 0.8, 1.2, 0.6],
                         rotate: [0, 5, -5, 10, -10, 0],
                         filter: ["brightness(2) hue-rotate(0deg)", "brightness(4) hue-rotate(90deg)"]
-                      } :
-                      revealPhase === "reveal" ? { scale: 1.2, filter: "brightness(1)", rotate: 0 } : {}
+                      } : 
+                      revealPhase === "explode" ? {
+                        scale: [1.5, 0, 10], // Implode then Explode
+                        opacity: [1, 0.5, 0],
+                        filter: "brightness(10)"
+                      } : {}
                     }
                     transition={
                       revealPhase === "float" ? { duration: 2, ease: "easeInOut" } :
                       revealPhase === "distort" ? { duration: 3, ease: "linear", repeat: Infinity } :
+                      revealPhase === "explode" ? { duration: 1.5, ease: "circIn" } :
                       { duration: 0.5 }
                     }
                   >
                     {/* Content Placeholder - Different for Old vs New */}
-                    {revealPhase === "reveal" ? (
+                    {false ? (
                       <div className="space-y-4 w-3/4 opacity-90 scale-95 origin-top pt-4">
                          <h3 className={cn("text-xl font-bold text-center mb-6", config.text)}>New {config.label}</h3>
                          
@@ -587,46 +565,40 @@ export default function ClientDocumentsPage() {
                 )}
               </AnimatePresence>
 
-              {/* Phase 3: Particles / Explosion - Celebrate the New Doc */}
-              {["reveal"].includes(revealPhase) && (
-                 <div className="absolute inset-0 pointer-events-none z-20">
+              {/* Phase 3: Explosion - Celebrate the New Doc */}
+              {revealPhase === "explode" && (
+                 <div className="absolute inset-0 pointer-events-none z-50 flex items-center justify-center">
+                    {/* Flash */}
+                    <motion.div 
+                        className="absolute inset-0 bg-white"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: [0, 1, 0] }}
+                        transition={{ duration: 0.5, delay: 1 }}
+                    />
+                    
+                    {/* Particles */}
                     {[...Array(50)].map((_, i) => (
                       <motion.div
                         key={i}
-                        className={cn("absolute rounded-full", i % 2 === 0 ? config.bg : "bg-white")}
+                        className={cn("absolute rounded-full w-2 h-2", i % 2 === 0 ? config.bg : "bg-white")}
                         initial={{ 
-                          left: "50%", 
-                          top: "50%", 
-                          width: Math.random() * 12, 
-                          height: Math.random() * 12,
-                          opacity: 1
+                            x: 0,
+                            y: 0,
+                            scale: 0
                         }}
                         animate={{ 
-                          x: (Math.random() - 0.5) * 1500, 
-                          y: (Math.random() - 0.5) * 1500,
-                          opacity: 0,
-                          scale: 0,
-                          rotate: Math.random() * 360
+                          x: (Math.random() - 0.5) * 2000, 
+                          y: (Math.random() - 0.5) * 2000,
+                          opacity: [1, 0],
+                          scale: [1, 0],
                         }}
-                        transition={{ duration: 2.5, ease: "easeOut", delay: Math.random() * 0.2 }}
+                        transition={{ duration: 1, ease: "easeOut", delay: 1 }}
                       />
                     ))}
                  </div>
               )}
 
-              {/* Phase 4: Reveal Text - Moved to Top to match final modal */}
-              {revealPhase === "reveal" && (
-                <motion.div
-                  className="absolute top-12 flex flex-col items-center z-50 w-full"
-                  initial={{ opacity: 0, y: -20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ type: "spring", bounce: 0.5 }}
-                >
-                   <h1 className="text-4xl font-bold flex items-center gap-2 mb-4 drop-shadow-lg text-white font-sans tracking-wide uppercase">
-                     It's a new {config.label}!
-                   </h1>
-                </motion.div>
-              )}
+
             </div>
           </motion.div>
         )}
