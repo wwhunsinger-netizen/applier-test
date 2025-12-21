@@ -589,27 +589,10 @@ export default function ClientDocumentsPage() {
              >
                 <div className="flex-1 p-12 overflow-y-auto">
                     {/* Simplified Content Preview */}
-                    <div className="max-w-2xl mx-auto space-y-8 blur-[0.5px]">
-                       {activeTab === 'resume' ? (
-                          <div className="space-y-4 text-gray-800">
-                            <div className="text-center pb-8 border-b">
-                              <h1 className="text-4xl font-bold text-gray-900">Dimas Gonzales</h1>
-                              <p className="text-xl text-gray-600 mt-2">Senior Software Engineer</p>
-                            </div>
-                            <div className="space-y-4">
-                              <h4 className="font-bold uppercase text-xs tracking-wider text-gray-500 border-b border-gray-200 pb-1">Work Experience</h4>
-                              <div className="mb-2">
-                                <div className="flex justify-between font-bold">
-                                  <span>Senior Software Engineer</span>
-                                  <span>2024 - Present</span>
-                                </div>
-                                <div className="italic text-gray-600">Geico (Remote)</div>
-                              </div>
-                              <ul className="list-disc list-inside space-y-2 text-sm text-gray-700">
-                                <li>Lead Engineer for the Billing Data Warehouse team.</li>
-                                <li>Enforced data quality and governance using SodaCL and DataHub.</li>
-                              </ul>
-                            </div>
+                    <div className={cn("mx-auto space-y-8", activeTab === "resume" ? "w-full" : "max-w-2xl blur-[0.5px]")}>
+                       {activeTab === "resume" ? (
+                          <div className="py-8 transform scale-90 origin-top flex justify-center w-full">
+                            {NEW_RESUME_CONTENT}
                           </div>
                        ) : (
                           <>
