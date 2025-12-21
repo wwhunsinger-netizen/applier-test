@@ -679,7 +679,7 @@ export default function ClientDocumentsPage() {
           <div className="flex-1 relative perspective-1000">
              <div className="flex gap-6 h-full">
                {/* Document Viewer Area */}
-               <div className="flex-1 relative h-full">
+               <div className="flex-1 relative h-full min-h-0">
                   <AnimatePresence mode="wait">
                     {!isFlipped ? (
                       <motion.div 
@@ -687,7 +687,7 @@ export default function ClientDocumentsPage() {
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.9 }}
-                        className="w-full h-full bg-white text-black p-12 shadow-xl rounded-lg overflow-y-auto"
+                        className="absolute inset-0 bg-white text-black p-12 shadow-xl rounded-lg overflow-y-auto"
                       >
                          {activeTab === 'resume' ? OLD_RESUME_CONTENT : (
                            <div className="space-y-6 font-serif text-gray-500 blur-[0.5px]">
@@ -705,7 +705,7 @@ export default function ClientDocumentsPage() {
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ duration: 0.5 }}
-                        className={cn("w-full h-full bg-white text-black shadow-2xl rounded-lg overflow-hidden relative flex flex-col")}
+                        className={cn("absolute inset-0 bg-white text-black shadow-2xl rounded-lg overflow-hidden flex flex-col")}
                       >
                          {/* Comments Overlay */}
                          {comments.map(comment => (
@@ -768,8 +768,8 @@ export default function ClientDocumentsPage() {
                </div>
 
                {/* Sidebar Actions */}
-               <div className="w-80 flex flex-col gap-4">
-                 <Card className="bg-[#111] border-white/10 flex-1">
+               <div className="w-80 flex flex-col gap-4 h-full min-h-0">
+                 <Card className="bg-[#111] border-white/10 flex-1 h-full">
                    <CardContent className="p-6 h-full flex flex-col justify-center items-center text-center space-y-6">
                       {!isFlipped ? (
                         <>
