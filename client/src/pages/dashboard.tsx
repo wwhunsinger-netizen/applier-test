@@ -25,23 +25,23 @@ export default function DashboardPage() {
     if (minutes >= 0 && minutes < 4 * 60) {
       setGreeting({
         text: "Hello, night owl",
-        style: "font-serif text-5xl font-normal tracking-wide",
-        icon: <Sparkles className="w-10 h-10 text-[#FF9E7D] mr-4 inline-block mb-2" />
+        style: "font-serif text-3xl font-normal tracking-wide flex items-center gap-2",
+        icon: <Sparkles className="w-6 h-6 text-[#FF9E7D] inline-block" />
       });
     } 
     // 4AM to 7:30AM (450 minutes)
     else if (minutes >= 4 * 60 && minutes <= 7 * 60 + 30) {
       setGreeting({
         text: "Early Bird gets the worm",
-        style: "font-serif text-5xl font-normal tracking-wide",
-        icon: <Sun className="w-10 h-10 text-yellow-400 mr-4 inline-block mb-2" />
+        style: "font-serif text-3xl font-normal tracking-wide flex items-center gap-2",
+        icon: <Sun className="w-6 h-6 text-yellow-400 inline-block" />
       });
     }
     // Default
     else {
       setGreeting({
-        text: "Dashboard",
-        style: "text-3xl font-bold tracking-tight text-white",
+        text: "Welcome back, Alex. Your command center is ready.",
+        style: "text-muted-foreground mt-1",
         icon: null
       });
     }
@@ -61,11 +61,11 @@ export default function DashboardPage() {
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h1 className={cn("flex items-center text-white", greeting?.style)}>
+        <h1 className="text-3xl font-bold tracking-tight text-white">Dashboard</h1>
+        <div className={cn("mt-1", greeting?.style)}>
           {greeting?.icon}
           {greeting?.text}
-        </h1>
-        <p className="text-muted-foreground mt-1">Welcome back, Alex. Your command center is ready.</p>
+        </div>
       </div>
 
       {/* Hero Stats Card */}
