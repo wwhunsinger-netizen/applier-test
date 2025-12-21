@@ -135,24 +135,37 @@ export default function ClientDocumentsPage() {
     }
   };
 
-  // PDF Viewer Component
-  const PDFViewer = ({ url, scale = 1.0 }: { url: string, scale?: number }) => (
-    <Document 
-      file={url} 
-      className="flex flex-col gap-8 items-center"
-      loading={<div className="text-gray-500 animate-pulse">Loading PDF...</div>}
-      error={<div className="text-red-500">Failed to load PDF. Please try again.</div>}
-    >
-      <Page pageNumber={1} scale={scale} renderTextLayer={false} renderAnnotationLayer={false} className="shadow-xl" width={816} />
-      <Page pageNumber={2} scale={scale} renderTextLayer={false} renderAnnotationLayer={false} className="shadow-xl" width={816} />
-    </Document>
-  );
+  const PDFViewer = ({ url, scale = 0.65 }: { url: string, scale?: number }) => {
+    const [numPages, setNumPages] = useState<number>(0);
+    
+    return (
+      <Document 
+        file={url} 
+        className="flex flex-col gap-8 items-center"
+        loading={<div className="text-gray-500 animate-pulse">Loading PDF...</div>}
+        error={<div className="text-red-500">Failed to load PDF. Please try again.</div>}
+        onLoadSuccess={({ numPages }) => setNumPages(numPages)}
+      >
+        {Array.from(new Array(numPages || 2), (_, index) => (
+          <Page 
+            key={`page_${index + 1}`}
+            pageNumber={index + 1} 
+            scale={scale} 
+            renderTextLayer={false} 
+            renderAnnotationLayer={false} 
+            className="shadow-xl" 
+            width={816} 
+          />
+        ))}
+      </Document>
+    );
+  };
 
   // Reconstruct OLD_RESUME_CONTENT with HTML and Red Pen Markups
   const OLD_RESUME_CONTENT = (
-    <div className="w-full min-h-full flex flex-col items-center gap-8 pb-20">
+    <div className="w-full min-h-full flex flex-col items-center gap-8 pb-20 origin-top" style={{ transform: !beforePdfUrl ? "scale(0.65)" : "none" }}>
       {beforePdfUrl ? (
-         <PDFViewer url={beforePdfUrl} scale={1.0} />
+         <PDFViewer url={beforePdfUrl} scale={0.65} />
       ) : (
       <div className="w-[8.5in] min-h-[11in] bg-white shadow-xl p-[1in] text-sm relative font-serif text-gray-800 shrink-0">
         {/* Red Pen Markups Overlay */}
@@ -261,9 +274,9 @@ export default function ClientDocumentsPage() {
 
 // Update the NEW_RESUME_CONTENT structure to look like a PDF viewer
   const NEW_RESUME_CONTENT = (
-    <div className="w-full min-h-full flex flex-col items-center gap-8 pb-20">
+    <div className="w-full min-h-full flex flex-col items-center gap-8 pb-20 origin-top" style={{ transform: !afterPdfUrl ? "scale(0.65)" : "none" }}>
       {afterPdfUrl ? (
-        <PDFViewer url={afterPdfUrl} scale={1.0} />
+        <PDFViewer url={afterPdfUrl} scale={0.65} />
       ) : (
         <>
       {/* Page 1 */}
@@ -676,7 +689,6 @@ export default function ClientDocumentsPage() {
                         exit={{ opacity: 0, scale: 0.9 }}
                         className="w-full h-full bg-white text-black p-12 shadow-xl rounded-lg overflow-y-auto"
                       >
-                         <h3 className="text-xl font-bold mb-8 border-b pb-2 text-gray-400">Old {config.label}</h3>
                          {activeTab === 'resume' ? OLD_RESUME_CONTENT : (
                            <div className="space-y-6 font-serif text-gray-500 blur-[0.5px]">
                              <p>John Doe <br/> Software Developer</p>
