@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion, AnimatePresence } from "framer-motion";
-import { FileText, Linkedin, Check, Lightbulb, RotateCw, CheckCircle2, Sparkles, MessageSquare, X, ArrowLeft, ArrowRight, Upload } from "lucide-react";
+import { FileText, Linkedin, Check, Lightbulb, RotateCw, CheckCircle2, Sparkles, MessageSquare, X, ArrowLeft, ArrowRight, Upload, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -187,6 +187,21 @@ export default function ClientDocumentsPage() {
   const handleRequestRevisions = () => {
     if (confirm("Request revisions based on your comments?")) {
       setRevisionStatus("requested");
+    }
+  };
+
+  const handleReset = () => {
+    if (confirm("Reset all uploaded PDFs and comments? This will clear the demo state.")) {
+      localStorage.removeItem("beforePdfUrl");
+      localStorage.removeItem("afterPdfUrl");
+      setBeforePdfUrl(null);
+      setAfterPdfUrl(null);
+      setComments([]);
+      setUnlockedDocs({ resume: false, "cover-letter": false, linkedin: false });
+      setIsFlipped(false);
+      setShowLargeReview(false);
+      setRevisionStatus("idle");
+      toast.success("Demo state reset successfully");
     }
   };
 
@@ -699,10 +714,19 @@ export default function ClientDocumentsPage() {
            </div>
            
            {/* Dev Tools: File Uploaders */}
-           <div className="flex gap-4">
+           <div className="flex gap-4 items-center">
+              <Button 
+                variant="ghost" 
+                size="icon"
+                className="text-gray-400 hover:text-red-400 hover:bg-red-900/20"
+                onClick={handleReset}
+                title="Reset Demo State"
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
               <div className="relative group">
-                 <Button variant="outline" className="border-white/10 hover:bg-white/10 text-gray-400 gap-2 relative z-10">
-                   <Upload className="w-4 h-4" /> Upload Old PDF
+                 <Button variant="outline" className={cn("border-white/10 hover:bg-white/10 gap-2 relative z-10", beforePdfUrl ? "text-green-400 border-green-500/30" : "text-gray-400")}>
+                   <Upload className="w-4 h-4" /> {beforePdfUrl ? "Old PDF Loaded" : "Upload Old PDF"}
                  </Button>
                  <input 
                    type="file" 
@@ -713,8 +737,8 @@ export default function ClientDocumentsPage() {
                  />
               </div>
               <div className="relative group">
-                 <Button variant="outline" className="border-white/10 hover:bg-white/10 text-gray-400 gap-2 relative z-10">
-                   <Upload className="w-4 h-4" /> Upload New PDF
+                 <Button variant="outline" className={cn("border-white/10 hover:bg-white/10 gap-2 relative z-10", afterPdfUrl ? "text-green-400 border-green-500/30" : "text-gray-400")}>
+                   <Upload className="w-4 h-4" /> {afterPdfUrl ? "New PDF Loaded" : "Upload New PDF"}
                  </Button>
                  <input 
                    type="file" 
