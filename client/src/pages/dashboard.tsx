@@ -5,15 +5,47 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Zap, Clock, TrendingUp, CheckCircle2, AlertCircle, ArrowRight, Flame, Trophy, Briefcase } from "lucide-react";
+import { Zap, Clock, TrendingUp, CheckCircle2, AlertCircle, ArrowRight, Flame, Trophy, Briefcase, Sparkles, Sun } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { HoverCardWrapper } from "@/components/hover-card-wrapper";
 import { useUser } from "@/lib/userContext";
 import AdminDashboardPage from "./admin/dashboard";
 import ClientOverviewPage from "./client/overview";
+import { useState, useEffect } from "react";
 
 export default function DashboardPage() {
   const { currentUser } = useUser();
+  const [greeting, setGreeting] = useState<{text: string, style: string, icon: React.ReactNode | null} | null>(null);
+
+  useEffect(() => {
+    const now = new Date();
+    const minutes = now.getHours() * 60 + now.getMinutes();
+    
+    // Midnight (00:00) to 4AM (04:00)
+    if (minutes >= 0 && minutes < 4 * 60) {
+      setGreeting({
+        text: "Hello, night owl",
+        style: "font-serif text-5xl font-normal tracking-wide",
+        icon: <Sparkles className="w-10 h-10 text-[#FF9E7D] mr-4 inline-block mb-2" />
+      });
+    } 
+    // 4AM to 7:30AM (450 minutes)
+    else if (minutes >= 4 * 60 && minutes <= 7 * 60 + 30) {
+      setGreeting({
+        text: "Early Bird gets the worm",
+        style: "font-serif text-5xl font-normal tracking-wide",
+        icon: <Sun className="w-10 h-10 text-yellow-400 mr-4 inline-block mb-2" />
+      });
+    }
+    // Default
+    else {
+      setGreeting({
+        text: "Dashboard",
+        style: "text-3xl font-bold tracking-tight text-white",
+        icon: null
+      });
+    }
+  }, []);
 
   if (currentUser.role === "Admin") {
     return <AdminDashboardPage />;
@@ -29,7 +61,10 @@ export default function DashboardPage() {
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold tracking-tight text-white">Dashboard</h1>
+        <h1 className={cn("flex items-center text-white", greeting?.style)}>
+          {greeting?.icon}
+          {greeting?.text}
+        </h1>
         <p className="text-muted-foreground mt-1">Welcome back, Alex. Your command center is ready.</p>
       </div>
 
