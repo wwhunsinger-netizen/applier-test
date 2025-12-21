@@ -119,6 +119,15 @@ export default function ClientDocumentsPage() {
   };
 
   const handleImprove = () => {
+    // For non-resume tabs, skip the long animation
+    if (activeTab !== "resume") {
+      setIsFlipped(true);
+      setShowLargeReview(true);
+      setIsRevealing(false);
+      setRevealPhase("intro");
+      return;
+    }
+
     setIsRevealing(true);
     setRevealPhase("intro");
     
@@ -859,9 +868,9 @@ export default function ClientDocumentsPage() {
 
                          <div className="bg-[#111] border-b border-white/10 p-4 flex justify-between items-center shrink-0">
                            <div className="flex items-center gap-4">
-                             <div className="bg-red-600 text-white px-4 py-1 rounded font-bold uppercase tracking-wider text-sm flex items-center gap-2">
+                             <div className={cn("text-white px-4 py-1 rounded font-bold uppercase tracking-wider text-sm flex items-center gap-2", config.bg)}>
                                <Sparkles className="w-4 h-4" />
-                               Improved Resume
+                               Improved {config.label}
                              </div>
                              <Button 
                                variant="ghost" 
