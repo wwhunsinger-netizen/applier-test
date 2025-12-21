@@ -511,8 +511,9 @@ export default function ClientDocumentsPage() {
                     className="w-[300px] h-[400px] bg-white rounded shadow-2xl z-10 relative flex items-center justify-center"
                     initial={{ y: 500, scale: 0.5, filter: "brightness(1)", opacity: 0 }}
                     animate={
-                      revealPhase === "float" ? { y: -50, scale: 1.1, filter: "brightness(1.5)", opacity: 1 } :
+                      revealPhase === "float" ? { y: 0, scale: 1.1, filter: "brightness(1.5)", opacity: 1 } :
                       revealPhase === "distort" ? { 
+                        y: 0,
                         scaleY: [1, 1.5, 0.5, 1.2, 0.8, 1.5], 
                         scaleX: [1, 0.6, 1.4, 0.8, 1.2, 0.6],
                         rotate: [0, 5, -5, 10, -10, 0],
@@ -520,6 +521,7 @@ export default function ClientDocumentsPage() {
                         opacity: 1
                       } : 
                       revealPhase === "explode" ? {
+                        y: 0,
                         scale: [1.5, 0, 10], // Implode then Explode
                         opacity: [1, 0.5, 0],
                         filter: "brightness(10)"
