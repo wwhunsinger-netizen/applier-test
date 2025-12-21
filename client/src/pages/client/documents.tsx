@@ -486,6 +486,23 @@ export default function ClientDocumentsPage() {
                 </Button>
               </div>
 
+              {/* Phase 1: Intro Text - "What? Your {label} is evolving!" */}
+              <AnimatePresence>
+                {["intro", "float", "distort"].includes(revealPhase) && (
+                  <motion.h2
+                    className={cn("text-4xl md:text-6xl font-bold text-white tracking-widest uppercase z-20 absolute", config.text)}
+                    initial={{ y: 0, scale: 0.8, opacity: 0 }}
+                    animate={
+                      revealPhase === "intro" ? { y: 0, scale: 1, opacity: 1 } :
+                      { y: -300, scale: 0.8, opacity: 0.8 }
+                    }
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 1 }}
+                  >
+                    What? Your {config.label} is evolving!
+                  </motion.h2>
+                )}
+              </AnimatePresence>
 
               {/* Document Evolution */}
               <AnimatePresence>
