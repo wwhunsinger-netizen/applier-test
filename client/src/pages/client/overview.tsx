@@ -1,7 +1,7 @@
 import { MOCK_CLIENT_STATS, MOCK_CLIENT_WEEKLY_PROGRESS, MOCK_CLIENT_ACTIVITY_FEED, MOCK_CLIENT_PIPELINE, MOCK_CLIENT_INTERVIEWS } from "@/lib/mockData";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Send, XCircle, Calendar, ChevronDown, ChevronUp, TrendingUp, Clock, CheckCircle2, ArrowRight, Flame } from "lucide-react";
-import { useState } from "react";
+import { Send, XCircle, Calendar, ChevronDown, ChevronUp, TrendingUp, Clock, CheckCircle2, ArrowRight, Flame, Sparkles, Sun } from "lucide-react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useUser } from "@/lib/userContext";
@@ -12,6 +12,37 @@ import { Button } from "@/components/ui/button";
 export default function ClientOverviewPage() {
   const [isAppsExpanded, setIsAppsExpanded] = useState(false);
   const { currentUser } = useUser();
+  const [greeting, setGreeting] = useState<{text: string, style: string, icon: React.ReactNode | null} | null>(null);
+
+  useEffect(() => {
+    const now = new Date();
+    const minutes = now.getHours() * 60 + now.getMinutes();
+    
+    // Midnight (00:00) to 4AM (04:00)
+    if (minutes >= 0 && minutes < 4 * 60) {
+      setGreeting({
+        text: "Hello, night owl",
+        style: "font-serif text-5xl font-normal tracking-wide",
+        icon: <Sparkles className="w-10 h-10 text-[#FF9E7D] mr-4 inline-block mb-2" /> // Color picked from screenshot approximation
+      });
+    } 
+    // 4AM to 7:30AM (450 minutes)
+    else if (minutes >= 4 * 60 && minutes <= 7 * 60 + 30) {
+      setGreeting({
+        text: "Early Bird gets the worm",
+        style: "font-serif text-5xl font-normal tracking-wide",
+        icon: <Sun className="w-10 h-10 text-yellow-400 mr-4 inline-block mb-2" />
+      });
+    }
+    // Default
+    else {
+      setGreeting({
+        text: `Welcome back, ${currentUser.name.split(' ')[0]}`,
+        style: "text-3xl font-bold tracking-tight",
+        icon: null
+      });
+    }
+  }, [currentUser]);
   
   const nextInterview = MOCK_CLIENT_INTERVIEWS.find(i => new Date(i.date) > new Date()) || MOCK_CLIENT_INTERVIEWS[0];
 
@@ -19,7 +50,10 @@ export default function ClientOverviewPage() {
     <div className="space-y-8 pb-10">
       {/* Welcome Section */}
       <div>
-        <h1 className="text-3xl font-bold tracking-tight text-white">Welcome back, {currentUser.name.split(' ')[0]}</h1>
+        <h1 className={cn("text-white flex items-center", greeting?.style)}>
+          {greeting?.icon}
+          {greeting?.text}
+        </h1>
         <p className="text-muted-foreground mt-1 text-lg">Interviews are rolling in - keep the momentum!</p>
       </div>
 
