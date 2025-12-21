@@ -837,61 +837,6 @@ export default function ClientDocumentsPage() {
                         transition={{ duration: 0.5 }}
                         className={cn("absolute inset-0 bg-[#111] text-white shadow-2xl rounded-lg overflow-hidden flex flex-col")}
                       >
-                         {/* Active Comment Draft Overlay */}
-                         {activeCommentDraft && (
-                           <div 
-                             className="absolute right-4 z-50 w-[300px] bg-white rounded-lg shadow-2xl border border-gray-200 overflow-hidden animate-in fade-in slide-in-from-right-4 duration-200"
-                             style={{ top: activeCommentDraft.top }}
-                           >
-                             <div className="bg-gray-50 px-3 py-2 border-b border-gray-100 flex justify-between items-center">
-                               <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Add Feedback</span>
-                               <Button variant="ghost" size="icon" className="h-6 w-6 text-gray-400 hover:text-gray-600" onClick={handleCancelComment}>
-                                 <X className="w-3 h-3" />
-                               </Button>
-                             </div>
-                             <div className="p-3">
-                               <Textarea 
-                                 autoFocus
-                                 placeholder="What would you like to change?" 
-                                 className="min-h-[80px] text-sm bg-transparent border-gray-200 focus-visible:ring-offset-0 text-gray-900 resize-none mb-3"
-                                 value={activeCommentDraft.text}
-                                 onChange={(e) => setActiveCommentDraft({...activeCommentDraft, text: e.target.value})}
-                                 onKeyDown={(e) => {
-                                   if (e.key === 'Enter' && !e.shiftKey) {
-                                     e.preventDefault();
-                                     handleSaveComment();
-                                   }
-                                   if (e.key === 'Escape') {
-                                     handleCancelComment();
-                                   }
-                                 }}
-                               />
-                               <div className="flex justify-end gap-2">
-                                 <Button variant="ghost" size="sm" onClick={handleCancelComment} className="text-gray-500 hover:text-gray-700 h-8">
-                                   Cancel
-                                 </Button>
-                                 <Button size="sm" onClick={handleSaveComment} className="bg-blue-600 hover:bg-blue-700 h-8">
-                                   Post Comment
-                                 </Button>
-                               </div>
-                             </div>
-                           </div>
-                         )}
-
-                         {/* Comments Overlay */}
-                         {comments.map(comment => (
-                           <div 
-                             key={comment.id} 
-                             className="absolute right-4 z-10 bg-yellow-100 border border-yellow-300 p-2 rounded shadow-lg max-w-[200px]"
-                             style={{ top: comment.top }}
-                           >
-                             <div className="flex items-start gap-2">
-                               <MessageSquare className="w-4 h-4 text-yellow-600 mt-1 shrink-0" />
-                               <p className="text-xs text-yellow-900">{comment.text}</p>
-                             </div>
-                           </div>
-                         ))}
-
                          <div className="bg-[#111] border-b border-white/10 p-4 flex justify-between items-center shrink-0">
                            <div className="flex items-center gap-4">
                              <div className={cn("text-white px-4 py-1 rounded font-bold uppercase tracking-wider text-sm flex items-center gap-2", config.bg)}>
@@ -917,6 +862,61 @@ export default function ClientDocumentsPage() {
                          </div>
                          
                          <div className="flex-1 overflow-y-auto p-8 bg-[#111] relative cursor-text scroll-smooth">
+                           {/* Active Comment Draft Overlay */}
+                           {activeCommentDraft && (
+                             <div 
+                               className="absolute right-4 z-50 w-[300px] bg-white rounded-lg shadow-2xl border border-gray-200 overflow-hidden animate-in fade-in slide-in-from-right-4 duration-200"
+                               style={{ top: activeCommentDraft.top }}
+                             >
+                               <div className="bg-gray-50 px-3 py-2 border-b border-gray-100 flex justify-between items-center">
+                                 <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Add Feedback</span>
+                                 <Button variant="ghost" size="icon" className="h-6 w-6 text-gray-400 hover:text-gray-600" onClick={handleCancelComment}>
+                                   <X className="w-3 h-3" />
+                                 </Button>
+                               </div>
+                               <div className="p-3">
+                                 <Textarea 
+                                   autoFocus
+                                   placeholder="What would you like to change?" 
+                                   className="min-h-[80px] text-sm bg-transparent border-gray-200 focus-visible:ring-offset-0 text-gray-900 resize-none mb-3"
+                                   value={activeCommentDraft.text}
+                                   onChange={(e) => setActiveCommentDraft({...activeCommentDraft, text: e.target.value})}
+                                   onKeyDown={(e) => {
+                                     if (e.key === 'Enter' && !e.shiftKey) {
+                                       e.preventDefault();
+                                       handleSaveComment();
+                                     }
+                                     if (e.key === 'Escape') {
+                                       handleCancelComment();
+                                     }
+                                   }}
+                                 />
+                                 <div className="flex justify-end gap-2">
+                                   <Button variant="ghost" size="sm" onClick={handleCancelComment} className="text-gray-500 hover:text-gray-700 h-8">
+                                     Cancel
+                                   </Button>
+                                   <Button size="sm" onClick={handleSaveComment} className="bg-blue-600 hover:bg-blue-700 h-8">
+                                     Post Comment
+                                   </Button>
+                                 </div>
+                               </div>
+                             </div>
+                           )}
+
+                           {/* Comments Overlay */}
+                           {comments.map(comment => (
+                             <div 
+                               key={comment.id} 
+                               className="absolute right-4 z-10 bg-yellow-100 border border-yellow-300 p-2 rounded shadow-lg max-w-[200px]"
+                               style={{ top: comment.top }}
+                             >
+                               <div className="flex items-start gap-2">
+                                 <MessageSquare className="w-4 h-4 text-yellow-600 mt-1 shrink-0" />
+                                 <p className="text-xs text-yellow-900">{comment.text}</p>
+                               </div>
+                             </div>
+                           ))}
+
                            {/* Hint Overlay for Comments */}
                            {!isApproved && revisionStatus !== 'requested' && comments.length === 0 && !showLargeReview && (
                              <div className="sticky top-4 left-full -ml-[250px] z-50 bg-blue-50 text-blue-600 px-3 py-2 rounded text-xs border border-blue-200 animate-pulse shadow-sm w-fit">
