@@ -19,7 +19,30 @@ export function UserProvider({ children }: { children: ReactNode }) {
   });
 
   const login = (email: string) => {
-    const user = MOCK_USERS.find(u => u.email === email);
+    let user = MOCK_USERS.find(u => u.email === email);
+    
+    // If not found in mocks, check local storage for admin created clients
+    if (!user) {
+      try {
+        const savedClientsStr = localStorage.getItem("admin_clients");
+        if (savedClientsStr) {
+          const savedClients = JSON.parse(savedClientsStr);
+          const foundClient = savedClients.find((c: any) => c.email === email);
+          if (foundClient) {
+            user = {
+              id: foundClient.id,
+              name: foundClient.name,
+              email: foundClient.email,
+              role: "Client", // Force role to Client for these users
+              avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(foundClient.name)}&background=random` // Generate avatar
+            };
+          }
+        }
+      } catch (e) {
+        console.error("Error reading admin_clients", e);
+      }
+    }
+
     if (user) {
       setCurrentUser(user);
       localStorage.setItem("jumpseat_user_email", email);

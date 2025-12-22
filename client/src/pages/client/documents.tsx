@@ -12,6 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Document, Page, pdfjs } from 'react-pdf';
 import { toast } from "sonner";
 import noCoverLetterImg from "@assets/No_cover_letter_1766359371139.png";
+import { useUser } from "@/lib/userContext";
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   'pdfjs-dist/build/pdf.worker.min.mjs',
@@ -74,8 +75,35 @@ const PDFViewer = ({ url, scale = 0.65 }: { url: string, scale?: number }) => {
 };
 
 export default function ClientDocumentsPage() {
+  const { currentUser } = useUser();
   const [activeTab, setActiveTab] = useState<DocType>("resume");
   const [isFlipped, setIsFlipped] = useState(false);
+  
+  // Load uploaded files from the Admin Context (localStorage)
+  const [uploadedFiles, setUploadedFiles] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    // Refresh files when the user or component mounts
+    const loadFiles = () => {
+      try {
+        const saved = localStorage.getItem(`client_files_${currentUser.id}`);
+        if (saved) {
+          setUploadedFiles(JSON.parse(saved));
+        } else {
+          setUploadedFiles({});
+        }
+      } catch (e) {
+        console.error("Error loading files", e);
+      }
+    };
+    
+    loadFiles();
+    
+    // Optional: Listen for storage events if we want real-time updates across tabs
+    window.addEventListener('storage', loadFiles);
+    return () => window.removeEventListener('storage', loadFiles);
+  }, [currentUser.id]);
+
   const [approvedDocs, setApprovedDocs] = useState<Record<DocType, boolean>>({
     resume: false,
     "cover-letter": false,
@@ -232,6 +260,21 @@ export default function ClientDocumentsPage() {
 
   const handleImprove = () => {
     // For non-resume tabs, skip the long animation
+    // Only proceed if we have an improved version uploaded
+    const fileKey = activeTab === 'resume' ? 'resume_improved' : 
+                    activeTab === 'cover-letter' ? 'cover_letter_A' : // Defaulting to A for now
+                    'linkedin_A'; // Defaulting to A for now
+                    
+    // Note: The logic below is a bit simplified for the demo. 
+    // In a real app we'd check specific versions. 
+    // For this prototype, if ANY improved resume exists, we treat it as valid.
+    const hasImproved = uploadedFiles['resume_improved'] || uploadedFiles['cover_letter_A'] || uploadedFiles['linkedin_A'];
+    
+    if (activeTab === "resume" && !uploadedFiles['resume_improved']) {
+      toast.error("No improved resume available yet.");
+      return;
+    }
+
     if (activeTab !== "resume") {
       setIsFlipped(true);
       setShowLargeReview(true);
