@@ -47,6 +47,10 @@ export default function ClientDocumentsPage() {
     linkedin: false
   });
   
+  // New State for Revision Request
+  const [isRequestingRevisions, setIsRequestingRevisions] = useState(false);
+  const [revisionRequestText, setRevisionRequestText] = useState("");
+
   const animationTimeouts = useRef<NodeJS.Timeout[]>([]);
 
   // Dev State for PDF Uploads
@@ -100,7 +104,7 @@ export default function ClientDocumentsPage() {
 
   // Mock highlight logic
   const handleTextClick = (e: React.MouseEvent, top: string) => {
-    if (!isFlipped || isApproved || revisionStatus === 'requested') return;
+    if (!isFlipped || isApproved || revisionStatus === 'requested' || isRequestingRevisions) return;
     
     // If we're already editing this one, don't do anything
     if (activeCommentDraft?.top === top) return;
@@ -121,6 +125,40 @@ export default function ClientDocumentsPage() {
 
   const handleCancelComment = () => {
     setActiveCommentDraft(null);
+  };
+  
+  const handleStartRevisionRequest = () => {
+    setIsRequestingRevisions(true);
+  };
+
+  const handleCancelRevisionRequest = () => {
+    setIsRequestingRevisions(false);
+    setRevisionRequestText("");
+  };
+
+  const handleSubmitRevisions = () => {
+    if (!revisionRequestText.trim() && comments.length === 0) {
+      toast.error("No feedback provided", {
+        description: "Please describe what changes you'd like to see."
+      });
+      return;
+    }
+    
+    setRevisionStatus('requested');
+    setIsRequestingRevisions(false);
+    
+    // Add the general feedback as a "comment" if provided
+    if (revisionRequestText.trim()) {
+      setComments(prev => [...prev, {
+        id: Date.now(),
+        top: "0%", // General comment
+        text: revisionRequestText
+      }]);
+    }
+    
+    toast.success("Revisions Requested", {
+      description: "Wilson has been notified and will update your documents."
+    });
   };
 
   const handleImprove = () => {
@@ -1033,7 +1071,7 @@ export default function ClientDocumentsPage() {
                                  <Button size="lg" className="w-full bg-green-600 hover:bg-green-700 font-bold h-12" onClick={handleApprove}>
                                    <Check className="w-5 h-5 mr-2" /> Approve This Version
                                  </Button>
-                                 <Button variant="outline" className="w-full border-white/10 hover:bg-white/5" onClick={handleRequestRevisions}>
+                                 <Button variant="outline" className="w-full border-white/10 hover:bg-white/5" onClick={handleStartRevisionRequest}>
                                    Request Revisions
                                  </Button>
                                </div>
@@ -1049,6 +1087,33 @@ export default function ClientDocumentsPage() {
                             </>
                           )
                         )
+                      )}
+                      
+                      {/* Revision Request Text Area Mode */}
+                      {isRequestingRevisions && !isApproved && revisionStatus !== 'requested' && (
+                        <div className="absolute inset-0 z-20 bg-[#111] p-6 flex flex-col animate-in fade-in duration-200">
+                          <div className="mb-4">
+                            <h3 className="text-xl font-bold text-white mb-1">Request Revisions</h3>
+                            <p className="text-sm text-gray-400">Describe what changes you'd like to see.</p>
+                          </div>
+                          
+                          <Textarea 
+                            className="flex-1 bg-white/5 border-white/10 text-white resize-none mb-4 focus-visible:ring-offset-0 placeholder:text-gray-600"
+                            placeholder="e.g. Can you emphasize my leadership experience more? Also fix the typo in the first paragraph..."
+                            value={revisionRequestText}
+                            onChange={(e) => setRevisionRequestText(e.target.value)}
+                            autoFocus
+                          />
+                          
+                          <div className="space-y-3">
+                             <Button size="lg" className="w-full bg-blue-600 hover:bg-blue-700 font-bold h-12" onClick={handleSubmitRevisions}>
+                               Submit Revisions
+                             </Button>
+                             <Button variant="ghost" className="w-full text-gray-400 hover:text-white" onClick={handleCancelRevisionRequest}>
+                               Cancel
+                             </Button>
+                          </div>
+                        </div>
                       )}
                    </CardContent>
                  </Card>
