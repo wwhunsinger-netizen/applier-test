@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,12 +11,47 @@ import { MOCK_USERS } from "@/lib/mockData";
 import { useUser } from "@/lib/userContext";
 import { cn } from "@/lib/utils";
 
+// Helper interface for locally stored clients
+interface StoredClient {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+}
+
 export default function LoginPage() {
   const [, setLocation] = useLocation();
   const { login } = useUser();
   const [isLoading, setIsLoading] = useState(false);
   const [showAppLoader, setShowAppLoader] = useState(false);
   const [email, setEmail] = useState("admin@jumpseat.com");
+  
+  // Combine MOCK_USERS with locally stored clients for demo purposes
+  const [demoUsers, setDemoUsers] = useState(MOCK_USERS);
+
+  useEffect(() => {
+    try {
+      const savedClientsStr = localStorage.getItem("admin_clients");
+      if (savedClientsStr) {
+        const savedClients = JSON.parse(savedClientsStr);
+        const newDemoUsers = savedClients.map((client: StoredClient) => ({
+          id: client.id,
+          name: client.name,
+          email: client.email,
+          role: "Client",
+          avatar: null // Default avatar logic handles null
+        }));
+        
+        // Filter out any duplicates if they exist in MOCK_USERS (though IDs should be different)
+        const existingIds = new Set(MOCK_USERS.map(u => u.id));
+        const uniqueNewUsers = newDemoUsers.filter((u: any) => !existingIds.has(u.id));
+        
+        setDemoUsers([...MOCK_USERS, ...uniqueNewUsers]);
+      }
+    } catch (e) {
+      console.error("Failed to load local clients for demo login", e);
+    }
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -101,8 +136,8 @@ export default function LoginPage() {
           {/* Demo Accounts */}
           <div className="mt-8 pt-6 border-t border-white/5 space-y-3">
             <p className="text-xs text-muted-foreground text-center mb-2">Demo Accounts (Click to fill)</p>
-            <div className="grid gap-2">
-              {MOCK_USERS.map((user) => (
+            <div className="grid gap-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+              {demoUsers.map((user) => (
                 <button
                   key={user.id}
                   type="button"

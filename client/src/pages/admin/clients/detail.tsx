@@ -125,20 +125,24 @@ export default function AdminClientDetailPage() {
             <Card className="bg-[#111] border-white/10">
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="text-lg">Improved Resume</CardTitle>
-                {client.status === 'action_needed' ? (
-                  <div className="flex items-center gap-2">
-                    <Badge variant="destructive" className="bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500/20">Needs Revision</Badge>
-                    <Button 
-                      size="sm" 
-                      variant="outline" 
-                      className="h-6 text-xs border-red-500/30 text-red-400 hover:text-red-300 hover:bg-red-500/10 hover:border-red-500/50"
-                      onClick={() => setIsCommentsOpen(true)}
-                    >
-                      View {client.commentsCount} Comments
-                    </Button>
-                  </div>
+                {uploadedFiles['resume_improved'] ? (
+                  client.status === 'action_needed' ? (
+                    <div className="flex items-center gap-2">
+                      <Badge variant="destructive" className="bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500/20">Needs Revision</Badge>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="h-6 text-xs border-red-500/30 text-red-400 hover:text-red-300 hover:bg-red-500/10 hover:border-red-500/50"
+                        onClick={() => setIsCommentsOpen(true)}
+                      >
+                        View {client.commentsCount} Comments
+                      </Button>
+                    </div>
+                  ) : (
+                    <Badge variant="outline" className="bg-yellow-500/10 text-yellow-500 border-yellow-500/20">Pending Review</Badge>
+                  )
                 ) : (
-                  <Badge variant="outline" className="bg-yellow-500/10 text-yellow-500 border-yellow-500/20">Pending Review</Badge>
+                  <Badge variant="outline" className="bg-white/5 text-muted-foreground border-white/10">Not Uploaded</Badge>
                 )}
               </CardHeader>
               <CardContent className="space-y-4">
