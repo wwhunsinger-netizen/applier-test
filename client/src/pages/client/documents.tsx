@@ -157,34 +157,6 @@ export default function ClientDocumentsPage() {
     }
   }, [uploadedFiles, activeTab]);
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'before' | 'after') => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const result = reader.result as string;
-        if (type === 'before') {
-          setBeforePdfUrl(result);
-          try {
-            localStorage.setItem("beforePdfUrl", result);
-          } catch (e) {
-            console.error("Storage quota exceeded", e);
-            toast.error("File too large to save for next visit, but loaded for this session.");
-          }
-        } else {
-          setAfterPdfUrl(result);
-          try {
-            localStorage.setItem("afterPdfUrl", result);
-          } catch (e) {
-            console.error("Storage quota exceeded", e);
-            toast.error("File too large to save for next visit, but loaded for this session.");
-          }
-        }
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
   // Reset states when changing tabs, but check if already unlocked
   useEffect(() => {
     // Always reset revision request state when changing tabs
@@ -358,22 +330,6 @@ export default function ClientDocumentsPage() {
   const handleRequestRevisions = () => {
     if (confirm("Request revisions based on your comments?")) {
       setRevisionStatus(prev => ({ ...prev, [activeTab]: 'requested' }));
-    }
-  };
-
-  const handleReset = () => {
-    if (confirm("Reset all uploaded PDFs and comments? This will clear the demo state.")) {
-      localStorage.removeItem("beforePdfUrl");
-      localStorage.removeItem("afterPdfUrl");
-      setBeforePdfUrl(null);
-      setAfterPdfUrl(null);
-      setComments({ resume: [], "cover-letter": [], linkedin: [] });
-      setUnlockedDocs({ resume: false, "cover-letter": false, linkedin: false });
-      setApprovedDocs({ resume: false, "cover-letter": false, linkedin: false });
-      setIsFlipped(false);
-      setShowLargeReview(false);
-      setRevisionStatus({ resume: "idle", "cover-letter": "idle", linkedin: "idle" });
-      toast.success("Demo state reset successfully");
     }
   };
 
@@ -925,44 +881,6 @@ export default function ClientDocumentsPage() {
              <p className="text-muted-foreground mt-1">Approve your tailored application materials.</p>
            </div>
            
-           {/* Dev Tools: File Uploaders */}
-           <div className="flex gap-4 items-center">
-              <Button 
-                variant="ghost" 
-                size="icon"
-                className="text-gray-400 hover:text-red-400 hover:bg-red-900/20"
-                onClick={handleReset}
-                title="Reset Demo State"
-              >
-                <Trash2 className="w-4 h-4" />
-              </Button>
-              <div className="relative group">
-                 <Button variant="outline" className={cn("border-white/10 hover:bg-white/10 gap-2 relative z-10", beforePdfUrl ? "text-green-400 border-green-500/30" : "text-gray-400")}>
-                   <Upload className="w-4 h-4" /> {beforePdfUrl ? "Old PDF Loaded" : "Upload Old PDF"}
-                 </Button>
-                 <input 
-                   key={beforePdfUrl ? "loaded" : "empty"} // Key forces re-render when state changes
-                   type="file" 
-                   accept="application/pdf" 
-                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
-                   onChange={(e) => handleFileUpload(e, 'before')}
-                   title="Upload Old PDF"
-                 />
-              </div>
-              <div className="relative group">
-                 <Button variant="outline" className={cn("border-white/10 hover:bg-white/10 gap-2 relative z-10", afterPdfUrl ? "text-green-400 border-green-500/30" : "text-gray-400")}>
-                   <Upload className="w-4 h-4" /> {afterPdfUrl ? "New PDF Loaded" : "Upload New PDF"}
-                 </Button>
-                 <input 
-                   key={afterPdfUrl ? "loaded" : "empty"} // Key forces re-render when state changes
-                   type="file" 
-                   accept="application/pdf" 
-                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
-                   onChange={(e) => handleFileUpload(e, 'after')}
-                   title="Upload New PDF"
-                 />
-              </div>
-           </div>
         </div>
       </div>
 
