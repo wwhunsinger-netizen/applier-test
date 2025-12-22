@@ -21,7 +21,19 @@ export default function AdminClientDetailPage() {
     return saved ? JSON.parse(saved) : [];
   });
 
-  const client = clients.find(c => c.id === clientId);
+  const handleDeleteClient = () => {
+    if (confirm("Are you sure you want to delete this client? This action cannot be undone and will remove all associated documents and data.")) {
+      // 1. Remove client from list
+      const newClients = clients.filter(c => c.id !== clientId);
+      localStorage.setItem("admin_clients", JSON.stringify(newClients));
+
+      // 2. Remove associated files
+      localStorage.removeItem(`client_files_${clientId}`);
+      
+      // 3. Navigate back to list
+      window.location.href = "/admin/clients";
+    }
+  };
 
   if (!client) {
     return (
@@ -81,7 +93,7 @@ export default function AdminClientDetailPage() {
             <h1 className="text-3xl font-bold tracking-tight text-white">{client.name}</h1>
             <p className="text-muted-foreground">{client.email}</p>
           </div>
-          <Button variant="destructive" size="sm">Delete Client</Button>
+          <Button variant="destructive" size="sm" onClick={handleDeleteClient}>Delete Client</Button>
         </div>
       </div>
 
