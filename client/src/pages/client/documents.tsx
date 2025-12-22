@@ -21,9 +21,30 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
 type DocType = "resume" | "cover-letter" | "linkedin";
 
 const DOC_CONFIG = {
-  resume: { color: "red", label: "Resume", bg: "bg-red-500", text: "text-red-500", border: "border-red-500" },
-  "cover-letter": { color: "purple", label: "Cover Letter", bg: "bg-purple-500", text: "text-purple-500", border: "border-purple-500" },
-  linkedin: { color: "blue", label: "LinkedIn Profile", bg: "bg-blue-500", text: "text-blue-500", border: "border-blue-500" },
+  resume: { 
+    color: "red", 
+    label: "Resume", 
+    bg: "bg-red-500", 
+    text: "text-red-500", 
+    border: "border-red-500",
+    placeholder: "e.g. Can you emphasize my leadership experience more? Also fix the typo in the first paragraph..."
+  },
+  "cover-letter": { 
+    color: "purple", 
+    label: "Cover Letter", 
+    bg: "bg-purple-500", 
+    text: "text-purple-500", 
+    border: "border-purple-500",
+    placeholder: "e.g. Can you adjust the opening paragraph to mention my passion for fintech? Make the closing stronger..."
+  },
+  linkedin: { 
+    color: "blue", 
+    label: "LinkedIn Profile", 
+    bg: "bg-blue-500", 
+    text: "text-blue-500", 
+    border: "border-blue-500",
+    placeholder: "e.g. Can you make the headline more catchy? Add more keywords to the skills section for SEO..."
+  },
 };
 
 export default function ClientDocumentsPage() {
@@ -1095,7 +1116,7 @@ export default function ClientDocumentsPage() {
                           
                           <Textarea 
                             className="flex-1 bg-white/5 border-white/10 text-white resize-none mb-4 focus-visible:ring-offset-0 placeholder:text-gray-600"
-                            placeholder="e.g. Can you emphasize my leadership experience more? Also fix the typo in the first paragraph..."
+                            placeholder={config.placeholder}
                             value={revisionRequestText}
                             onChange={(e) => setRevisionRequestText(e.target.value)}
                             autoFocus
