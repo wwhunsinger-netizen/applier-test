@@ -54,12 +54,23 @@ export default function ClientOverviewPage() {
   
   // Check completion status from localStorage
   const [isCriteriaCompleted, setIsCriteriaCompleted] = useState(false);
+  const [isCriteriaReady, setIsCriteriaReady] = useState(false);
 
   useEffect(() => {
-    if (localStorage.getItem('jobCriteriaCompleted') === 'true') {
-      setIsCriteriaCompleted(true);
+    // For existing mock users (not new clients), assume criteria is ready
+    if (!isNewClient) {
+      setIsCriteriaReady(true);
+      if (localStorage.getItem('jobCriteriaCompleted') === 'true') {
+        setIsCriteriaCompleted(true);
+      }
+    } else {
+      // For new clients, check specific flags
+      const ready = localStorage.getItem(`jobCriteriaReady_${currentUser.id}`) === 'true';
+      const completed = localStorage.getItem(`jobCriteriaCompleted_${currentUser.id}`) === 'true';
+      setIsCriteriaReady(ready);
+      setIsCriteriaCompleted(completed);
     }
-  }, []);
+  }, [currentUser.id, isNewClient]);
   
   const nextInterview = MOCK_CLIENT_INTERVIEWS.find(i => new Date(i.date) > new Date()) || MOCK_CLIENT_INTERVIEWS[0];
 
@@ -91,30 +102,47 @@ export default function ClientOverviewPage() {
               </Card>
             </Link>
 
-            <Link href={isCriteriaCompleted ? "#" : "/client/job-criteria"}>
-              <Card className={cn(
-                "bg-[#111] border-white/10 transition-all h-full relative overflow-hidden",
-                isCriteriaCompleted ? "opacity-80" : "hover:border-primary/50 cursor-pointer group"
-              )}>
-                {isCriteriaCompleted && (
-                  <div className="absolute inset-0 bg-green-500/10 z-0 flex items-center justify-center">
-                    <div className="bg-green-500/20 p-4 rounded-full backdrop-blur-sm border border-green-500/30">
-                        <CheckCircle2 className="w-12 h-12 text-green-500" />
+            {isCriteriaReady ? (
+              <Link href={isCriteriaCompleted ? "#" : "/client/job-criteria"}>
+                <Card className={cn(
+                  "bg-[#111] border-white/10 transition-all h-full relative overflow-hidden",
+                  isCriteriaCompleted ? "opacity-80" : "hover:border-primary/50 cursor-pointer group"
+                )}>
+                  {isCriteriaCompleted && (
+                    <div className="absolute inset-0 bg-green-500/10 z-0 flex items-center justify-center">
+                      <div className="bg-green-500/20 p-4 rounded-full backdrop-blur-sm border border-green-500/30">
+                          <CheckCircle2 className="w-12 h-12 text-green-500" />
+                      </div>
                     </div>
-                  </div>
-                )}
-                
-                <CardContent className={cn("p-8 flex flex-col items-center gap-4 relative z-10", isCriteriaCompleted && "opacity-40")}>
-                  <div className="w-16 h-16 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-500 group-hover:scale-110 transition-transform">
-                    <ClipboardCheck className="w-8 h-8" />
-                  </div>
-                  <div className="space-y-2">
-                    <h3 className="text-xl font-bold text-white">Review Job Criteria</h3>
-                    <p className="text-sm text-muted-foreground">Confirm the types of jobs we should apply to.</p>
-                  </div>
-                </CardContent>
+                  )}
+                  
+                  <CardContent className={cn("p-8 flex flex-col items-center gap-4 relative z-10", isCriteriaCompleted && "opacity-40")}>
+                    <div className="w-16 h-16 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-500 group-hover:scale-110 transition-transform">
+                      <ClipboardCheck className="w-8 h-8" />
+                    </div>
+                    <div className="space-y-2">
+                      <h3 className="text-xl font-bold text-white">Review Job Criteria</h3>
+                      <p className="text-sm text-muted-foreground">Confirm the types of jobs we should apply to.</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            ) : (
+              <Card className="bg-[#111] border-white/10 h-full relative overflow-hidden opacity-60 cursor-not-allowed">
+                 <div className="absolute inset-0 bg-black/40 z-20 flex items-center justify-center backdrop-blur-[1px]">
+                   {/* Overlay content if needed, currently empty to just block interaction */}
+                 </div>
+                 <CardContent className="p-8 flex flex-col items-center gap-4 relative z-10">
+                    <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center text-muted-foreground">
+                      <Clock className="w-8 h-8 animate-pulse" />
+                    </div>
+                    <div className="space-y-2">
+                      <h3 className="text-xl font-bold text-white">Review Job Criteria</h3>
+                      <p className="text-sm text-muted-foreground">Your job matches are being prepared by the team.</p>
+                    </div>
+                  </CardContent>
               </Card>
-            </Link>
+            )}
           </div>
         </motion.div>
       </div>

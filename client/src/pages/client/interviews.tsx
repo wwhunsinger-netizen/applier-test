@@ -3,11 +3,17 @@ import { MOCK_CLIENT_INTERVIEWS } from "@/lib/mockData";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Calendar as CalendarIcon, Clock, Video, Users, CheckCircle, ExternalLink, MapPin, Download, FileText } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, Video, Users, CheckCircle, ExternalLink, MapPin, Download, FileText, Calendar } from "lucide-react";
 import { format } from "date-fns";
+import { useUser } from "@/lib/userContext";
 
 export default function ClientInterviewsPage() {
+  const { currentUser } = useUser();
   const [selectedInterview, setSelectedInterview] = useState<typeof MOCK_CLIENT_INTERVIEWS[0] | null>(null);
+
+  // For new clients, show no interviews
+  const isNewClient = currentUser.email === "newclient@jumpseat.com" || currentUser.id.startsWith("client-");
+  const interviews = isNewClient ? [] : MOCK_CLIENT_INTERVIEWS;
 
   return (
     <div className="space-y-6">
@@ -25,55 +31,67 @@ export default function ClientInterviewsPage() {
 
       {/* Calendar Grid View - Simplified for Mock */}
       <div className="grid gap-4">
-        {MOCK_CLIENT_INTERVIEWS.map(interview => (
-          <Card 
-            key={interview.id} 
-            className="bg-[#111] border-white/10 hover:border-primary/50 transition-colors cursor-pointer group"
-            onClick={() => setSelectedInterview(interview)}
-          >
-            <CardContent className="p-6 flex items-center justify-between">
-              <div className="flex items-center gap-6">
-                <div className="flex flex-col items-center justify-center w-16 h-16 bg-white/5 rounded-lg border border-white/10 group-hover:bg-primary/10 group-hover:border-primary/20 transition-colors">
-                  <span className="text-xs text-muted-foreground uppercase font-bold">{format(new Date(interview.date), "MMM")}</span>
-                  <span className="text-2xl font-bold text-white">{format(new Date(interview.date), "d")}</span>
-                </div>
-                
-                <div>
-                  <h3 className="text-xl font-bold text-white">{interview.company}</h3>
-                  <div className="text-muted-foreground flex items-center gap-2 mt-1">
-                    <span className="font-medium text-white/80">{interview.role}</span>
-                    <span>•</span>
-                    <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {format(new Date(interview.date), "h:mm a")}</span>
+        {interviews.length > 0 ? (
+          interviews.map(interview => (
+            <Card 
+              key={interview.id} 
+              className="bg-[#111] border-white/10 hover:border-primary/50 transition-colors cursor-pointer group"
+              onClick={() => setSelectedInterview(interview)}
+            >
+              <CardContent className="p-6 flex items-center justify-between">
+                <div className="flex items-center gap-6">
+                  <div className="flex flex-col items-center justify-center w-16 h-16 bg-white/5 rounded-lg border border-white/10 group-hover:bg-primary/10 group-hover:border-primary/20 transition-colors">
+                    <span className="text-xs text-muted-foreground uppercase font-bold">{format(new Date(interview.date), "MMM")}</span>
+                    <span className="text-2xl font-bold text-white">{format(new Date(interview.date), "d")}</span>
+                  </div>
+                  
+                  <div>
+                    <h3 className="text-xl font-bold text-white">{interview.company}</h3>
+                    <div className="text-muted-foreground flex items-center gap-2 mt-1">
+                      <span className="font-medium text-white/80">{interview.role}</span>
+                      <span>•</span>
+                      <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {format(new Date(interview.date), "h:mm a")}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="flex items-center gap-4">
-                <div className="text-right">
-                  <div className="flex items-center justify-end gap-1.5 text-sm mb-1">
-                    {interview.format === "Video" ? <Video className="w-3.5 h-3.5 text-blue-400" /> : <Users className="w-3.5 h-3.5 text-purple-400" />}
-                    <span className="text-white/90">{interview.format}</span>
+                <div className="flex items-center gap-4">
+                  <div className="text-right">
+                    <div className="flex items-center justify-end gap-1.5 text-sm mb-1">
+                      {interview.format === "Video" ? <Video className="w-3.5 h-3.5 text-blue-400" /> : <Users className="w-3.5 h-3.5 text-purple-400" />}
+                      <span className="text-white/90">{interview.format}</span>
+                    </div>
+                    {interview.prepDocComplete ? (
+                      <Button 
+                        size="sm" 
+                        className="bg-primary hover:bg-primary/90 text-white font-bold shadow-lg shadow-primary/20" 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedInterview(interview);
+                        }}
+                      >
+                        <FileText className="w-4 h-4 mr-2" />
+                        See Prep Doc
+                      </Button>
+                    ) : (
+                      <div className="text-xs text-muted-foreground">Prep Doc Pending</div>
+                    )}
                   </div>
-                  {interview.prepDocComplete ? (
-                    <Button 
-                      size="sm" 
-                      className="bg-primary hover:bg-primary/90 text-white font-bold shadow-lg shadow-primary/20" 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedInterview(interview);
-                      }}
-                    >
-                      <FileText className="w-4 h-4 mr-2" />
-                      See Prep Doc
-                    </Button>
-                  ) : (
-                    <div className="text-xs text-muted-foreground">Prep Doc Pending</div>
-                  )}
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          ))
+        ) : (
+          <div className="flex flex-col items-center justify-center py-20 border border-dashed border-white/10 rounded-lg bg-white/5">
+            <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4">
+              <Calendar className="w-8 h-8 text-muted-foreground" />
+            </div>
+            <h3 className="text-lg font-bold text-white mb-1">No interviews scheduled yet</h3>
+            <p className="text-muted-foreground text-center max-w-sm">
+              We'll notify you as soon as an interview is confirmed. Ensure your calendar is synced to avoid conflicts.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Prep Doc Modal */}

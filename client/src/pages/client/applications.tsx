@@ -3,15 +3,18 @@ import { MOCK_APPLICATIONS, Job, MOCK_JOBS } from "@/lib/mockData";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search, ExternalLink } from "lucide-react";
+import { Search, ExternalLink, Inbox, Send } from "lucide-react";
 import { format } from "date-fns";
+import { useUser } from "@/lib/userContext";
 
 export default function ClientApplicationsPage() {
+  const { currentUser } = useUser();
   const [search, setSearch] = useState("");
   
-  // Filter for current user's apps (mocked as user-1 for now for client view)
-  // In real app, filter by current user ID
-  const myApps = MOCK_APPLICATIONS.filter(app => app.applierId === "user-1");
+  // Filter for current user's apps
+  // For new mock clients (id starts with client-), show no apps
+  const isNewClient = currentUser.email === "newclient@jumpseat.com" || currentUser.id.startsWith("client-");
+  const myApps = isNewClient ? [] : MOCK_APPLICATIONS.filter(app => app.applierId === currentUser.id);
 
   const getJob = (jobId: string) => MOCK_JOBS.find(j => j.id === jobId);
 
@@ -45,39 +48,51 @@ export default function ClientApplicationsPage() {
       </div>
 
       <div className="grid gap-4">
-        {myApps.map(app => {
-          const job = getJob(app.jobId);
-          if (!job) return null;
-          
-          return (
-            <Card key={app.id} className="bg-[#111] border-white/10 hover:bg-white/5 transition-colors group">
-              <CardContent className="p-6 flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="h-12 w-12 rounded bg-white/10 flex items-center justify-center font-bold text-xl text-muted-foreground">
-                    {job.company.substring(0, 1)}
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-white text-lg group-hover:text-primary transition-colors flex items-center gap-2">
-                      {job.role}
-                      <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-                    </h3>
-                    <div className="text-sm text-muted-foreground flex items-center gap-2 mt-1">
-                      <span className="font-medium text-white/80">{job.company}</span>
-                      <span>•</span>
-                      <span>Applied {app.appliedDate}</span>
+        {myApps.length > 0 ? (
+          myApps.map(app => {
+            const job = getJob(app.jobId);
+            if (!job) return null;
+            
+            return (
+              <Card key={app.id} className="bg-[#111] border-white/10 hover:bg-white/5 transition-colors group">
+                <CardContent className="p-6 flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="h-12 w-12 rounded bg-white/10 flex items-center justify-center font-bold text-xl text-muted-foreground">
+                      {job.company.substring(0, 1)}
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-white text-lg group-hover:text-primary transition-colors flex items-center gap-2">
+                        {job.role}
+                        <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </h3>
+                      <div className="text-sm text-muted-foreground flex items-center gap-2 mt-1">
+                        <span className="font-medium text-white/80">{job.company}</span>
+                        <span>•</span>
+                        <span>Applied {app.appliedDate}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="flex items-center gap-4">
-                   <Badge variant="outline" className={getStatusColor(app.status)}>
-                     {app.status}
-                   </Badge>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
+                  <div className="flex items-center gap-4">
+                    <Badge variant="outline" className={getStatusColor(app.status)}>
+                      {app.status}
+                    </Badge>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })
+        ) : (
+          <div className="flex flex-col items-center justify-center py-20 border border-dashed border-white/10 rounded-lg bg-white/5">
+            <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4">
+              <Send className="w-8 h-8 text-muted-foreground" />
+            </div>
+            <h3 className="text-lg font-bold text-white mb-1">No applications sent yet</h3>
+            <p className="text-muted-foreground text-center max-w-sm">
+              Once we finish onboarding and setting your criteria, we'll start applying to jobs on your behalf.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
