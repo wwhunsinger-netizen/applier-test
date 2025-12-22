@@ -176,11 +176,20 @@ export default function ClientDocumentsPage() {
         top: activeCommentDraft.top 
       };
       
-      setComments(prev => ({
-        ...prev,
-        [activeTab]: [...prev[activeTab], newComment]
-      }));
+      const updatedComments = {
+        ...comments,
+        [activeTab]: [...comments[activeTab], newComment]
+      };
+      
+      setComments(updatedComments);
       setActiveCommentDraft(null);
+
+      // Persist comments to localStorage for Admin visibility
+      try {
+        localStorage.setItem(`client_comments_${currentUser.id}`, JSON.stringify(updatedComments));
+      } catch (e) {
+        console.error("Failed to save comments", e);
+      }
     }
   };
 
@@ -208,6 +217,8 @@ export default function ClientDocumentsPage() {
     setRevisionStatus(prev => ({ ...prev, [activeTab]: 'requested' }));
     setIsRequestingRevisions(false);
     
+    let updatedComments = { ...comments };
+    
     // Add the general feedback as a "comment" if provided
     if (revisionRequestText.trim()) {
       const newComment = {
@@ -216,10 +227,19 @@ export default function ClientDocumentsPage() {
         text: revisionRequestText
       };
       
-      setComments(prev => ({
-        ...prev,
-        [activeTab]: [...prev[activeTab], newComment]
-      }));
+      updatedComments = {
+        ...updatedComments,
+        [activeTab]: [...updatedComments[activeTab], newComment]
+      };
+      
+      setComments(updatedComments);
+    }
+    
+    // Persist comments to localStorage
+    try {
+      localStorage.setItem(`client_comments_${currentUser.id}`, JSON.stringify(updatedComments));
+    } catch (e) {
+      console.error("Failed to save comments", e);
     }
     
     toast.success("Revisions Requested", {
