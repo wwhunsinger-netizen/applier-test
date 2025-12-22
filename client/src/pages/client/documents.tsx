@@ -87,6 +87,10 @@ export default function ClientDocumentsPage() {
 
   // Reset states when changing tabs, but check if already unlocked
   useEffect(() => {
+    // Always reset revision request state when changing tabs
+    setIsRequestingRevisions(false);
+    setRevisionRequestText("");
+
     if (unlockedDocs[activeTab]) {
       setIsFlipped(true);
       setShowLargeReview(false);
