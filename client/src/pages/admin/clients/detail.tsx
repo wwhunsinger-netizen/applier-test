@@ -21,6 +21,8 @@ export default function AdminClientDetailPage() {
     return saved ? JSON.parse(saved) : [];
   });
 
+  const client = clients.find(c => c.id === clientId);
+
   const handleDeleteClient = () => {
     if (confirm("Are you sure you want to delete this client? This action cannot be undone and will remove all associated documents and data.")) {
       // 1. Remove client from list
