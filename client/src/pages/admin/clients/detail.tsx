@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useRoute } from "wouter";
 import { MOCK_CLIENTS_LIST, Client } from "@/lib/mockData";
 import { Button } from "@/components/ui/button";
