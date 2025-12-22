@@ -58,6 +58,32 @@ export default function AdminClientDetailPage() {
     return saved ? JSON.parse(saved) : {};
   });
 
+  // Load approvals
+  const [clientApprovals, setClientApprovals] = useState<Record<string, boolean>>(() => {
+    try {
+      const saved = localStorage.getItem(`client_approvals_${clientId}`);
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  // Listen for storage updates
+  useEffect(() => {
+    const loadData = () => {
+      try {
+        const savedApprovals = localStorage.getItem(`client_approvals_${clientId}`);
+        if (savedApprovals) setClientApprovals(JSON.parse(savedApprovals));
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    
+    // Check periodically since storage event only works across tabs
+    const interval = setInterval(loadData, 2000);
+    return () => clearInterval(interval);
+  }, [clientId]);
+
   const handleFileUpload = (key: string, e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
@@ -169,7 +195,11 @@ export default function AdminClientDetailPage() {
                       </Button>
                     </div>
                   ) : (
-                    <Badge variant="outline" className="bg-yellow-500/10 text-yellow-500 border-yellow-500/20">Pending Review</Badge>
+                    clientApprovals['resume'] ? (
+                      <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/20">Approved</Badge>
+                    ) : (
+                      <Badge variant="outline" className="bg-yellow-500/10 text-yellow-500 border-yellow-500/20">Uploaded - Pending Client Review</Badge>
+                    )
                   )
                 ) : (
                   <Badge variant="outline" className="bg-white/5 text-muted-foreground border-white/10">Not Uploaded</Badge>

@@ -305,6 +305,16 @@ export default function ClientDocumentsPage() {
   const handleApprove = () => {
     setApprovedDocs(prev => ({ ...prev, [activeTab]: true }));
     setComments(prev => ({ ...prev, [activeTab]: [] })); 
+    
+    // Save approval status to localStorage for Admin visibility
+    try {
+      const existingApprovalsStr = localStorage.getItem(`client_approvals_${currentUser.id}`);
+      const existingApprovals = existingApprovalsStr ? JSON.parse(existingApprovalsStr) : {};
+      const newApprovals = { ...existingApprovals, [activeTab]: true };
+      localStorage.setItem(`client_approvals_${currentUser.id}`, JSON.stringify(newApprovals));
+    } catch (e) {
+      console.error("Failed to save approval status", e);
+    }
   };
 
   const handleRequestRevisions = () => {
