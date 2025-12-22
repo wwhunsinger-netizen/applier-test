@@ -46,7 +46,11 @@ export default function ClientOverviewPage() {
   
   // Use mock stats unless it's the new test user which should have 0 stats
   const isNewClient = currentUser.email === "newclient@jumpseat.com";
-  const stats = isNewClient ? { totalApps: 0 } : MOCK_CLIENT_STATS;
+  
+  const stats = {
+    ...MOCK_CLIENT_STATS,
+    totalApps: currentUser.applicationsSent !== undefined ? currentUser.applicationsSent : (isNewClient ? 0 : MOCK_CLIENT_STATS.totalApps)
+  };
   
   // Check completion status from localStorage
   const [isCriteriaCompleted, setIsCriteriaCompleted] = useState(false);

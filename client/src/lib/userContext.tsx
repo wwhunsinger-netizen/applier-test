@@ -1,7 +1,10 @@
 import { createContext, useContext, useState, ReactNode } from "react";
 import { MOCK_USERS } from "./mockData";
 
-type User = typeof MOCK_USERS[0];
+type User = typeof MOCK_USERS[0] & {
+  applicationsSent?: number;
+  interviewsScheduled?: number;
+};
 
 interface UserContextType {
   currentUser: User;
@@ -19,7 +22,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
   });
 
   const login = (email: string) => {
-    let user = MOCK_USERS.find(u => u.email === email);
+    let user: User | undefined = MOCK_USERS.find(u => u.email === email);
     
     // If not found in mocks, check local storage for admin created clients
     if (!user) {
@@ -34,7 +37,9 @@ export function UserProvider({ children }: { children: ReactNode }) {
               name: foundClient.name,
               email: foundClient.email,
               role: "Client", // Force role to Client for these users
-              avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(foundClient.name)}&background=random` // Generate avatar
+              avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(foundClient.name)}&background=random`, // Generate avatar
+              applicationsSent: foundClient.applicationsSent,
+              interviewsScheduled: foundClient.interviewsScheduled
             };
           }
         }
