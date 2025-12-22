@@ -263,66 +263,84 @@ export default function AdminClientDetailPage() {
 
         {/* LinkedIn Tab */}
         <TabsContent value="linkedin" className="space-y-6">
-          <Card className="bg-[#111] border-white/10">
-            <CardHeader>
-              <CardTitle className="text-lg">Original LinkedIn Profile (PDF)</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {!uploadedFiles['linkedin_original'] ? (
-                <div className="relative p-6 border-2 border-dashed border-white/10 rounded-lg flex flex-col items-center justify-center text-center hover:bg-white/5 transition-colors cursor-pointer">
-                  <Upload className="w-6 h-6 text-muted-foreground mb-2" />
-                  <p className="text-sm">Upload PDF</p>
-                  <input 
-                    type="file" 
-                    className="absolute inset-0 opacity-0 cursor-pointer" 
-                    onChange={(e) => handleFileUpload('linkedin_original', e)}
-                  />
-                </div>
-              ) : (
-                <div className="flex items-center justify-between p-3 bg-white/5 rounded border border-white/10">
-                  <div className="flex items-center gap-3">
-                    <Linkedin className="w-5 h-5 text-blue-400" />
-                    <span className="text-sm truncate max-w-[200px]">
-                      {uploadedFiles['linkedin_original']?.startsWith('data:') ? 'LinkedIn (Original).pdf' : uploadedFiles['linkedin_original']}
-                    </span>
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Original LinkedIn */}
+            <Card className="bg-[#111] border-white/10">
+              <CardHeader>
+                <CardTitle className="text-lg">Original LinkedIn Profile</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {!uploadedFiles['linkedin_original'] ? (
+                  <div className="relative p-8 border-2 border-dashed border-white/10 rounded-lg flex flex-col items-center justify-center text-center hover:bg-white/5 transition-colors cursor-pointer group">
+                    <Upload className="w-8 h-8 text-muted-foreground mb-2" />
+                    <p className="text-sm font-medium">Upload PDF</p>
+                    <input 
+                      type="file" 
+                      className="absolute inset-0 opacity-0 cursor-pointer" 
+                      onChange={(e) => handleFileUpload('linkedin_original', e)}
+                    />
                   </div>
-                  <Button size="sm" variant="ghost" className="h-8 w-8 p-0"><Download className="w-4 h-4" /></Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-          
-          <div className="grid md:grid-cols-3 gap-6">
-            {['A', 'B', 'C'].map((version) => (
-              <Card key={version} className="bg-[#111] border-white/10">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base">Optimized Version {version}</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                   {!uploadedFiles[`linkedin_${version}`] ? (
-                    <div className="relative p-4 border-2 border-dashed border-white/10 rounded-lg flex flex-col items-center justify-center text-center hover:bg-white/5 transition-colors cursor-pointer h-32">
-                      <Upload className="w-5 h-5 text-muted-foreground mb-2" />
-                      <p className="text-xs">Upload PDF</p>
-                      <input 
-                        type="file" 
-                        className="absolute inset-0 opacity-0 cursor-pointer" 
-                        onChange={(e) => handleFileUpload(`linkedin_${version}`, e)}
-                      />
+                ) : (
+                  <div className="flex items-center justify-between p-3 bg-white/5 rounded border border-white/10">
+                    <div className="flex items-center gap-3">
+                      <Linkedin className="w-5 h-5 text-blue-400" />
+                      <span className="text-sm truncate max-w-[150px]">
+                        {uploadedFiles['linkedin_original']?.startsWith('data:') ? 'LinkedIn (Original).pdf' : uploadedFiles['linkedin_original']}
+                      </span>
                     </div>
-                  ) : (
-                    <div className="p-4 bg-white/5 rounded-lg border border-white/10 h-32 flex flex-col items-center justify-center text-center relative group">
-                       <Linkedin className="w-8 h-8 text-blue-400 mb-2" />
-                       <p className="text-xs text-white truncate max-w-full px-2">
-                         {uploadedFiles[`linkedin_${version}`]?.startsWith('data:') ? `LinkedIn V${version}.pdf` : uploadedFiles[`linkedin_${version}`]}
-                       </p>
-                       <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-lg">
-                          <Button size="sm" variant="secondary"><Download className="w-4 h-4 mr-2" /> Download</Button>
-                       </div>
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => {
+                        const newFiles = {...uploadedFiles};
+                        delete newFiles['linkedin_original'];
+                        setUploadedFiles(newFiles);
+                        localStorage.setItem(`client_files_${clientId}`, JSON.stringify(newFiles));
+                      }}>
+                        <Upload className="w-4 h-4 rotate-45" />
+                      </Button>
                     </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Optimized LinkedIn (Version A) */}
+            <Card className="bg-[#111] border-white/10">
+              <CardHeader>
+                <CardTitle className="text-lg">Optimized Profile (PDF)</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                 {!uploadedFiles['linkedin_A'] ? (
+                  <div className="relative p-8 border-2 border-dashed border-white/10 rounded-lg flex flex-col items-center justify-center text-center hover:bg-white/5 transition-colors cursor-pointer group">
+                    <Upload className="w-8 h-8 text-muted-foreground mb-2" />
+                    <p className="text-sm font-medium">Upload Optimized Version</p>
+                    <input 
+                      type="file" 
+                      className="absolute inset-0 opacity-0 cursor-pointer" 
+                      onChange={(e) => handleFileUpload('linkedin_A', e)}
+                    />
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between p-3 bg-white/5 rounded border border-white/10">
+                    <div className="flex items-center gap-3">
+                      <Linkedin className="w-5 h-5 text-green-400" />
+                      <span className="text-sm truncate max-w-[150px]">
+                        {uploadedFiles['linkedin_A']?.startsWith('data:') ? 'LinkedIn (Optimized).pdf' : uploadedFiles['linkedin_A']}
+                      </span>
+                    </div>
+                    <div className="flex gap-2">
+                       <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => {
+                        const newFiles = {...uploadedFiles};
+                        delete newFiles['linkedin_A'];
+                        setUploadedFiles(newFiles);
+                        localStorage.setItem(`client_files_${clientId}`, JSON.stringify(newFiles));
+                      }}>
+                        <Upload className="w-4 h-4 rotate-45" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
         </TabsContent>
 
