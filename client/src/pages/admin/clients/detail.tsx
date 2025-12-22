@@ -187,24 +187,6 @@ export default function AdminClientDetailPage() {
                     </div>
                   </div>
                 )}
-
-                {/* Comments Section - Injected Here */}
-                {clientComments['resume'] && clientComments['resume'].length > 0 && (
-                  <div className="mt-8 pt-6 border-t border-white/10">
-                    <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
-                       <AlertCircle className="w-4 h-4 text-red-400" />
-                       Client Comments ({clientComments['resume'].length})
-                    </h3>
-                    <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
-                      {clientComments['resume'].map(comment => (
-                        <div key={comment.id} className="p-3 bg-red-500/5 border border-red-500/20 rounded-lg text-sm">
-                           <p className="text-white/90">{comment.text}</p>
-                           <p className="text-xs text-red-400 mt-2">Location: {comment.top}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </CardContent>
             </Card>
 
@@ -257,6 +239,27 @@ export default function AdminClientDetailPage() {
                     </div>
                     <div className="flex gap-2">
                       <Button size="sm" variant="ghost" className="h-8 w-8 p-0"><Download className="w-4 h-4" /></Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Client Feedback Section - Moved Here */}
+                {clientComments['resume'] && clientComments['resume'].length > 0 && (
+                  <div className="mt-8 pt-6 border-t border-white/10">
+                    <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
+                       <AlertCircle className="w-4 h-4 text-red-400" />
+                       Client Feedback ({clientComments['resume'].length})
+                    </h3>
+                    <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                      {clientComments['resume'].map(comment => (
+                        <div key={comment.id} className="p-3 bg-red-500/5 border border-red-500/20 rounded-lg text-sm">
+                           <p className="text-white/90">{comment.text}</p>
+                           {/* Only show location if it's not generic/0% */}
+                           {comment.top !== "0%" && (
+                             <p className="text-xs text-red-400 mt-2">Location: {comment.top}</p>
+                           )}
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}
