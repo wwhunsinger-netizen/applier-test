@@ -46,10 +46,24 @@ export default function AdminClientDetailPage() {
 
   const handleFileUpload = (key: string, e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      const fileName = e.target.files[0].name;
-      const newFiles = { ...uploadedFiles, [key]: fileName };
-      setUploadedFiles(newFiles);
-      localStorage.setItem(`client_files_${clientId}`, JSON.stringify(newFiles));
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      
+      reader.onload = () => {
+        const result = reader.result as string;
+        // Save the Data URL instead of just the filename
+        const newFiles = { ...uploadedFiles, [key]: result };
+        setUploadedFiles(newFiles);
+        try {
+          localStorage.setItem(`client_files_${clientId}`, JSON.stringify(newFiles));
+        } catch (e) {
+          console.error("Storage quota exceeded", e);
+          // Fallback to just saving the name if too big, but this will break preview
+          // Ideally we warn user
+        }
+      };
+      
+      reader.readAsDataURL(file);
     }
   };
 
@@ -104,7 +118,9 @@ export default function AdminClientDetailPage() {
                   <div className="flex items-center justify-between p-3 bg-white/5 rounded border border-white/10">
                     <div className="flex items-center gap-3">
                       <FileText className="w-5 h-5 text-blue-400" />
-                      <span className="text-sm truncate max-w-[150px]">{uploadedFiles['resume_original']}</span>
+                      <span className="text-sm truncate max-w-[150px]">
+                        {uploadedFiles['resume_original']?.startsWith('data:') ? 'Resume (Original).pdf' : uploadedFiles['resume_original']}
+                      </span>
                     </div>
                     <div className="flex gap-2">
                       <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => {
@@ -160,7 +176,9 @@ export default function AdminClientDetailPage() {
                   <div className="flex items-center justify-between p-3 bg-white/5 rounded border border-white/10">
                     <div className="flex items-center gap-3">
                       <FileText className="w-5 h-5 text-green-400" />
-                      <span className="text-sm truncate max-w-[150px]">{uploadedFiles['resume_improved']}</span>
+                      <span className="text-sm truncate max-w-[150px]">
+                        {uploadedFiles['resume_improved']?.startsWith('data:') ? 'Resume (Improved).pdf' : uploadedFiles['resume_improved']}
+                      </span>
                     </div>
                     <div className="flex gap-2">
                       <Button size="sm" variant="ghost" className="h-8 w-8 p-0"><Download className="w-4 h-4" /></Button>
@@ -193,7 +211,9 @@ export default function AdminClientDetailPage() {
                 <div className="flex items-center justify-between p-3 bg-white/5 rounded border border-white/10">
                   <div className="flex items-center gap-3">
                     <FileText className="w-5 h-5 text-purple-400" />
-                    <span className="text-sm truncate max-w-[200px]">{uploadedFiles['cover_letter_original']}</span>
+                    <span className="text-sm truncate max-w-[200px]">
+                      {uploadedFiles['cover_letter_original']?.startsWith('data:') ? 'Cover Letter (Original).pdf' : uploadedFiles['cover_letter_original']}
+                    </span>
                   </div>
                   <Button size="sm" variant="ghost" className="h-8 w-8 p-0"><Download className="w-4 h-4" /></Button>
                 </div>
@@ -221,7 +241,9 @@ export default function AdminClientDetailPage() {
                   ) : (
                     <div className="p-4 bg-white/5 rounded-lg border border-white/10 h-32 flex flex-col items-center justify-center text-center relative group">
                        <FileText className="w-8 h-8 text-purple-400 mb-2" />
-                       <p className="text-xs text-white truncate max-w-full px-2">{uploadedFiles[`cover_letter_${version}`]}</p>
+                       <p className="text-xs text-white truncate max-w-full px-2">
+                         {uploadedFiles[`cover_letter_${version}`]?.startsWith('data:') ? `Version ${version}.pdf` : uploadedFiles[`cover_letter_${version}`]}
+                       </p>
                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-lg">
                           <Button size="sm" variant="secondary"><Download className="w-4 h-4 mr-2" /> Download</Button>
                        </div>
@@ -260,7 +282,9 @@ export default function AdminClientDetailPage() {
                 <div className="flex items-center justify-between p-3 bg-white/5 rounded border border-white/10">
                   <div className="flex items-center gap-3">
                     <Linkedin className="w-5 h-5 text-blue-400" />
-                    <span className="text-sm truncate max-w-[200px]">{uploadedFiles['linkedin_original']}</span>
+                    <span className="text-sm truncate max-w-[200px]">
+                      {uploadedFiles['linkedin_original']?.startsWith('data:') ? 'LinkedIn (Original).pdf' : uploadedFiles['linkedin_original']}
+                    </span>
                   </div>
                   <Button size="sm" variant="ghost" className="h-8 w-8 p-0"><Download className="w-4 h-4" /></Button>
                 </div>
@@ -288,7 +312,9 @@ export default function AdminClientDetailPage() {
                   ) : (
                     <div className="p-4 bg-white/5 rounded-lg border border-white/10 h-32 flex flex-col items-center justify-center text-center relative group">
                        <Linkedin className="w-8 h-8 text-blue-400 mb-2" />
-                       <p className="text-xs text-white truncate max-w-full px-2">{uploadedFiles[`linkedin_${version}`]}</p>
+                       <p className="text-xs text-white truncate max-w-full px-2">
+                         {uploadedFiles[`linkedin_${version}`]?.startsWith('data:') ? `LinkedIn V${version}.pdf` : uploadedFiles[`linkedin_${version}`]}
+                       </p>
                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-lg">
                           <Button size="sm" variant="secondary"><Download className="w-4 h-4 mr-2" /> Download</Button>
                        </div>

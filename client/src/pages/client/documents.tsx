@@ -137,8 +137,25 @@ export default function ClientDocumentsPage() {
   const animationTimeouts = useRef<NodeJS.Timeout[]>([]);
 
   // Dev State for PDF Uploads
-  const [beforePdfUrl, setBeforePdfUrl] = useState<string | null>(() => localStorage.getItem("beforePdfUrl"));
-  const [afterPdfUrl, setAfterPdfUrl] = useState<string | null>(() => localStorage.getItem("afterPdfUrl"));
+  // Now linked to the uploadedFiles from localStorage
+  const [beforePdfUrl, setBeforePdfUrl] = useState<string | null>(null);
+  const [afterPdfUrl, setAfterPdfUrl] = useState<string | null>(null);
+
+  // Sync loaded files to PDF viewer states
+  useEffect(() => {
+    if (activeTab === "resume") {
+      setBeforePdfUrl(uploadedFiles['resume_original'] || null);
+      setAfterPdfUrl(uploadedFiles['resume_improved'] || null);
+    } else if (activeTab === "cover-letter") {
+      // Logic for cover letter versions if we supported viewing them in PDF viewer
+      setBeforePdfUrl(uploadedFiles['cover_letter_original'] || null);
+      // For improved, maybe default to Version A for now or handle selection
+      setAfterPdfUrl(uploadedFiles['cover_letter_A'] || null);
+    } else if (activeTab === "linkedin") {
+      setBeforePdfUrl(uploadedFiles['linkedin_original'] || null);
+      setAfterPdfUrl(uploadedFiles['linkedin_A'] || null);
+    }
+  }, [uploadedFiles, activeTab]);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'before' | 'after') => {
     const file = e.target.files?.[0];
