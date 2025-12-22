@@ -104,10 +104,21 @@ export default function ClientDocumentsPage() {
     return () => window.removeEventListener('storage', loadFiles);
   }, [currentUser.id]);
 
-  const [approvedDocs, setApprovedDocs] = useState<Record<DocType, boolean>>({
-    resume: false,
-    "cover-letter": false,
-    linkedin: false
+  const [approvedDocs, setApprovedDocs] = useState<Record<DocType, boolean>>(() => {
+    try {
+      const saved = localStorage.getItem(`client_approvals_${currentUser.id}`);
+      return saved ? JSON.parse(saved) : {
+        resume: false,
+        "cover-letter": false,
+        linkedin: false
+      };
+    } catch {
+      return {
+        resume: false,
+        "cover-letter": false,
+        linkedin: false
+      };
+    }
   });
   const [activeVersion, setActiveVersion] = useState("A");
   const [comments, setComments] = useState<Record<DocType, {id: number, text: string, top: string}[]>>(() => {
