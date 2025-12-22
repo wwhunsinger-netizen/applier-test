@@ -110,10 +110,21 @@ export default function ClientDocumentsPage() {
     linkedin: false
   });
   const [activeVersion, setActiveVersion] = useState("A");
-  const [comments, setComments] = useState<Record<DocType, {id: number, text: string, top: string}[]>>({
-    resume: [],
-    "cover-letter": [],
-    linkedin: []
+  const [comments, setComments] = useState<Record<DocType, {id: number, text: string, top: string}[]>>(() => {
+    try {
+      const saved = localStorage.getItem(`client_comments_${currentUser.id}`);
+      return saved ? JSON.parse(saved) : {
+        resume: [],
+        "cover-letter": [],
+        linkedin: []
+      };
+    } catch {
+      return {
+        resume: [],
+        "cover-letter": [],
+        linkedin: []
+      };
+    }
   });
   const [isRevealing, setIsRevealing] = useState(false);
   const [revealPhase, setRevealPhase] = useState<"intro" | "float" | "distort" | "explode" | "reveal" | "settle">("intro");
