@@ -964,14 +964,6 @@ export default function ClientDocumentsPage() {
                          </div>
                          
                          <div className="flex-1 overflow-y-auto p-8 bg-[#111] relative cursor-text scroll-smooth">
-                           {/* Hint Overlay for Comments */}
-                           {!isApproved && revisionStatus !== 'requested' && comments.length === 0 && !showLargeReview && (
-                             <div className="sticky top-4 left-full -ml-[250px] z-50 bg-blue-50 text-blue-600 px-3 py-2 rounded text-xs border border-blue-200 animate-pulse shadow-sm w-fit">
-                               <Lightbulb className="w-3 h-3 inline mr-1" />
-                               Click any section to add a comment
-                             </div>
-                           )}
-
                            {activeTab === 'resume' ? <RenderNewResumeContent /> : (
                              <div className="space-y-8 font-serif text-sm leading-relaxed max-w-[800px] mx-auto bg-white min-h-[11in] p-[1in] shadow-xl text-gray-800">
                                {/* Default placeholder content for other document types */}
@@ -1053,7 +1045,7 @@ export default function ClientDocumentsPage() {
                                </div>
                                <div>
                                  <h3 className="text-xl font-bold text-white">Review & Approve</h3>
-                                 <p className="text-sm text-muted-foreground mt-2">Click any text section to leave a comment for revisions.</p>
+                                 <p className="text-sm text-muted-foreground mt-2">Request revisions or approve this version.</p>
                                </div>
                                
                                {comments.length > 0 && (
