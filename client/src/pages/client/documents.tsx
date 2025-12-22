@@ -47,6 +47,32 @@ const DOC_CONFIG = {
   },
 };
 
+const PDFViewer = ({ url, scale = 0.65 }: { url: string, scale?: number }) => {
+  const [numPages, setNumPages] = useState<number>(0);
+  
+  return (
+    <Document 
+      file={url} 
+      className="flex flex-col gap-8 items-center"
+      loading={<div className="text-gray-500 animate-pulse">Loading PDF...</div>}
+      error={<div className="text-red-500">Failed to load PDF. Please try again.</div>}
+      onLoadSuccess={({ numPages }) => setNumPages(numPages)}
+    >
+      {Array.from(new Array(numPages || 2), (_, index) => (
+        <Page 
+          key={`page_${index + 1}`}
+          pageNumber={index + 1} 
+          scale={scale} 
+          renderTextLayer={false} 
+          renderAnnotationLayer={false} 
+          className="shadow-xl" 
+          width={816} 
+        />
+      ))}
+    </Document>
+  );
+};
+
 export default function ClientDocumentsPage() {
   const [activeTab, setActiveTab] = useState<DocType>("resume");
   const [isFlipped, setIsFlipped] = useState(false);
@@ -289,32 +315,6 @@ export default function ClientDocumentsPage() {
       setRevisionStatus({ resume: "idle", "cover-letter": "idle", linkedin: "idle" });
       toast.success("Demo state reset successfully");
     }
-  };
-
-  const PDFViewer = ({ url, scale = 0.65 }: { url: string, scale?: number }) => {
-    const [numPages, setNumPages] = useState<number>(0);
-    
-    return (
-      <Document 
-        file={url} 
-        className="flex flex-col gap-8 items-center"
-        loading={<div className="text-gray-500 animate-pulse">Loading PDF...</div>}
-        error={<div className="text-red-500">Failed to load PDF. Please try again.</div>}
-        onLoadSuccess={({ numPages }) => setNumPages(numPages)}
-      >
-        {Array.from(new Array(numPages || 2), (_, index) => (
-          <Page 
-            key={`page_${index + 1}`}
-            pageNumber={index + 1} 
-            scale={scale} 
-            renderTextLayer={false} 
-            renderAnnotationLayer={false} 
-            className="shadow-xl" 
-            width={816} 
-          />
-        ))}
-      </Document>
-    );
   };
 
   // Reconstruct OLD_RESUME_CONTENT with HTML and Red Pen Markups
