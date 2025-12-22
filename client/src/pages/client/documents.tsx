@@ -964,7 +964,7 @@ export default function ClientDocumentsPage() {
                          </div>
                          
                          <div className="flex-1 overflow-y-auto p-8 bg-[#111] relative cursor-text scroll-smooth">
-                           {activeTab === 'resume' ? <RenderNewResumeContent /> : (
+                           {activeTab === 'resume' ? renderNewResumeContent() : (
                              <div className="space-y-8 font-serif text-sm leading-relaxed max-w-[800px] mx-auto bg-white min-h-[11in] p-[1in] shadow-xl text-gray-800">
                                {/* Default placeholder content for other document types */}
                                <div 
