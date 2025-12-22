@@ -56,11 +56,19 @@ export default function ClientDocumentsPage() {
     linkedin: false
   });
   const [activeVersion, setActiveVersion] = useState("A");
-  const [comments, setComments] = useState<{id: number, text: string, top: string}[]>([]);
+  const [comments, setComments] = useState<Record<DocType, {id: number, text: string, top: string}[]>>({
+    resume: [],
+    "cover-letter": [],
+    linkedin: []
+  });
   const [isRevealing, setIsRevealing] = useState(false);
   const [revealPhase, setRevealPhase] = useState<"intro" | "float" | "distort" | "explode" | "reveal" | "settle">("intro");
   const [showLargeReview, setShowLargeReview] = useState(false);
-  const [revisionStatus, setRevisionStatus] = useState<"idle" | "requested">("idle");
+  const [revisionStatus, setRevisionStatus] = useState<Record<DocType, "idle" | "requested">>({
+    resume: "idle",
+    "cover-letter": "idle",
+    linkedin: "idle"
+  });
   const [activeCommentDraft, setActiveCommentDraft] = useState<{top: string, text: string} | null>(null);
   const [unlockedDocs, setUnlockedDocs] = useState<Record<DocType, boolean>>({
     resume: false,
@@ -129,7 +137,7 @@ export default function ClientDocumentsPage() {
 
   // Mock highlight logic
   const handleTextClick = (e: React.MouseEvent, top: string) => {
-    if (!isFlipped || isApproved || revisionStatus === 'requested' || isRequestingRevisions) return;
+    if (!isFlipped || isApproved || revisionStatus[activeTab] === 'requested' || isRequestingRevisions) return;
     
     // If we're already editing this one, don't do anything
     if (activeCommentDraft?.top === top) return;
@@ -139,11 +147,16 @@ export default function ClientDocumentsPage() {
 
   const handleSaveComment = () => {
     if (activeCommentDraft && activeCommentDraft.text.trim()) {
-      setComments([...comments, { 
+      const newComment = { 
         id: Date.now(), 
         text: activeCommentDraft.text, 
         top: activeCommentDraft.top 
-      }]);
+      };
+      
+      setComments(prev => ({
+        ...prev,
+        [activeTab]: [...prev[activeTab], newComment]
+      }));
       setActiveCommentDraft(null);
     }
   };
@@ -162,23 +175,28 @@ export default function ClientDocumentsPage() {
   };
 
   const handleSubmitRevisions = () => {
-    if (!revisionRequestText.trim() && comments.length === 0) {
+    if (!revisionRequestText.trim() && comments[activeTab].length === 0) {
       toast.error("No feedback provided", {
         description: "Please describe what changes you'd like to see."
       });
       return;
     }
     
-    setRevisionStatus('requested');
+    setRevisionStatus(prev => ({ ...prev, [activeTab]: 'requested' }));
     setIsRequestingRevisions(false);
     
     // Add the general feedback as a "comment" if provided
     if (revisionRequestText.trim()) {
-      setComments(prev => [...prev, {
+      const newComment = {
         id: Date.now(),
         top: "0%", // General comment
         text: revisionRequestText
-      }]);
+      };
+      
+      setComments(prev => ({
+        ...prev,
+        [activeTab]: [...prev[activeTab], newComment]
+      }));
     }
     
     toast.success("Revisions Requested", {
@@ -248,12 +266,12 @@ export default function ClientDocumentsPage() {
 
   const handleApprove = () => {
     setApprovedDocs(prev => ({ ...prev, [activeTab]: true }));
-    setComments([]); 
+    setComments(prev => ({ ...prev, [activeTab]: [] })); 
   };
 
   const handleRequestRevisions = () => {
     if (confirm("Request revisions based on your comments?")) {
-      setRevisionStatus("requested");
+      setRevisionStatus(prev => ({ ...prev, [activeTab]: 'requested' }));
     }
   };
 
@@ -263,12 +281,12 @@ export default function ClientDocumentsPage() {
       localStorage.removeItem("afterPdfUrl");
       setBeforePdfUrl(null);
       setAfterPdfUrl(null);
-      setComments([]);
+      setComments({ resume: [], "cover-letter": [], linkedin: [] });
       setUnlockedDocs({ resume: false, "cover-letter": false, linkedin: false });
       setApprovedDocs({ resume: false, "cover-letter": false, linkedin: false });
       setIsFlipped(false);
       setShowLargeReview(false);
-      setRevisionStatus("idle");
+      setRevisionStatus({ resume: "idle", "cover-letter": "idle", linkedin: "idle" });
       toast.success("Demo state reset successfully");
     }
   };
@@ -460,7 +478,7 @@ export default function ClientDocumentsPage() {
       )}
 
       {/* Comments Overlay - Rendered INSIDE scaled container */}
-      {comments.map(comment => (
+      {comments[activeTab].map(comment => (
         <div 
           key={comment.id} 
           className="absolute right-[-220px] z-10 bg-yellow-100 border border-yellow-300 p-2 rounded shadow-lg max-w-[200px]"
@@ -984,7 +1002,7 @@ export default function ClientDocumentsPage() {
                            </div>
                            <div className="flex items-center gap-2">
                               {isApproved && <Badge className="bg-green-500 gap-1"><CheckCircle2 className="w-3 h-3" /> Approved</Badge>}
-                              {revisionStatus === 'requested' && <Badge className="bg-yellow-500 gap-1"><RotateCw className="w-3 h-3 animate-spin" /> Revisions Requested</Badge>}
+                              {revisionStatus[activeTab] === 'requested' && <Badge className="bg-yellow-500 gap-1"><RotateCw className="w-3 h-3 animate-spin" /> Revisions Requested</Badge>}
                            </div>
                          </div>
                          
@@ -1038,7 +1056,7 @@ export default function ClientDocumentsPage() {
                           </Button>
                         </>
                       ) : (
-                        revisionStatus === 'requested' ? (
+                        revisionStatus[activeTab] === 'requested' ? (
                           <>
                              <div className="p-4 bg-yellow-500/10 rounded-full text-yellow-500 mb-2">
                                <RotateCw className="w-8 h-8 animate-spin" />
@@ -1046,14 +1064,14 @@ export default function ClientDocumentsPage() {
                              <div>
                                <h3 className="text-xl font-bold text-white">Revisions Requested</h3>
                                <p className="text-sm text-muted-foreground mt-2">
-                                 Wilson is working on your updates based on {comments.length} comments.
+                                 We are working on your updates based on {comments[activeTab].length} comments.
                                  You'll be notified when the new version is ready.
                                </p>
                              </div>
                              <div className="w-full bg-yellow-500/10 border border-yellow-500/20 p-3 rounded text-left mt-4 opacity-70">
                                <p className="text-xs font-bold text-yellow-500 mb-1">Your Comments:</p>
                                <ul className="text-xs text-yellow-200/80 list-disc list-inside">
-                                 {comments.map(c => (
+                                 {comments[activeTab].map(c => (
                                    <li key={c.id} className="truncate">{c.text}</li>
                                  ))}
                                </ul>
@@ -1073,11 +1091,11 @@ export default function ClientDocumentsPage() {
                                  <p className="text-sm text-muted-foreground mt-2">Request revisions or approve this version.</p>
                                </div>
                                
-                               {comments.length > 0 && (
+                               {comments[activeTab].length > 0 && (
                                  <div className="w-full bg-yellow-500/10 border border-yellow-500/20 p-3 rounded text-left">
-                                   <p className="text-xs font-bold text-yellow-500 mb-1">{comments.length} Comments Added:</p>
+                                   <p className="text-xs font-bold text-yellow-500 mb-1">{comments[activeTab].length} Comments Added:</p>
                                    <ul className="text-xs text-yellow-200/80 list-disc list-inside">
-                                     {comments.map(c => (
+                                     {comments[activeTab].map(c => (
                                        <li key={c.id} className="truncate">{c.text}</li>
                                      ))}
                                    </ul>
@@ -1107,7 +1125,7 @@ export default function ClientDocumentsPage() {
                       )}
                       
                       {/* Revision Request Text Area Mode */}
-                      {isRequestingRevisions && !isApproved && revisionStatus !== 'requested' && (
+                      {isRequestingRevisions && !isApproved && revisionStatus[activeTab] !== 'requested' && (
                         <div className="absolute inset-0 z-20 bg-[#111] p-6 flex flex-col animate-in fade-in duration-200">
                           <div className="mb-4">
                             <h3 className="text-xl font-bold text-white mb-1">Request Revisions</h3>
