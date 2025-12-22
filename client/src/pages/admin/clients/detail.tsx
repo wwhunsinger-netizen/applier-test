@@ -120,6 +120,46 @@ export default function AdminClientDetailPage() {
     }
   };
 
+  const handleDownload = (fileKey: string, fileName: string) => {
+    const fileData = uploadedFiles[fileKey];
+    if (!fileData) return;
+
+    const link = document.createElement('a');
+    link.href = fileData;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleRevisionUpload = (key: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      
+      reader.onload = () => {
+        const result = reader.result as string;
+        
+        // 1. Update the file (supersede previous)
+        const newFiles = { ...uploadedFiles, [key]: result };
+        setUploadedFiles(newFiles);
+        localStorage.setItem(`client_files_${clientId}`, JSON.stringify(newFiles));
+
+        // 2. Clear comments (resolve them)
+        const newComments = { ...clientComments, [activeTab]: [] };
+        setClientComments(newComments);
+        localStorage.setItem(`client_comments_${clientId}`, JSON.stringify(newComments));
+
+        // 3. Reset approval status
+        const newApprovals = { ...clientApprovals, [activeTab]: false };
+        setClientApprovals(newApprovals);
+        localStorage.setItem(`client_approvals_${clientId}`, JSON.stringify(newApprovals));
+      };
+      
+      reader.readAsDataURL(file);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -184,6 +224,9 @@ export default function AdminClientDetailPage() {
                       }}>
                         <Upload className="w-4 h-4 rotate-45" /> {/* Use as generic remove/reset for now or just re-upload */}
                       </Button>
+                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => handleDownload('resume_original', 'Resume (Original).pdf')}>
+                        <Download className="w-4 h-4" />
+                      </Button>
                     </div>
                   </div>
                 )}
@@ -195,24 +238,12 @@ export default function AdminClientDetailPage() {
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="text-lg">Improved Resume</CardTitle>
                 {uploadedFiles['resume_improved'] ? (
-                  client.status === 'action_needed' ? (
-                    <div className="flex items-center gap-2">
-                      <Badge variant="destructive" className="bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500/20">Needs Revision</Badge>
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
-                        className="h-6 text-xs border-red-500/30 text-red-400 hover:text-red-300 hover:bg-red-500/10 hover:border-red-500/50"
-                        onClick={() => setIsCommentsOpen(true)}
-                      >
-                        View {client.commentsCount} Comments
-                      </Button>
-                    </div>
+                  clientApprovals['resume'] ? (
+                    <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/20">Approved</Badge>
+                  ) : clientComments['resume'] && clientComments['resume'].length > 0 ? (
+                    <Badge variant="destructive" className="bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500/20">Changes Requested</Badge>
                   ) : (
-                    clientApprovals['resume'] ? (
-                      <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/20">Approved</Badge>
-                    ) : (
-                      <Badge variant="outline" className="bg-yellow-500/10 text-yellow-500 border-yellow-500/20">Uploaded - Pending Client Review</Badge>
-                    )
+                    <Badge variant="outline" className="bg-yellow-500/10 text-yellow-500 border-yellow-500/20">Uploaded - Pending Client Review</Badge>
                   )
                 ) : (
                   <Badge variant="outline" className="bg-white/5 text-muted-foreground border-white/10">Not Uploaded</Badge>
@@ -238,28 +269,48 @@ export default function AdminClientDetailPage() {
                       </span>
                     </div>
                     <div className="flex gap-2">
-                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0"><Download className="w-4 h-4" /></Button>
+                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => handleDownload('resume_improved', 'Resume (Improved).pdf')}>
+                        <Download className="w-4 h-4" />
+                      </Button>
                     </div>
                   </div>
                 )}
 
-                {/* Client Feedback Section - Moved Here */}
+                {/* Client Feedback Section */}
                 {clientComments['resume'] && clientComments['resume'].length > 0 && (
                   <div className="mt-8 pt-6 border-t border-white/10">
-                    <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
-                       <AlertCircle className="w-4 h-4 text-red-400" />
-                       Client Feedback ({clientComments['resume'].length})
-                    </h3>
-                    <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                         <AlertCircle className="w-4 h-4 text-red-400" />
+                         Client Feedback ({clientComments['resume'].length})
+                      </h3>
+                    </div>
+                    
+                    <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar mb-6">
                       {clientComments['resume'].map(comment => (
                         <div key={comment.id} className="p-3 bg-red-500/5 border border-red-500/20 rounded-lg text-sm">
                            <p className="text-white/90">{comment.text}</p>
-                           {/* Only show location if it's not generic/0% */}
                            {comment.top !== "0%" && (
                              <p className="text-xs text-red-400 mt-2">Location: {comment.top}</p>
                            )}
                         </div>
                       ))}
+                    </div>
+
+                    {/* Upload Revised Version Section */}
+                    <div className="bg-white/5 rounded-lg border border-white/10 p-4">
+                      <h4 className="text-sm font-bold text-white mb-2">Upload Revised Version</h4>
+                      <p className="text-xs text-muted-foreground mb-3">Uploading a new version will resolve all comments and reset the status to 'Pending Review'.</p>
+                      
+                      <div className="relative border-2 border-dashed border-white/10 rounded bg-[#0a0a0a] hover:bg-white/5 transition-colors cursor-pointer p-4 flex items-center justify-center gap-3">
+                        <Upload className="w-4 h-4 text-primary" />
+                        <span className="text-sm text-primary font-medium">Select PDF File</span>
+                        <input 
+                          type="file" 
+                          className="absolute inset-0 opacity-0 cursor-pointer"
+                          onChange={(e) => handleRevisionUpload('resume_improved', e)}
+                        />
+                      </div>
                     </div>
                   </div>
                 )}
