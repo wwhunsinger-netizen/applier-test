@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { MOCK_CLIENTS_LIST, Client } from "@/lib/mockData";
 import { Card, CardContent } from "@/components/ui/card";
@@ -17,7 +17,17 @@ export default function AdminClientsPage() {
   const { toast } = useToast();
   const [searchTerm, setSearch] = useState("");
   const [isAddClientOpen, setIsAddClientOpen] = useState(false);
-  const [clients, setClients] = useState<Client[]>(MOCK_CLIENTS_LIST);
+  
+  // Persistent Client State
+  const [clients, setClients] = useState<Client[]>(() => {
+    const saved = localStorage.getItem("admin_clients");
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  // Save to localStorage whenever clients change
+  useEffect(() => {
+    localStorage.setItem("admin_clients", JSON.stringify(clients));
+  }, [clients]);
   
   // New Client Form State
   const [newClientName, setNewClientName] = useState("");
@@ -55,7 +65,7 @@ export default function AdminClientsPage() {
       status: "active"
     };
 
-    setClients([...clients, newClient]);
+    setClients(prev => [...prev, newClient]);
     setIsCreated(true);
   };
 

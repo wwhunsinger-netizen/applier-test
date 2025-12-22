@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useRoute } from "wouter";
-import { MOCK_CLIENTS_LIST } from "@/lib/mockData";
+import { MOCK_CLIENTS_LIST, Client } from "@/lib/mockData";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,17 +9,49 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Upload, FileText, Download, CheckCircle2, AlertCircle, Plus, Calendar, Clock, Video, Users, Link as LinkIcon } from "lucide-react";
+import { ArrowLeft, Upload, FileText, Download, CheckCircle2, AlertCircle, Plus, Calendar, Clock, Video, Users, Link as LinkIcon, Linkedin } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 
 export default function AdminClientDetailPage() {
   const [, params] = useRoute("/admin/clients/:id");
   const clientId = params?.id;
-  const client = MOCK_CLIENTS_LIST.find(c => c.id === clientId) || MOCK_CLIENTS_LIST[0]; // Fallback for mock
+
+  const [clients] = useState<Client[]>(() => {
+    const saved = localStorage.getItem("admin_clients");
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const client = clients.find(c => c.id === clientId);
+
+  if (!client) {
+    return (
+      <div className="p-8 text-center">
+        <h2 className="text-xl font-bold text-white mb-4">Client Not Found</h2>
+        <Link href="/admin/clients">
+          <Button>Back to Clients</Button>
+        </Link>
+      </div>
+    );
+  }
 
   const [activeTab, setActiveTab] = useState("resume");
   const [isAddInterviewOpen, setIsAddInterviewOpen] = useState(false);
   const [isCommentsOpen, setIsCommentsOpen] = useState(false);
+  
+  // File Persistence
+  const [uploadedFiles, setUploadedFiles] = useState<Record<string, string>>(() => {
+    const saved = localStorage.getItem(`client_files_${clientId}`);
+    return saved ? JSON.parse(saved) : {};
+  });
+
+  const handleFileUpload = (key: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const fileName = e.target.files[0].name;
+      const newFiles = { ...uploadedFiles, [key]: fileName };
+      setUploadedFiles(newFiles);
+      localStorage.setItem(`client_files_${clientId}`, JSON.stringify(newFiles));
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -57,21 +89,35 @@ export default function AdminClientDetailPage() {
                 <CardTitle className="text-lg">Original Resume</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="p-8 border-2 border-dashed border-white/10 rounded-lg flex flex-col items-center justify-center text-center hover:bg-white/5 transition-colors cursor-pointer">
-                  <Upload className="w-8 h-8 text-muted-foreground mb-2" />
-                  <p className="text-sm font-medium">Upload File</p>
-                  <p className="text-xs text-muted-foreground">PDF, DOC, DOCX</p>
-                </div>
-                {/* Mock Uploaded State */}
-                <div className="flex items-center justify-between p-3 bg-white/5 rounded border border-white/10">
-                  <div className="flex items-center gap-3">
-                    <FileText className="w-5 h-5 text-blue-400" />
-                    <span className="text-sm truncate max-w-[150px]">{client.name.split(' ')[0]}_Old_Resume.pdf</span>
+                {!uploadedFiles['resume_original'] ? (
+                  <div className="relative p-8 border-2 border-dashed border-white/10 rounded-lg flex flex-col items-center justify-center text-center hover:bg-white/5 transition-colors cursor-pointer group">
+                    <Upload className="w-8 h-8 text-muted-foreground mb-2" />
+                    <p className="text-sm font-medium">Upload File</p>
+                    <p className="text-xs text-muted-foreground">PDF, DOC, DOCX</p>
+                    <input 
+                      type="file" 
+                      className="absolute inset-0 opacity-0 cursor-pointer" 
+                      onChange={(e) => handleFileUpload('resume_original', e)}
+                    />
                   </div>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="ghost" className="h-8 w-8 p-0"><Eye className="w-4 h-4" /></Button>
+                ) : (
+                  <div className="flex items-center justify-between p-3 bg-white/5 rounded border border-white/10">
+                    <div className="flex items-center gap-3">
+                      <FileText className="w-5 h-5 text-blue-400" />
+                      <span className="text-sm truncate max-w-[150px]">{uploadedFiles['resume_original']}</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => {
+                        const newFiles = {...uploadedFiles};
+                        delete newFiles['resume_original'];
+                        setUploadedFiles(newFiles);
+                        localStorage.setItem(`client_files_${clientId}`, JSON.stringify(newFiles));
+                      }}>
+                        <Upload className="w-4 h-4 rotate-45" /> {/* Use as generic remove/reset for now or just re-upload */}
+                      </Button>
+                    </div>
                   </div>
-                </div>
+                )}
               </CardContent>
             </Card>
 
@@ -96,19 +142,27 @@ export default function AdminClientDetailPage() {
                 )}
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="p-8 border-2 border-dashed border-white/10 rounded-lg flex flex-col items-center justify-center text-center hover:bg-white/5 transition-colors cursor-pointer">
-                  <Upload className="w-8 h-8 text-muted-foreground mb-2" />
-                  <p className="text-sm font-medium">Upload Improved Version</p>
-                </div>
-                <div className="flex items-center justify-between p-3 bg-white/5 rounded border border-white/10">
-                  <div className="flex items-center gap-3">
-                    <FileText className="w-5 h-5 text-green-400" />
-                    <span className="text-sm truncate max-w-[150px]">{client.name.split(' ')[0]}_V1_Final.pdf</span>
+                {!uploadedFiles['resume_improved'] ? (
+                  <div className="relative p-8 border-2 border-dashed border-white/10 rounded-lg flex flex-col items-center justify-center text-center hover:bg-white/5 transition-colors cursor-pointer">
+                    <Upload className="w-8 h-8 text-muted-foreground mb-2" />
+                    <p className="text-sm font-medium">Upload Improved Version</p>
+                    <input 
+                      type="file" 
+                      className="absolute inset-0 opacity-0 cursor-pointer" 
+                      onChange={(e) => handleFileUpload('resume_improved', e)}
+                    />
                   </div>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="ghost" className="h-8 w-8 p-0"><Download className="w-4 h-4" /></Button>
+                ) : (
+                  <div className="flex items-center justify-between p-3 bg-white/5 rounded border border-white/10">
+                    <div className="flex items-center gap-3">
+                      <FileText className="w-5 h-5 text-green-400" />
+                      <span className="text-sm truncate max-w-[150px]">{uploadedFiles['resume_improved']}</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0"><Download className="w-4 h-4" /></Button>
+                    </div>
                   </div>
-                </div>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -121,10 +175,25 @@ export default function AdminClientDetailPage() {
               <CardTitle className="text-lg">Original Cover Letter</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="p-6 border-2 border-dashed border-white/10 rounded-lg flex flex-col items-center justify-center text-center hover:bg-white/5 transition-colors cursor-pointer">
-                <Upload className="w-6 h-6 text-muted-foreground mb-2" />
-                <p className="text-sm">Upload Base Cover Letter</p>
-              </div>
+              {!uploadedFiles['cover_letter_original'] ? (
+                <div className="relative p-6 border-2 border-dashed border-white/10 rounded-lg flex flex-col items-center justify-center text-center hover:bg-white/5 transition-colors cursor-pointer">
+                  <Upload className="w-6 h-6 text-muted-foreground mb-2" />
+                  <p className="text-sm">Upload Base Cover Letter</p>
+                  <input 
+                    type="file" 
+                    className="absolute inset-0 opacity-0 cursor-pointer" 
+                    onChange={(e) => handleFileUpload('cover_letter_original', e)}
+                  />
+                </div>
+              ) : (
+                <div className="flex items-center justify-between p-3 bg-white/5 rounded border border-white/10">
+                  <div className="flex items-center gap-3">
+                    <FileText className="w-5 h-5 text-purple-400" />
+                    <span className="text-sm truncate max-w-[200px]">{uploadedFiles['cover_letter_original']}</span>
+                  </div>
+                  <Button size="sm" variant="ghost" className="h-8 w-8 p-0"><Download className="w-4 h-4" /></Button>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -135,13 +204,30 @@ export default function AdminClientDetailPage() {
                   <CardTitle className="text-base">Version {version}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <div className="p-4 border-2 border-dashed border-white/10 rounded-lg flex flex-col items-center justify-center text-center hover:bg-white/5 transition-colors cursor-pointer h-32">
-                    <Upload className="w-5 h-5 text-muted-foreground mb-2" />
-                    <p className="text-xs">Upload Version {version}</p>
-                  </div>
+                  {!uploadedFiles[`cover_letter_${version}`] ? (
+                    <div className="relative p-4 border-2 border-dashed border-white/10 rounded-lg flex flex-col items-center justify-center text-center hover:bg-white/5 transition-colors cursor-pointer h-32">
+                      <Upload className="w-5 h-5 text-muted-foreground mb-2" />
+                      <p className="text-xs">Upload Version {version}</p>
+                      <input 
+                        type="file" 
+                        className="absolute inset-0 opacity-0 cursor-pointer" 
+                        onChange={(e) => handleFileUpload(`cover_letter_${version}`, e)}
+                      />
+                    </div>
+                  ) : (
+                    <div className="p-4 bg-white/5 rounded-lg border border-white/10 h-32 flex flex-col items-center justify-center text-center relative group">
+                       <FileText className="w-8 h-8 text-purple-400 mb-2" />
+                       <p className="text-xs text-white truncate max-w-full px-2">{uploadedFiles[`cover_letter_${version}`]}</p>
+                       <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-lg">
+                          <Button size="sm" variant="secondary"><Download className="w-4 h-4 mr-2" /> Download</Button>
+                       </div>
+                    </div>
+                  )}
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
                     <span>Status:</span>
-                    <span className="text-white">Not Uploaded</span>
+                    <span className={uploadedFiles[`cover_letter_${version}`] ? "text-green-400" : "text-white"}>
+                      {uploadedFiles[`cover_letter_${version}`] ? "Uploaded" : "Not Uploaded"}
+                    </span>
                   </div>
                 </CardContent>
               </Card>
@@ -156,10 +242,25 @@ export default function AdminClientDetailPage() {
               <CardTitle className="text-lg">Original LinkedIn Profile (PDF)</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="p-6 border-2 border-dashed border-white/10 rounded-lg flex flex-col items-center justify-center text-center hover:bg-white/5 transition-colors cursor-pointer">
-                <Upload className="w-6 h-6 text-muted-foreground mb-2" />
-                <p className="text-sm">Upload PDF</p>
-              </div>
+              {!uploadedFiles['linkedin_original'] ? (
+                <div className="relative p-6 border-2 border-dashed border-white/10 rounded-lg flex flex-col items-center justify-center text-center hover:bg-white/5 transition-colors cursor-pointer">
+                  <Upload className="w-6 h-6 text-muted-foreground mb-2" />
+                  <p className="text-sm">Upload PDF</p>
+                  <input 
+                    type="file" 
+                    className="absolute inset-0 opacity-0 cursor-pointer" 
+                    onChange={(e) => handleFileUpload('linkedin_original', e)}
+                  />
+                </div>
+              ) : (
+                <div className="flex items-center justify-between p-3 bg-white/5 rounded border border-white/10">
+                  <div className="flex items-center gap-3">
+                    <Linkedin className="w-5 h-5 text-blue-400" />
+                    <span className="text-sm truncate max-w-[200px]">{uploadedFiles['linkedin_original']}</span>
+                  </div>
+                  <Button size="sm" variant="ghost" className="h-8 w-8 p-0"><Download className="w-4 h-4" /></Button>
+                </div>
+              )}
             </CardContent>
           </Card>
           
@@ -170,10 +271,25 @@ export default function AdminClientDetailPage() {
                   <CardTitle className="text-base">Optimized Version {version}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <div className="p-4 border-2 border-dashed border-white/10 rounded-lg flex flex-col items-center justify-center text-center hover:bg-white/5 transition-colors cursor-pointer h-32">
-                    <Upload className="w-5 h-5 text-muted-foreground mb-2" />
-                    <p className="text-xs">Upload PDF</p>
-                  </div>
+                   {!uploadedFiles[`linkedin_${version}`] ? (
+                    <div className="relative p-4 border-2 border-dashed border-white/10 rounded-lg flex flex-col items-center justify-center text-center hover:bg-white/5 transition-colors cursor-pointer h-32">
+                      <Upload className="w-5 h-5 text-muted-foreground mb-2" />
+                      <p className="text-xs">Upload PDF</p>
+                      <input 
+                        type="file" 
+                        className="absolute inset-0 opacity-0 cursor-pointer" 
+                        onChange={(e) => handleFileUpload(`linkedin_${version}`, e)}
+                      />
+                    </div>
+                  ) : (
+                    <div className="p-4 bg-white/5 rounded-lg border border-white/10 h-32 flex flex-col items-center justify-center text-center relative group">
+                       <Linkedin className="w-8 h-8 text-blue-400 mb-2" />
+                       <p className="text-xs text-white truncate max-w-full px-2">{uploadedFiles[`linkedin_${version}`]}</p>
+                       <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-lg">
+                          <Button size="sm" variant="secondary"><Download className="w-4 h-4 mr-2" /> Download</Button>
+                       </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ))}
