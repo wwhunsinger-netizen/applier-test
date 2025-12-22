@@ -386,7 +386,7 @@ export default function ClientDocumentsPage() {
 // ... existing code ...
 
   // Update the NEW_RESUME_CONTENT structure to look like a PDF viewer
-  const RenderNewResumeContent = () => (
+  const renderNewResumeContent = () => (
     <div className="w-full min-h-full flex flex-col items-center gap-8 pb-20 origin-top" style={{ transform: !afterPdfUrl ? "scale(0.65)" : "none" }}>
       
       {/* Active Comment Draft Overlay - Rendered INSIDE scaled container so it moves with it */}
@@ -779,7 +779,7 @@ export default function ClientDocumentsPage() {
                     <div className={cn("mx-auto space-y-8", activeTab === "resume" ? "w-full" : "max-w-2xl blur-[0.5px]")}>
                        {activeTab === "resume" ? (
                           <div className="py-8 transform scale-90 origin-top flex justify-center w-full">
-                            <RenderNewResumeContent />
+                            {renderNewResumeContent()}
                           </div>
                        ) : (
                           <>
