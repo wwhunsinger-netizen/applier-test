@@ -62,7 +62,9 @@ export default function AdminClientsPage() {
       email: newClientEmail,
       username: newClientEmail.split('@')[0], // Mock username
       created: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-      status: "active"
+      status: "active",
+      applicationsSent: 0,
+      interviewsScheduled: 0
     };
 
     setClients(prev => [...prev, newClient]);

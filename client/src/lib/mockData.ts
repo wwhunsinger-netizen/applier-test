@@ -156,6 +156,8 @@ export interface Client {
   created: string;
   status: "active" | "action_needed";
   commentsCount?: number;
+  applicationsSent?: number;
+  interviewsScheduled?: number;
 }
 
 export const MOCK_CLIENTS_LIST: Client[] = [
