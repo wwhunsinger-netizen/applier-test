@@ -147,33 +147,13 @@ export default function ClientDocumentsPage() {
       setBeforePdfUrl(uploadedFiles['resume_original'] || null);
       setAfterPdfUrl(uploadedFiles['resume_improved'] || null);
     } else if (activeTab === "cover-letter") {
-      // Logic for cover letter versions if we supported viewing them in PDF viewer
       setBeforePdfUrl(uploadedFiles['cover_letter_original'] || null);
-      // For improved, maybe default to Version A for now or handle selection
       setAfterPdfUrl(uploadedFiles['cover_letter_A'] || null);
     } else if (activeTab === "linkedin") {
       setBeforePdfUrl(uploadedFiles['linkedin_original'] || null);
       setAfterPdfUrl(uploadedFiles['linkedin_A'] || null);
     }
   }, [uploadedFiles, activeTab]);
-
-  // Reset states when changing tabs, but check if already unlocked
-  useEffect(() => {
-    // Always reset revision request state when changing tabs
-    setIsRequestingRevisions(false);
-    setRevisionRequestText("");
-
-    if (unlockedDocs[activeTab]) {
-      setIsFlipped(true);
-      setShowLargeReview(false);
-      setIsRevealing(false);
-    } else {
-      setIsFlipped(false);
-      setShowLargeReview(false);
-      setIsRevealing(false);
-      setRevealPhase("intro");
-    }
-  }, [activeTab, unlockedDocs]);
 
   const config = DOC_CONFIG[activeTab];
   const isApproved = approvedDocs[activeTab];
