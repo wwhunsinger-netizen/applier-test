@@ -1,18 +1,97 @@
-import { sql } from "drizzle-orm";
-import { pgTable, text, varchar } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-export const users = pgTable("users", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
+export type UserRole = "Admin" | "Client" | "Applier";
+
+export interface Client {
+  id: string;
+  name: string;
+  email: string;
+  username: string;
+  created_at: string;
+  status: "active" | "action_needed";
+  comments_count?: number;
+  applications_sent?: number;
+  interviews_scheduled?: number;
+}
+
+export interface Applier {
+  id: string;
+  name: string;
+  email: string;
+  username: string;
+  created_at: string;
+}
+
+export interface Job {
+  id: string;
+  role: string;
+  company: string;
+  location: string;
+  posted_time: string;
+  match_score: number;
+  description: string;
+  client_id: string;
+  requirements?: string[];
+}
+
+export interface Application {
+  id: string;
+  job_id: string;
+  applier_id: string;
+  client_id: string;
+  status: "Pending" | "Applied" | "Interview" | "Offer" | "Rejected";
+  qa_status: "None" | "Approved" | "Rejected";
+  applied_date: string;
+  flagged_issue?: string;
+}
+
+export interface Interview {
+  id: string;
+  client_id: string;
+  company: string;
+  role: string;
+  date: string;
+  format: "Video" | "Panel" | "Phone" | "In-Person";
+  prep_doc_complete: boolean;
+}
+
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  role: UserRole;
+  username: string;
+  avatar?: string;
+}
+
+export const insertClientSchema = z.object({
+  name: z.string().min(1),
+  email: z.string().email(),
+  username: z.string().min(1),
+  status: z.enum(["active", "action_needed"]).default("active"),
+  applications_sent: z.number().default(0),
+  interviews_scheduled: z.number().default(0),
 });
 
-export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  password: true,
+export const insertApplicationSchema = z.object({
+  job_id: z.string(),
+  applier_id: z.string(),
+  client_id: z.string(),
+  status: z.enum(["Pending", "Applied", "Interview", "Offer", "Rejected"]),
+  qa_status: z.enum(["None", "Approved", "Rejected"]).default("None"),
+  applied_date: z.string(),
+  flagged_issue: z.string().optional(),
 });
 
-export type InsertUser = z.infer<typeof insertUserSchema>;
-export type User = typeof users.$inferSelect;
+export const insertInterviewSchema = z.object({
+  client_id: z.string(),
+  company: z.string(),
+  role: z.string(),
+  date: z.string(),
+  format: z.enum(["Video", "Panel", "Phone", "In-Person"]),
+  prep_doc_complete: z.boolean().default(false),
+});
+
+export type InsertClient = z.infer<typeof insertClientSchema>;
+export type InsertApplication = z.infer<typeof insertApplicationSchema>;
+export type InsertInterview = z.infer<typeof insertInterviewSchema>;

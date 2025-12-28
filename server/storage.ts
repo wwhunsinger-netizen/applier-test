@@ -1,38 +1,208 @@
-import { type User, type InsertUser } from "@shared/schema";
-import { randomUUID } from "crypto";
-
-// modify the interface with any CRUD methods
-// you might need
+import type { Client, Application, Interview, Job, Applier, InsertClient, InsertApplication, InsertInterview } from "@shared/schema";
+import { supabase } from "./supabase";
 
 export interface IStorage {
-  getUser(id: string): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
+  // Client operations
+  getClients(): Promise<Client[]>;
+  getClient(id: string): Promise<Client | null>;
+  createClient(client: InsertClient): Promise<Client>;
+  updateClient(id: string, updates: Partial<Client>): Promise<Client | null>;
+  
+  // Application operations
+  getApplications(): Promise<Application[]>;
+  getApplicationsByClient(clientId: string): Promise<Application[]>;
+  getApplicationsByApplier(applierId: string): Promise<Application[]>;
+  createApplication(application: InsertApplication): Promise<Application>;
+  
+  // Interview operations
+  getInterviews(): Promise<Interview[]>;
+  getInterviewsByClient(clientId: string): Promise<Interview[]>;
+  createInterview(interview: InsertInterview): Promise<Interview>;
+  
+  // Job operations
+  getJobs(): Promise<Job[]>;
+  getJobsByClient(clientId: string): Promise<Job[]>;
+  
+  // Applier operations
+  getAppliers(): Promise<Applier[]>;
+  getApplier(id: string): Promise<Applier | null>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<string, User>;
-
-  constructor() {
-    this.users = new Map();
+export class SupabaseStorage implements IStorage {
+  // Client operations
+  async getClients(): Promise<Client[]> {
+    const { data, error } = await supabase
+      .from('clients')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    return data || [];
   }
 
-  async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
+  async getClient(id: string): Promise<Client | null> {
+    const { data, error } = await supabase
+      .from('clients')
+      .select('*')
+      .eq('id', id)
+      .single();
+    
+    if (error) {
+      if (error.code === 'PGRST116') return null; // Not found
+      throw error;
+    }
+    return data;
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+  async createClient(client: InsertClient): Promise<Client> {
+    const { data, error } = await supabase
+      .from('clients')
+      .insert(client)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const id = randomUUID();
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
-    return user;
+  async updateClient(id: string, updates: Partial<Client>): Promise<Client | null> {
+    const { data, error } = await supabase
+      .from('clients')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) {
+      if (error.code === 'PGRST116') return null;
+      throw error;
+    }
+    return data;
+  }
+
+  // Application operations
+  async getApplications(): Promise<Application[]> {
+    const { data, error } = await supabase
+      .from('applications')
+      .select('*')
+      .order('applied_date', { ascending: false });
+    
+    if (error) throw error;
+    return data || [];
+  }
+
+  async getApplicationsByClient(clientId: string): Promise<Application[]> {
+    const { data, error } = await supabase
+      .from('applications')
+      .select('*')
+      .eq('client_id', clientId)
+      .order('applied_date', { ascending: false });
+    
+    if (error) throw error;
+    return data || [];
+  }
+
+  async getApplicationsByApplier(applierId: string): Promise<Application[]> {
+    const { data, error } = await supabase
+      .from('applications')
+      .select('*')
+      .eq('applier_id', applierId)
+      .order('applied_date', { ascending: false });
+    
+    if (error) throw error;
+    return data || [];
+  }
+
+  async createApplication(application: InsertApplication): Promise<Application> {
+    const { data, error } = await supabase
+      .from('applications')
+      .insert(application)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  }
+
+  // Interview operations
+  async getInterviews(): Promise<Interview[]> {
+    const { data, error } = await supabase
+      .from('interviews')
+      .select('*')
+      .order('date', { ascending: true });
+    
+    if (error) throw error;
+    return data || [];
+  }
+
+  async getInterviewsByClient(clientId: string): Promise<Interview[]> {
+    const { data, error } = await supabase
+      .from('interviews')
+      .select('*')
+      .eq('client_id', clientId)
+      .order('date', { ascending: true });
+    
+    if (error) throw error;
+    return data || [];
+  }
+
+  async createInterview(interview: InsertInterview): Promise<Interview> {
+    const { data, error } = await supabase
+      .from('interviews')
+      .insert(interview)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  }
+
+  // Job operations
+  async getJobs(): Promise<Job[]> {
+    const { data, error } = await supabase
+      .from('jobs')
+      .select('*')
+      .order('posted_time', { ascending: false });
+    
+    if (error) throw error;
+    return data || [];
+  }
+
+  async getJobsByClient(clientId: string): Promise<Job[]> {
+    const { data, error } = await supabase
+      .from('jobs')
+      .select('*')
+      .eq('client_id', clientId)
+      .order('posted_time', { ascending: false });
+    
+    if (error) throw error;
+    return data || [];
+  }
+
+  // Applier operations
+  async getAppliers(): Promise<Applier[]> {
+    const { data, error } = await supabase
+      .from('appliers')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    return data || [];
+  }
+
+  async getApplier(id: string): Promise<Applier | null> {
+    const { data, error } = await supabase
+      .from('appliers')
+      .select('*')
+      .eq('id', id)
+      .single();
+    
+    if (error) {
+      if (error.code === 'PGRST116') return null;
+      throw error;
+    }
+    return data;
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new SupabaseStorage();
