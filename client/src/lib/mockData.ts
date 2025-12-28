@@ -48,34 +48,6 @@ export interface LeaderboardEntry {
 
 export const MOCK_USERS = [
   {
-    id: "user-1",
-    name: "Sarah M.",
-    email: "sarah@jumpseat.com",
-    role: "Applier",
-    avatar: "https://i.pravatar.cc/150?u=sarah"
-  },
-  {
-    id: "user-2",
-    name: "Michael B.",
-    email: "michael@jumpseat.com",
-    role: "Applier",
-    avatar: "https://i.pravatar.cc/150?u=michael"
-  },
-  {
-    id: "user-3",
-    name: "Jessica T.",
-    email: "jessica@jumpseat.com",
-    role: "Applier",
-    avatar: "https://i.pravatar.cc/150?u=jessica"
-  },
-  {
-    id: "user-4",
-    name: "David K.",
-    email: "david@jumpseat.com",
-    role: "Applier",
-    avatar: "https://i.pravatar.cc/150?u=david"
-  },
-  {
     id: "user-5",
     name: "Admin User",
     email: "admin@jumpseat.com",
@@ -83,18 +55,11 @@ export const MOCK_USERS = [
     avatar: "https://i.pravatar.cc/150?u=admin"
   },
   {
-    id: "user-6",
-    name: "Client User",
-    email: "client@jumpseat.com",
-    role: "Client",
-    avatar: "https://i.pravatar.cc/150?u=client"
-  },
-  {
-    id: "user-7",
-    name: "New Client",
-    email: "newclient@jumpseat.com",
-    role: "Client",
-    avatar: "https://i.pravatar.cc/150?u=newclient"
+    id: "user-8",
+    name: "New Applier",
+    email: "newapplier@jumpseat.com",
+    role: "Applier",
+    avatar: "https://i.pravatar.cc/150?u=newapplier"
   }
 ];
 

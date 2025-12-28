@@ -55,8 +55,9 @@ export function UserProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = () => {
-    // For demo purposes, reset to default user or keep as is, but we'll clear storage
     localStorage.removeItem("jumpseat_user_email");
+    setCurrentUser(MOCK_USERS[0]); // Reset to default user
+    window.location.href = "/login"; // Redirect to login page
   };
 
   return (
