@@ -44,3 +44,7 @@ waitForPort = 5000
 
 [agent]
 mockupState = "MOCKUP"
+
+[userenv]
+
+[userenv.shared]
