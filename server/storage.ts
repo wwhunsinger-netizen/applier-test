@@ -33,8 +33,7 @@ export class SupabaseStorage implements IStorage {
   async getClients(): Promise<Client[]> {
     const { data, error } = await supabase
       .from('clients')
-      .select('*')
-      .order('created_at', { ascending: false });
+      .select('*');
     
     if (error) throw error;
     return data || [];
@@ -84,8 +83,7 @@ export class SupabaseStorage implements IStorage {
   async getApplications(): Promise<Application[]> {
     const { data, error } = await supabase
       .from('applications')
-      .select('*')
-      .order('applied_date', { ascending: false });
+      .select('*');
     
     if (error) throw error;
     return data || [];
@@ -95,8 +93,7 @@ export class SupabaseStorage implements IStorage {
     const { data, error } = await supabase
       .from('applications')
       .select('*')
-      .eq('client_id', clientId)
-      .order('applied_date', { ascending: false });
+      .eq('client_id', clientId);
     
     if (error) throw error;
     return data || [];
@@ -106,8 +103,7 @@ export class SupabaseStorage implements IStorage {
     const { data, error } = await supabase
       .from('applications')
       .select('*')
-      .eq('applier_id', applierId)
-      .order('applied_date', { ascending: false });
+      .eq('applier_id', applierId);
     
     if (error) throw error;
     return data || [];
@@ -128,8 +124,7 @@ export class SupabaseStorage implements IStorage {
   async getInterviews(): Promise<Interview[]> {
     const { data, error } = await supabase
       .from('interviews')
-      .select('*')
-      .order('date', { ascending: true });
+      .select('*');
     
     if (error) throw error;
     return data || [];
@@ -139,8 +134,7 @@ export class SupabaseStorage implements IStorage {
     const { data, error } = await supabase
       .from('interviews')
       .select('*')
-      .eq('client_id', clientId)
-      .order('date', { ascending: true });
+      .eq('client_id', clientId);
     
     if (error) throw error;
     return data || [];
@@ -161,8 +155,7 @@ export class SupabaseStorage implements IStorage {
   async getJobs(): Promise<Job[]> {
     const { data, error } = await supabase
       .from('jobs')
-      .select('*')
-      .order('posted_time', { ascending: false });
+      .select('*');
     
     if (error) throw error;
     return data || [];
@@ -172,8 +165,7 @@ export class SupabaseStorage implements IStorage {
     const { data, error } = await supabase
       .from('jobs')
       .select('*')
-      .eq('client_id', clientId)
-      .order('posted_time', { ascending: false });
+      .eq('client_id', clientId);
     
     if (error) throw error;
     return data || [];
@@ -183,8 +175,7 @@ export class SupabaseStorage implements IStorage {
   async getAppliers(): Promise<Applier[]> {
     const { data, error } = await supabase
       .from('appliers')
-      .select('*')
-      .order('created_at', { ascending: false });
+      .select('*');
     
     if (error) throw error;
     return data || [];
