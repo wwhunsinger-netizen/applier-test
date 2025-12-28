@@ -1,4 +1,4 @@
-import type { Client, Application, Interview, Job, Applier, InsertClient, InsertApplication, InsertInterview } from "@shared/schema";
+import type { Client, Application, Interview, Job, Applier, InsertClient, UpdateClient, InsertApplication, InsertInterview } from "@shared/schema";
 
 const API_BASE = "/api";
 
@@ -25,7 +25,7 @@ export async function createClient(client: InsertClient): Promise<Client> {
   return res.json();
 }
 
-export async function updateClient(id: string, updates: Partial<Client>): Promise<Client> {
+export async function updateClient(id: string, updates: UpdateClient): Promise<Client> {
   const res = await fetch(`${API_BASE}/clients/${id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },

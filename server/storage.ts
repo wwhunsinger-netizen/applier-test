@@ -1,4 +1,4 @@
-import type { Client, Application, Interview, Job, Applier, InsertClient, InsertApplication, InsertInterview } from "@shared/schema";
+import type { Client, Application, Interview, Job, Applier, InsertClient, UpdateClient, InsertApplication, InsertInterview } from "@shared/schema";
 import { supabase } from "./supabase";
 
 export interface IStorage {
@@ -6,7 +6,7 @@ export interface IStorage {
   getClients(): Promise<Client[]>;
   getClient(id: string): Promise<Client | null>;
   createClient(client: InsertClient): Promise<Client>;
-  updateClient(id: string, updates: Partial<Client>): Promise<Client | null>;
+  updateClient(id: string, updates: UpdateClient): Promise<Client | null>;
   
   // Application operations
   getApplications(): Promise<Application[]>;
@@ -64,7 +64,7 @@ export class SupabaseStorage implements IStorage {
     return data;
   }
 
-  async updateClient(id: string, updates: Partial<Client>): Promise<Client | null> {
+  async updateClient(id: string, updates: UpdateClient): Promise<Client | null> {
     const { data, error } = await supabase
       .from('clients')
       .update(updates)

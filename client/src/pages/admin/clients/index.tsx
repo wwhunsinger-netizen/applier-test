@@ -76,7 +76,10 @@ export default function AdminClientsPage() {
       username: newClientEmail.split('@')[0],
       status: "active",
       applications_sent: 0,
-      interviews_scheduled: 0
+      interviews_scheduled: 0,
+      job_criteria_signoff: false,
+      resume_approved: false,
+      cover_letter_approved: false
     };
 
     createClientMutation.mutate(newClient);
@@ -166,7 +169,7 @@ export default function AdminClientsPage() {
                     <div className="text-sm text-muted-foreground flex flex-col md:flex-row md:items-center gap-1 md:gap-3 mt-1">
                       <span data-testid={`text-email-${client.id}`}>{client.email}</span>
                       <span className="hidden md:inline text-white/20">•</span>
-                      <span>Created: {new Date(client.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                      <span>Created: {client.created_at ? new Date(client.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'}</span>
                     </div>
                   </div>
                 </div>

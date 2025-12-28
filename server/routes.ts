@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertClientSchema, insertApplicationSchema, insertInterviewSchema } from "@shared/schema";
+import { insertClientSchema, updateClientSchema, insertApplicationSchema, insertInterviewSchema } from "@shared/schema";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -45,14 +45,15 @@ export async function registerRoutes(
 
   app.patch("/api/clients/:id", async (req, res) => {
     try {
-      const client = await storage.updateClient(req.params.id, req.body);
+      const validatedData = updateClientSchema.parse(req.body);
+      const client = await storage.updateClient(req.params.id, validatedData);
       if (!client) {
         return res.status(404).json({ error: "Client not found" });
       }
       res.json(client);
     } catch (error) {
       console.error("Error updating client:", error);
-      res.status(500).json({ error: "Failed to update client" });
+      res.status(400).json({ error: "Failed to update client" });
     }
   });
 

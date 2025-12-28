@@ -1,6 +1,6 @@
 import { MOCK_CLIENT_STATS, MOCK_CLIENT_WEEKLY_PROGRESS, MOCK_CLIENT_ACTIVITY_FEED, MOCK_CLIENT_PIPELINE, MOCK_CLIENT_INTERVIEWS } from "@/lib/mockData";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Send, XCircle, Calendar, ChevronDown, ChevronUp, TrendingUp, Clock, CheckCircle2, ArrowRight, Flame, Sparkles, Sun, ClipboardCheck, FileText } from "lucide-react";
+import { Send, XCircle, Calendar, ChevronDown, ChevronUp, TrendingUp, Clock, CheckCircle2, ArrowRight, Flame, Sparkles, Sun, ClipboardCheck, FileText, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -8,11 +8,24 @@ import { useUser } from "@/lib/userContext";
 import { format } from "date-fns";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
+import { useQuery } from "@tanstack/react-query";
+import { fetchClient } from "@/lib/api";
+import type { Client } from "@shared/schema";
 
 export default function ClientOverviewPage() {
   const [isAppsExpanded, setIsAppsExpanded] = useState(false);
   const { currentUser } = useUser();
   const [greeting, setGreeting] = useState<{text: string, style: string, icon: React.ReactNode | null} | null>(null);
+
+  // Check if this is a real Supabase UUID (36 chars with dashes) vs mock ID
+  const isRealClientId = Boolean(currentUser.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(currentUser.id));
+  
+  // Fetch client data from API to get onboarding status (only for real clients)
+  const { data: clientData, isLoading: isClientLoading } = useQuery({
+    queryKey: ['client', currentUser.id],
+    queryFn: () => fetchClient(currentUser.id),
+    enabled: isRealClientId,
+  });
 
   useEffect(() => {
     const now = new Date();
@@ -44,37 +57,36 @@ export default function ClientOverviewPage() {
     }
   }, [currentUser]);
   
-  // Use mock stats unless it's the new test user which should have 0 stats
-  const isNewClient = currentUser.email === "newclient@jumpseat.com";
+  // Check onboarding status from API data
+  const resumeApproved = clientData?.resume_approved ?? false;
+  const coverLetterApproved = clientData?.cover_letter_approved ?? false;
+  const jobCriteriaSignoff = clientData?.job_criteria_signoff ?? false;
   
+  // All onboarding complete when all three are true
+  const isOnboardingComplete = resumeApproved && coverLetterApproved && jobCriteriaSignoff;
+  
+  // Documents are approved when both resume and cover letter are approved
+  const documentsApproved = resumeApproved && coverLetterApproved;
+  
+  // Use mock stats for display
   const stats = {
     ...MOCK_CLIENT_STATS,
-    totalApps: currentUser.applicationsSent !== undefined ? currentUser.applicationsSent : (isNewClient ? 0 : MOCK_CLIENT_STATS.totalApps)
+    totalApps: clientData?.applications_sent ?? 0
   };
-  
-  // Check completion status from localStorage
-  const [isCriteriaCompleted, setIsCriteriaCompleted] = useState(false);
-  const [isCriteriaReady, setIsCriteriaReady] = useState(false);
-
-  useEffect(() => {
-    // For existing mock users (not new clients), assume criteria is ready
-    if (!isNewClient) {
-      setIsCriteriaReady(true);
-      if (localStorage.getItem('jobCriteriaCompleted') === 'true') {
-        setIsCriteriaCompleted(true);
-      }
-    } else {
-      // For new clients, check specific flags
-      const ready = localStorage.getItem(`jobCriteriaReady_${currentUser.id}`) === 'true';
-      const completed = localStorage.getItem(`jobCriteriaCompleted_${currentUser.id}`) === 'true';
-      setIsCriteriaReady(ready);
-      setIsCriteriaCompleted(completed);
-    }
-  }, [currentUser.id, isNewClient]);
   
   const nextInterview = MOCK_CLIENT_INTERVIEWS.find(i => new Date(i.date) > new Date()) || MOCK_CLIENT_INTERVIEWS[0];
 
-  if (stats.totalApps === 0) {
+  // Show loading state while fetching client data (only for real clients)
+  if (isRealClientId && isClientLoading) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // Show onboarding checklist if not all steps are complete
+  if (!isOnboardingComplete) {
     return (
       <div className="space-y-8 pb-10 min-h-[60vh] flex flex-col items-center justify-center text-center">
         <motion.div
@@ -83,14 +95,24 @@ export default function ClientOverviewPage() {
            className="space-y-8 max-w-2xl"
         >
           <div>
-            <h1 className="text-4xl font-bold text-white mb-2">Welcome, {currentUser.name.split(' ')[0]}!</h1>
+            <h1 className="text-4xl font-bold text-white mb-2" data-testid="text-welcome-title">Welcome, {currentUser.name.split(' ')[0]}!</h1>
             <p className="text-muted-foreground text-lg">Finish the following onboarding steps so we can start applying.</p>
           </div>
 
           <div className="grid gap-6 md:grid-cols-2">
             <Link href="/client/documents">
-              <Card className="bg-[#111] border-white/10 hover:border-primary/50 transition-all cursor-pointer group h-full">
-                <CardContent className="p-8 flex flex-col items-center gap-4">
+              <Card className={cn(
+                "bg-[#111] border-white/10 transition-all h-full relative overflow-hidden",
+                documentsApproved ? "opacity-80" : "hover:border-primary/50 cursor-pointer group"
+              )} data-testid="card-review-documents">
+                {documentsApproved && (
+                  <div className="absolute inset-0 bg-green-500/10 z-0 flex items-center justify-center">
+                    <div className="bg-green-500/20 p-4 rounded-full backdrop-blur-sm border border-green-500/30">
+                        <CheckCircle2 className="w-12 h-12 text-green-500" />
+                    </div>
+                  </div>
+                )}
+                <CardContent className={cn("p-8 flex flex-col items-center gap-4 relative z-10", documentsApproved && "opacity-40")}>
                   <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
                     <FileText className="w-8 h-8" />
                   </div>
@@ -102,47 +124,30 @@ export default function ClientOverviewPage() {
               </Card>
             </Link>
 
-            {isCriteriaReady ? (
-              <Link href={isCriteriaCompleted ? "#" : "/client/job-criteria"}>
-                <Card className={cn(
-                  "bg-[#111] border-white/10 transition-all h-full relative overflow-hidden",
-                  isCriteriaCompleted ? "opacity-80" : "hover:border-primary/50 cursor-pointer group"
-                )}>
-                  {isCriteriaCompleted && (
-                    <div className="absolute inset-0 bg-green-500/10 z-0 flex items-center justify-center">
-                      <div className="bg-green-500/20 p-4 rounded-full backdrop-blur-sm border border-green-500/30">
-                          <CheckCircle2 className="w-12 h-12 text-green-500" />
-                      </div>
+            <Link href={jobCriteriaSignoff ? "#" : "/client/job-criteria"}>
+              <Card className={cn(
+                "bg-[#111] border-white/10 transition-all h-full relative overflow-hidden",
+                jobCriteriaSignoff ? "opacity-80" : "hover:border-primary/50 cursor-pointer group"
+              )} data-testid="card-review-job-criteria">
+                {jobCriteriaSignoff && (
+                  <div className="absolute inset-0 bg-green-500/10 z-0 flex items-center justify-center">
+                    <div className="bg-green-500/20 p-4 rounded-full backdrop-blur-sm border border-green-500/30">
+                        <CheckCircle2 className="w-12 h-12 text-green-500" />
                     </div>
-                  )}
-                  
-                  <CardContent className={cn("p-8 flex flex-col items-center gap-4 relative z-10", isCriteriaCompleted && "opacity-40")}>
-                    <div className="w-16 h-16 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-500 group-hover:scale-110 transition-transform">
-                      <ClipboardCheck className="w-8 h-8" />
-                    </div>
-                    <div className="space-y-2">
-                      <h3 className="text-xl font-bold text-white">Review Job Criteria</h3>
-                      <p className="text-sm text-muted-foreground">Confirm the types of jobs we should apply to.</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            ) : (
-              <Card className="bg-[#111] border-white/10 h-full relative overflow-hidden opacity-60 cursor-not-allowed">
-                 <div className="absolute inset-0 bg-black/40 z-20 flex items-center justify-center backdrop-blur-[1px]">
-                   {/* Overlay content if needed, currently empty to just block interaction */}
-                 </div>
-                 <CardContent className="p-8 flex flex-col items-center gap-4 relative z-10">
-                    <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center text-muted-foreground">
-                      <Clock className="w-8 h-8 animate-pulse" />
-                    </div>
-                    <div className="space-y-2">
-                      <h3 className="text-xl font-bold text-white">Review Job Criteria</h3>
-                      <p className="text-sm text-muted-foreground">Your job matches are being prepared by the team.</p>
-                    </div>
-                  </CardContent>
+                  </div>
+                )}
+                
+                <CardContent className={cn("p-8 flex flex-col items-center gap-4 relative z-10", jobCriteriaSignoff && "opacity-40")}>
+                  <div className="w-16 h-16 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-500 group-hover:scale-110 transition-transform">
+                    <ClipboardCheck className="w-8 h-8" />
+                  </div>
+                  <div className="space-y-2">
+                    <h3 className="text-xl font-bold text-white">Review Job Criteria</h3>
+                    <p className="text-sm text-muted-foreground">Confirm the types of jobs we should apply to.</p>
+                  </div>
+                </CardContent>
               </Card>
-            )}
+            </Link>
           </div>
         </motion.div>
       </div>
