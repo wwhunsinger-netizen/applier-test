@@ -13,6 +13,8 @@ import { Document, Page, pdfjs } from 'react-pdf';
 import { toast } from "sonner";
 import noCoverLetterImg from "@assets/No_cover_letter_1766359371139.png";
 import { useUser } from "@/lib/userContext";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { fetchClient, updateClient } from "@/lib/api";
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   'pdfjs-dist/build/pdf.worker.min.mjs',
@@ -76,8 +78,32 @@ const PDFViewer = ({ url, scale = 0.65 }: { url: string, scale?: number }) => {
 
 export default function ClientDocumentsPage() {
   const { currentUser } = useUser();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<DocType>("resume");
   const [isFlipped, setIsFlipped] = useState(false);
+  
+  // Check if this is a real Supabase UUID vs mock ID
+  const isRealClientId = Boolean(currentUser.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(currentUser.id));
+  
+  // Fetch client data from API to get current approval status
+  const { data: clientData } = useQuery({
+    queryKey: ['client', currentUser.id],
+    queryFn: () => fetchClient(currentUser.id),
+    enabled: isRealClientId,
+  });
+  
+  // Mutation to update client onboarding fields
+  const updateClientMutation = useMutation({
+    mutationFn: (updates: { resume_approved?: boolean; cover_letter_approved?: boolean }) => 
+      updateClient(currentUser.id, updates),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['client', currentUser.id] });
+    },
+    onError: (error) => {
+      console.error('Failed to update client:', error);
+      toast.error("Failed to save approval");
+    }
+  });
   
   // Load uploaded files from the Admin Context (localStorage)
   const [uploadedFiles, setUploadedFiles] = useState<Record<string, string>>({});
@@ -104,22 +130,32 @@ export default function ClientDocumentsPage() {
     return () => window.removeEventListener('storage', loadFiles);
   }, [currentUser.id]);
 
-  const [approvedDocs, setApprovedDocs] = useState<Record<DocType, boolean>>(() => {
-    try {
-      const saved = localStorage.getItem(`client_approvals_${currentUser.id}`);
-      return saved ? JSON.parse(saved) : {
-        resume: false,
-        "cover-letter": false,
-        linkedin: false
-      };
-    } catch {
-      return {
-        resume: false,
-        "cover-letter": false,
-        linkedin: false
-      };
-    }
+  const [approvedDocs, setApprovedDocs] = useState<Record<DocType, boolean>>({
+    resume: false,
+    "cover-letter": false,
+    linkedin: false
   });
+  
+  // Sync approval state from API data when available
+  useEffect(() => {
+    if (clientData) {
+      setApprovedDocs(prev => ({
+        ...prev,
+        resume: clientData.resume_approved ?? false,
+        "cover-letter": clientData.cover_letter_approved ?? false,
+      }));
+    } else if (!isRealClientId) {
+      // Fallback to localStorage for mock users
+      try {
+        const saved = localStorage.getItem(`client_approvals_${currentUser.id}`);
+        if (saved) {
+          setApprovedDocs(JSON.parse(saved));
+        }
+      } catch {
+        // Ignore errors
+      }
+    }
+  }, [clientData, isRealClientId, currentUser.id]);
   const [activeVersion, setActiveVersion] = useState("A");
   const [comments, setComments] = useState<Record<DocType, {id: number, text: string, top: string}[]>>(() => {
     try {
@@ -348,14 +384,25 @@ export default function ClientDocumentsPage() {
     setApprovedDocs(prev => ({ ...prev, [activeTab]: true }));
     setComments(prev => ({ ...prev, [activeTab]: [] })); 
     
-    // Save approval status to localStorage for Admin visibility
-    try {
-      const existingApprovalsStr = localStorage.getItem(`client_approvals_${currentUser.id}`);
-      const existingApprovals = existingApprovalsStr ? JSON.parse(existingApprovalsStr) : {};
-      const newApprovals = { ...existingApprovals, [activeTab]: true };
-      localStorage.setItem(`client_approvals_${currentUser.id}`, JSON.stringify(newApprovals));
-    } catch (e) {
-      console.error("Failed to save approval status", e);
+    // Save approval status to API (for real clients) or localStorage (for mock clients)
+    if (isRealClientId) {
+      // Map document type to API field
+      if (activeTab === "resume") {
+        updateClientMutation.mutate({ resume_approved: true });
+      } else if (activeTab === "cover-letter") {
+        updateClientMutation.mutate({ cover_letter_approved: true });
+      }
+      toast.success(`${DOC_CONFIG[activeTab].label} approved!`);
+    } else {
+      // Fallback to localStorage for mock users
+      try {
+        const existingApprovalsStr = localStorage.getItem(`client_approvals_${currentUser.id}`);
+        const existingApprovals = existingApprovalsStr ? JSON.parse(existingApprovalsStr) : {};
+        const newApprovals = { ...existingApprovals, [activeTab]: true };
+        localStorage.setItem(`client_approvals_${currentUser.id}`, JSON.stringify(newApprovals));
+      } catch (e) {
+        console.error("Failed to save approval status", e);
+      }
     }
   };
 

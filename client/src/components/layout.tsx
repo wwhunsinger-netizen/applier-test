@@ -62,23 +62,23 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           {navItems.map((item) => {
             const isActive = location === item.href;
             return (
-              <Link key={item.href} href={item.href}>
-                <a
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "flex items-center gap-3 px-4 py-3 rounded-md text-sm font-medium transition-all duration-200 group",
+                  isActive
+                    ? "bg-primary/10 text-primary shadow-sm"
+                    : "text-muted-foreground hover:bg-white/5 hover:text-white"
+                )}
+              >
+                <item.icon
                   className={cn(
-                    "flex items-center gap-3 px-4 py-3 rounded-md text-sm font-medium transition-all duration-200 group",
-                    isActive
-                      ? "bg-primary/10 text-primary shadow-sm"
-                      : "text-muted-foreground hover:bg-white/5 hover:text-white"
+                    "w-5 h-5 transition-colors",
+                    isActive ? "text-primary" : "text-muted-foreground group-hover:text-white"
                   )}
-                >
-                  <item.icon
-                    className={cn(
-                      "w-5 h-5 transition-colors",
-                      isActive ? "text-primary" : "text-muted-foreground group-hover:text-white"
-                    )}
-                  />
-                  {item.label}
-                </a>
+                />
+                {item.label}
               </Link>
             );
           })}
@@ -106,12 +106,15 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               <p className="text-xs text-muted-foreground truncate">{currentUser.email}</p>
             </div>
           </div>
-          <Link href="/login" onClick={logout}>
-            <Button variant="outline" size="sm" className="w-full justify-start text-muted-foreground hover:text-destructive hover:bg-destructive/10 hover:border-destructive/20 border-white/10 bg-transparent">
-              <LogOut className="w-4 h-4 mr-2" />
-              Sign Out
-            </Button>
-          </Link>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={logout}
+            className="w-full justify-start text-muted-foreground hover:text-destructive hover:bg-destructive/10 hover:border-destructive/20 border-white/10 bg-transparent"
+          >
+            <LogOut className="w-4 h-4 mr-2" />
+            Sign Out
+          </Button>
         </div>
       </aside>
 

@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { Link, useRoute } from "wouter";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Client } from "@shared/schema";
-import { fetchClient } from "@/lib/api";
+import { fetchClient, updateClient } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,18 +11,35 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { ArrowLeft, Upload, FileText, Download, CheckCircle2, AlertCircle, Plus, Calendar, Clock, Video, Users, Link as LinkIcon, Linkedin, Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { toast } from "sonner";
 
 export default function AdminClientDetailPage() {
   const [, params] = useRoute("/admin/clients/:id");
   const clientId = params?.id;
+  const queryClient = useQueryClient();
 
   // Fetch client from API
   const { data: client, isLoading, error } = useQuery({
     queryKey: ['client', clientId],
     queryFn: () => fetchClient(clientId!),
     enabled: !!clientId
+  });
+  
+  // Mutation to update client onboarding fields
+  const updateClientMutation = useMutation({
+    mutationFn: (updates: { resume_approved?: boolean; cover_letter_approved?: boolean; job_criteria_signoff?: boolean }) => 
+      updateClient(clientId!, updates),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['client', clientId] });
+      toast.success("Client updated");
+    },
+    onError: (error) => {
+      console.error('Failed to update client:', error);
+      toast.error("Failed to update client");
+    }
   });
 
   const handleDeleteClient = () => {
@@ -63,17 +80,7 @@ export default function AdminClientDetailPage() {
     return saved ? JSON.parse(saved) : {};
   });
 
-  // Load approvals
-  const [clientApprovals, setClientApprovals] = useState<Record<string, boolean>>(() => {
-    try {
-      const saved = localStorage.getItem(`client_approvals_${clientId}`);
-      return saved ? JSON.parse(saved) : {};
-    } catch {
-      return {};
-    }
-  });
-
-  // Load comments
+  // Load comments from localStorage (documents feedback system)
   const [clientComments, setClientComments] = useState<Record<string, {id: number, text: string, top: string}[]>>(() => {
     try {
       const saved = localStorage.getItem(`client_comments_${clientId}`);
@@ -83,13 +90,10 @@ export default function AdminClientDetailPage() {
     }
   });
 
-  // Listen for storage updates
+  // Listen for storage updates (for comments only - approvals come from API now)
   useEffect(() => {
     const loadData = () => {
       try {
-        const savedApprovals = localStorage.getItem(`client_approvals_${clientId}`);
-        if (savedApprovals) setClientApprovals(JSON.parse(savedApprovals));
-        
         const savedComments = localStorage.getItem(`client_comments_${clientId}`);
         if (savedComments) setClientComments(JSON.parse(savedComments));
       } catch (e) {
@@ -97,8 +101,8 @@ export default function AdminClientDetailPage() {
       }
     };
     
-    // Check periodically since storage event only works across tabs
-    const interval = setInterval(loadData, 2000);
+    // Check periodically for comment updates from client
+    const interval = setInterval(loadData, 5000);
     return () => clearInterval(interval);
   }, [clientId]);
 
@@ -155,10 +159,12 @@ export default function AdminClientDetailPage() {
         setClientComments(newComments);
         localStorage.setItem(`client_comments_${clientId}`, JSON.stringify(newComments));
 
-        // 3. Reset approval status
-        const newApprovals = { ...clientApprovals, [activeTab]: false };
-        setClientApprovals(newApprovals);
-        localStorage.setItem(`client_approvals_${clientId}`, JSON.stringify(newApprovals));
+        // 3. Reset approval status via API - when uploading a new revision, reset the approval
+        if (activeTab === 'resume') {
+          updateClientMutation.mutate({ resume_approved: false });
+        } else if (activeTab === 'cover-letters') {
+          updateClientMutation.mutate({ cover_letter_approved: false });
+        }
       };
       
       reader.readAsDataURL(file);
@@ -182,6 +188,58 @@ export default function AdminClientDetailPage() {
           <Button variant="destructive" size="sm" onClick={handleDeleteClient}>Delete Client</Button>
         </div>
       </div>
+
+      {/* Onboarding Status Controls */}
+      <Card className="bg-[#111] border-white/10">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <CheckCircle2 className="w-5 h-5 text-primary" />
+            Onboarding Status
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid md:grid-cols-3 gap-6">
+            <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/10">
+              <div>
+                <Label className="text-sm font-medium text-white">Resume Approved</Label>
+                <p className="text-xs text-muted-foreground">Client has approved their resume</p>
+              </div>
+              <Switch
+                checked={client.resume_approved ?? false}
+                onCheckedChange={(checked) => updateClientMutation.mutate({ resume_approved: checked })}
+                disabled={updateClientMutation.isPending}
+                data-testid="switch-resume-approved"
+              />
+            </div>
+            
+            <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/10">
+              <div>
+                <Label className="text-sm font-medium text-white">Cover Letter Approved</Label>
+                <p className="text-xs text-muted-foreground">Client has approved cover letter</p>
+              </div>
+              <Switch
+                checked={client.cover_letter_approved ?? false}
+                onCheckedChange={(checked) => updateClientMutation.mutate({ cover_letter_approved: checked })}
+                disabled={updateClientMutation.isPending}
+                data-testid="switch-cover-letter-approved"
+              />
+            </div>
+            
+            <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/10">
+              <div>
+                <Label className="text-sm font-medium text-white">Job Criteria Signoff</Label>
+                <p className="text-xs text-muted-foreground">Client has approved job criteria</p>
+              </div>
+              <Switch
+                checked={client.job_criteria_signoff ?? false}
+                onCheckedChange={(checked) => updateClientMutation.mutate({ job_criteria_signoff: checked })}
+                disabled={updateClientMutation.isPending}
+                data-testid="switch-job-criteria-signoff"
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
@@ -243,7 +301,7 @@ export default function AdminClientDetailPage() {
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="text-lg">Improved Resume</CardTitle>
                 {uploadedFiles['resume_improved'] ? (
-                  clientApprovals['resume'] ? (
+                  client.resume_approved ? (
                     <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/20">Approved</Badge>
                   ) : clientComments['resume'] && clientComments['resume'].length > 0 ? (
                     <Badge variant="destructive" className="bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500/20">Changes Requested</Badge>

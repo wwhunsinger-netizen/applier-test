@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,14 +9,41 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { fetchClient, updateClient } from "@/lib/api";
+import { useUser } from "@/lib/userContext";
 
 export default function ClientJobCriteriaPage() {
+  const { currentUser } = useUser();
+  const queryClient = useQueryClient();
   const [expandedJobId, setExpandedJobId] = useState<string | null>(null);
   const [jobs, setJobs] = useState(MOCK_JOBS);
   const [rejectingJobId, setRejectingJobId] = useState<string | null>(null);
   const [rejectionComment, setRejectionComment] = useState("");
   const [rejectedJobs, setRejectedJobs] = useState<Record<string, string>>({}); // jobId -> comment
   const [approvedJobs, setApprovedJobs] = useState<string[]>([]);
+  
+  // Check if this is a real Supabase UUID vs mock ID
+  const isRealClientId = Boolean(currentUser.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(currentUser.id));
+  
+  // Fetch client data from API to check if already submitted
+  const { data: clientData } = useQuery({
+    queryKey: ['client', currentUser.id],
+    queryFn: () => fetchClient(currentUser.id),
+    enabled: isRealClientId,
+  });
+  
+  // Mutation to update client job_criteria_signoff
+  const updateClientMutation = useMutation({
+    mutationFn: () => updateClient(currentUser.id, { job_criteria_signoff: true }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['client', currentUser.id] });
+    },
+    onError: (error) => {
+      console.error('Failed to update client:', error);
+      toast.error("Failed to save approval");
+    }
+  });
 
   const toggleExpand = (id: string, e: React.MouseEvent) => {
     // Prevent expanding if clicking action buttons
@@ -46,32 +73,81 @@ export default function ClientJobCriteriaPage() {
   };
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Derive submission state from API data for real clients, localStorage for mock
+  const getLocalJobCriteriaApproval = (): boolean => {
+    if (isRealClientId) return false;
+    try {
+      const saved = localStorage.getItem(`client_approvals_${currentUser.id}`);
+      if (saved) {
+        const approvals = JSON.parse(saved);
+        return approvals['job-criteria'] ?? false;
+      }
+    } catch {}
+    return false;
+  };
+  
   const [isSubmitted, setIsSubmitted] = useState(false);
   
-  // Initialize state from localStorage
-  useState(() => {
-    if (localStorage.getItem('jobCriteriaCompleted') === 'true') {
-      setIsSubmitted(true);
+  // Sync submitted state from API data when it loads (bidirectional sync)
+  useEffect(() => {
+    // For real clients, use API data as source of truth
+    if (isRealClientId) {
+      setIsSubmitted(clientData?.job_criteria_signoff ?? false);
     }
-  });
+    // For mock clients, check localStorage
+    else {
+      setIsSubmitted(getLocalJobCriteriaApproval());
+    }
+  }, [clientData, isRealClientId, currentUser.id]);
 
   // Check if all jobs have been reviewed
   const allReviewed = jobs.every(job => approvedJobs.includes(job.id) || rejectedJobs[job.id]);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     setIsSubmitting(true);
     
-    // Simulate API call/processing time
-    setTimeout(() => {
-      setIsSubmitting(false);
-      setIsSubmitted(true);
-      // Save completion state to localStorage for the Overview page to detect
-      localStorage.setItem('jobCriteriaCompleted', 'true');
-      toast.success("Job criteria submitted successfully!");
-    }, 1500);
+    // Call API for real clients, use localStorage fallback for mock users
+    if (isRealClientId) {
+      updateClientMutation.mutate(undefined, {
+        onSuccess: async () => {
+          // Wait for query to refetch before hiding loading state
+          await queryClient.invalidateQueries({ queryKey: ['client', currentUser.id] });
+          setIsSubmitting(false);
+          toast.success("Job criteria submitted successfully!");
+          // isSubmitted will be set by useEffect when query refetches
+        },
+        onError: () => {
+          setIsSubmitting(false);
+        }
+      });
+    } else {
+      // Fallback for mock users
+      setTimeout(() => {
+        // Save completion state to localStorage first
+        try {
+          const existingApprovalsStr = localStorage.getItem(`client_approvals_${currentUser.id}`);
+          const existingApprovals = existingApprovalsStr ? JSON.parse(existingApprovalsStr) : {};
+          const newApprovals = { ...existingApprovals, 'job-criteria': true };
+          localStorage.setItem(`client_approvals_${currentUser.id}`, JSON.stringify(newApprovals));
+        } catch (e) {
+          console.error("Failed to save approval status", e);
+        }
+        // Then update local state
+        setIsSubmitted(true);
+        setIsSubmitting(false);
+        toast.success("Job criteria submitted successfully!");
+      }, 1500);
+    }
   };
 
-  if (isSubmitted) {
+  // Show completion screen when API confirms signoff (or localStorage for mock users)
+  // Use API data as source of truth for real clients
+  const showCompletionScreen = isRealClientId 
+    ? (clientData?.job_criteria_signoff === true) 
+    : isSubmitted;
+    
+  if (showCompletionScreen) {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center text-center space-y-8 animate-in fade-in zoom-in duration-500">
         <motion.div

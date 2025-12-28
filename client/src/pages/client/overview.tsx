@@ -57,10 +57,23 @@ export default function ClientOverviewPage() {
     }
   }, [currentUser]);
   
-  // Check onboarding status from API data
-  const resumeApproved = clientData?.resume_approved ?? false;
-  const coverLetterApproved = clientData?.cover_letter_approved ?? false;
-  const jobCriteriaSignoff = clientData?.job_criteria_signoff ?? false;
+  // Helper to get localStorage approval for mock users
+  const getLocalStorageApproval = (key: string): boolean => {
+    if (isRealClientId) return false;
+    try {
+      const saved = localStorage.getItem(`client_approvals_${currentUser.id}`);
+      if (saved) {
+        const approvals = JSON.parse(saved);
+        return approvals[key] ?? false;
+      }
+    } catch {}
+    return false;
+  };
+  
+  // Check onboarding status from API data, with mock fallback for demo users
+  const resumeApproved = clientData?.resume_approved ?? getLocalStorageApproval('resume');
+  const coverLetterApproved = clientData?.cover_letter_approved ?? getLocalStorageApproval('cover-letter');
+  const jobCriteriaSignoff = clientData?.job_criteria_signoff ?? getLocalStorageApproval('job-criteria');
   
   // All onboarding complete when all three are true
   const isOnboardingComplete = resumeApproved && coverLetterApproved && jobCriteriaSignoff;
