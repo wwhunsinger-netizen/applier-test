@@ -1,13 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { MOCK_CLIENTS_LIST, Client } from "@/lib/mockData";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import type { Client, InsertClient } from "@shared/schema";
+import { fetchClients, createClient } from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Search, Plus, User, AlertCircle, ArrowRight, Eye, EyeOff, Copy, Check } from "lucide-react";
+import { Search, Plus, User, AlertCircle, ArrowRight, Eye, EyeOff, Copy, Check, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 import { useToast } from "@/hooks/use-toast";
@@ -15,19 +17,15 @@ import { useToast } from "@/hooks/use-toast";
 export default function AdminClientsPage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [searchTerm, setSearch] = useState("");
   const [isAddClientOpen, setIsAddClientOpen] = useState(false);
   
-  // Persistent Client State
-  const [clients, setClients] = useState<Client[]>(() => {
-    const saved = localStorage.getItem("admin_clients");
-    return saved ? JSON.parse(saved) : [];
+  // Fetch clients from API
+  const { data: clients = [], isLoading, error } = useQuery({
+    queryKey: ['clients'],
+    queryFn: fetchClients
   });
-
-  // Save to localStorage whenever clients change
-  useEffect(() => {
-    localStorage.setItem("admin_clients", JSON.stringify(clients));
-  }, [clients]);
   
   // New Client Form State
   const [newClientName, setNewClientName] = useState("");
@@ -35,6 +33,22 @@ export default function AdminClientsPage() {
   const [generatedPassword, setGeneratedPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isCreated, setIsCreated] = useState(false);
+
+  // Create client mutation
+  const createClientMutation = useMutation({
+    mutationFn: createClient,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['clients'] });
+      setIsCreated(true);
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to create client. Please try again.",
+        variant: "destructive",
+      });
+    }
+  });
 
   const filteredClients = clients.filter(client => 
     client.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -56,19 +70,16 @@ export default function AdminClientsPage() {
     
     handleGenerateCredentials();
     
-    const newClient: Client = {
-      id: `client-${Date.now()}`,
+    const newClient: InsertClient = {
       name: newClientName,
       email: newClientEmail,
-      username: newClientEmail.split('@')[0], // Mock username
-      created: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      username: newClientEmail.split('@')[0],
       status: "active",
-      applicationsSent: 0,
-      interviewsScheduled: 0
+      applications_sent: 0,
+      interviews_scheduled: 0
     };
 
-    setClients(prev => [...prev, newClient]);
-    setIsCreated(true);
+    createClientMutation.mutate(newClient);
   };
 
   const handleCopyInvite = () => {
@@ -114,8 +125,22 @@ export default function AdminClientsPage() {
 
       {/* Client List */}
       <div className="grid gap-4">
-        {filteredClients.map((client) => (
-          <Card key={client.id} className="bg-[#111] border-white/10 hover:border-white/20 transition-colors group">
+        {isLoading && (
+          <div className="p-12 text-center text-muted-foreground bg-[#111] rounded-lg border border-white/5">
+            <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />
+            Loading clients...
+          </div>
+        )}
+        
+        {error && (
+          <div className="p-12 text-center text-red-400 bg-red-500/10 rounded-lg border border-red-500/20">
+            <AlertCircle className="w-6 h-6 mx-auto mb-2" />
+            Failed to load clients. Please try again.
+          </div>
+        )}
+        
+        {!isLoading && !error && filteredClients.map((client) => (
+          <Card key={client.id} className="bg-[#111] border-white/10 hover:border-white/20 transition-colors group" data-testid={`card-client-${client.id}`}>
             <CardContent className="p-0">
               <div className="flex items-center justify-between p-6">
                 <div className="flex items-center gap-4">
@@ -131,23 +156,23 @@ export default function AdminClientsPage() {
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <h3 className="text-lg font-bold text-white">{client.name}</h3>
-                      {client.status === "action_needed" && (
-                        <Badge variant="destructive" className="h-5 text-[10px] px-1.5">
-                          {client.commentsCount} Comments
+                      <h3 className="text-lg font-bold text-white" data-testid={`text-client-name-${client.id}`}>{client.name}</h3>
+                      {client.status === "action_needed" && client.comments_count && (
+                        <Badge variant="destructive" className="h-5 text-[10px] px-1.5" data-testid={`badge-comments-${client.id}`}>
+                          {client.comments_count} Comments
                         </Badge>
                       )}
                     </div>
                     <div className="text-sm text-muted-foreground flex flex-col md:flex-row md:items-center gap-1 md:gap-3 mt-1">
-                      <span>{client.email}</span>
+                      <span data-testid={`text-email-${client.id}`}>{client.email}</span>
                       <span className="hidden md:inline text-white/20">•</span>
-                      <span>Created: {client.created}</span>
+                      <span>Created: {new Date(client.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                     </div>
                   </div>
                 </div>
 
                 <Link href={`/admin/clients/${client.id}`}>
-                  <Button variant="outline" className="border-white/10 hover:bg-white/5 text-white group-hover:border-primary/50 transition-colors">
+                  <Button variant="outline" className="border-white/10 hover:bg-white/5 text-white group-hover:border-primary/50 transition-colors" data-testid={`button-manage-${client.id}`}>
                     Manage Client <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
                 </Link>
@@ -156,9 +181,17 @@ export default function AdminClientsPage() {
           </Card>
         ))}
 
-        {filteredClients.length === 0 && (
+        {!isLoading && !error && filteredClients.length === 0 && clients.length > 0 && (
           <div className="p-12 text-center text-muted-foreground bg-[#111] rounded-lg border border-white/5 border-dashed">
             No clients found matching "{searchTerm}"
+          </div>
+        )}
+        
+        {!isLoading && !error && clients.length === 0 && (
+          <div className="p-12 text-center text-muted-foreground bg-[#111] rounded-lg border border-white/5 border-dashed">
+            <User className="w-12 h-12 mx-auto mb-4 opacity-50" />
+            <p className="text-lg font-semibold mb-2">No clients yet</p>
+            <p className="text-sm">Click "Add New Client" to create your first client account.</p>
           </div>
         )}
       </div>
@@ -176,6 +209,7 @@ export default function AdminClientsPage() {
                 <Label htmlFor="name">Full Name</Label>
                 <Input 
                   id="name" 
+                  data-testid="input-client-name"
                   value={newClientName} 
                   onChange={(e) => setNewClientName(e.target.value)} 
                   className="bg-white/5 border-white/10"
@@ -186,6 +220,7 @@ export default function AdminClientsPage() {
                 <Label htmlFor="email">Email Address</Label>
                 <Input 
                   id="email" 
+                  data-testid="input-client-email"
                   type="email" 
                   value={newClientEmail} 
                   onChange={(e) => setNewClientEmail(e.target.value)} 
@@ -245,15 +280,29 @@ export default function AdminClientsPage() {
           <DialogFooter>
             {!isCreated ? (
               <div className="flex gap-2 w-full justify-end">
-                <Button variant="ghost" onClick={resetForm}>Cancel</Button>
-                <Button onClick={handleCreateClient} className="bg-primary text-white">Create Client</Button>
+                <Button variant="ghost" onClick={resetForm} data-testid="button-cancel-client">Cancel</Button>
+                <Button 
+                  onClick={handleCreateClient} 
+                  className="bg-primary text-white" 
+                  disabled={createClientMutation.isPending}
+                  data-testid="button-create-client"
+                >
+                  {createClientMutation.isPending ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Creating...
+                    </>
+                  ) : (
+                    "Create Client"
+                  )}
+                </Button>
               </div>
             ) : (
               <div className="flex gap-2 w-full">
-                <Button variant="outline" className="flex-1 bg-white/5 border-white/10 hover:bg-white/10 text-white" onClick={handleCopyInvite}>
+                <Button variant="outline" className="flex-1 bg-white/5 border-white/10 hover:bg-white/10 text-white" onClick={handleCopyInvite} data-testid="button-copy-invite">
                   <Copy className="w-4 h-4 mr-2" /> Copy Invite
                 </Button>
-                <Button onClick={resetForm} className="flex-1">Done</Button>
+                <Button onClick={resetForm} className="flex-1" data-testid="button-done">Done</Button>
               </div>
             )}
           </DialogFooter>
