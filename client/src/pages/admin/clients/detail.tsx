@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { Link, useRoute } from "wouter";
-import { MOCK_CLIENTS_LIST, Client } from "@/lib/mockData";
+import { useQuery } from "@tanstack/react-query";
+import type { Client } from "@shared/schema";
+import { fetchClient } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,37 +11,40 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Upload, FileText, Download, CheckCircle2, AlertCircle, Plus, Calendar, Clock, Video, Users, Link as LinkIcon, Linkedin } from "lucide-react";
+import { ArrowLeft, Upload, FileText, Download, CheckCircle2, AlertCircle, Plus, Calendar, Clock, Video, Users, Link as LinkIcon, Linkedin, Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 
 export default function AdminClientDetailPage() {
   const [, params] = useRoute("/admin/clients/:id");
   const clientId = params?.id;
 
-  const [clients] = useState<Client[]>(() => {
-    const saved = localStorage.getItem("admin_clients");
-    return saved ? JSON.parse(saved) : [];
+  // Fetch client from API
+  const { data: client, isLoading, error } = useQuery({
+    queryKey: ['client', clientId],
+    queryFn: () => fetchClient(clientId!),
+    enabled: !!clientId
   });
-
-  const client = clients.find(c => c.id === clientId);
 
   const handleDeleteClient = () => {
     if (confirm("Are you sure you want to delete this client? This action cannot be undone and will remove all associated documents and data.")) {
-      // 1. Remove client from list
-      const newClients = clients.filter(c => c.id !== clientId);
-      localStorage.setItem("admin_clients", JSON.stringify(newClients));
-
-      // 2. Remove associated files
-      localStorage.removeItem(`client_files_${clientId}`);
-      
-      // 3. Navigate back to list
-      window.location.href = "/admin/clients";
+      // TODO: Implement delete API call
+      alert("Delete functionality not yet implemented");
     }
   };
 
-  if (!client) {
+  if (isLoading) {
     return (
       <div className="p-8 text-center">
+        <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-primary" />
+        <p className="text-muted-foreground">Loading client...</p>
+      </div>
+    );
+  }
+
+  if (error || !client) {
+    return (
+      <div className="p-8 text-center">
+        <AlertCircle className="w-12 h-12 mx-auto mb-4 text-red-400" />
         <h2 className="text-xl font-bold text-white mb-4">Client Not Found</h2>
         <Link href="/admin/clients">
           <Button>Back to Clients</Button>
