@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertClientSchema, updateClientSchema, insertApplicationSchema, insertInterviewSchema, insertClientDocumentSchema, insertJobCriteriaSampleSchema, insertClientJobResponseSchema, updateJobCriteriaSampleSchema } from "@shared/schema";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
+import { scrapeJobUrl } from "./apify";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -267,6 +268,54 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error deleting job sample:", error);
       res.status(500).json({ error: "Failed to delete job sample" });
+    }
+  });
+
+  app.post("/api/job-samples/:id/scrape", async (req, res) => {
+    try {
+      if (!process.env.APIFY_API_TOKEN) {
+        return res.status(500).json({ error: "Apify API token not configured. Please add APIFY_API_TOKEN to environment secrets." });
+      }
+      
+      const sample = await storage.getJobSampleById(req.params.id);
+      if (!sample) {
+        return res.status(404).json({ error: "Job sample not found" });
+      }
+      
+      const scrapedData = await scrapeJobUrl(sample.source_url);
+      
+      if (scrapedData) {
+        await storage.updateJobSample(req.params.id, {
+          title: scrapedData.title,
+          company_name: scrapedData.company_name,
+          location: scrapedData.location,
+          is_remote: scrapedData.is_remote,
+          job_type: scrapedData.job_type,
+          description: scrapedData.description,
+          required_skills: scrapedData.required_skills,
+          experience_level: scrapedData.experience_level,
+          apply_url: scrapedData.apply_url,
+          salary_min: scrapedData.salary_min,
+          salary_max: scrapedData.salary_max,
+          company_logo_url: scrapedData.company_logo_url,
+          raw_data: scrapedData.raw_data,
+          scrape_status: "complete",
+          scraped_at: new Date().toISOString(),
+        });
+        const updatedSample = await storage.getJobSampleById(req.params.id);
+        const { raw_data, ...safeResponse } = updatedSample || {};
+        res.json(safeResponse);
+      } else {
+        await storage.updateJobSample(req.params.id, {
+          scrape_status: "failed",
+        });
+        const updatedSample = await storage.getJobSampleById(req.params.id);
+        const { raw_data, ...safeResponse } = updatedSample || {};
+        res.json(safeResponse);
+      }
+    } catch (error) {
+      console.error("Error scraping job sample:", error);
+      res.status(500).json({ error: "Failed to scrape job sample. Check server logs for details." });
     }
   });
 

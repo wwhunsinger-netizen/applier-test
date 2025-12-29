@@ -65,8 +65,8 @@ The `clients` table in Supabase should have these columns:
 The `job_criteria_samples` table stores jobs scraped from URLs for client calibration:
 - `id` (uuid, primary key, auto-generated)
 - `client_id` (uuid, FK to clients)
-- `title` (text, required)
-- `company_name` (text, required)
+- `title` (text, nullable) - Populated after Apify scraping
+- `company_name` (text, nullable) - Populated after Apify scraping
 - `location` (text, nullable)
 - `is_remote` (boolean, nullable)
 - `job_type` (text, nullable) - full-time, part-time, contract, etc.
@@ -79,10 +79,16 @@ The `job_criteria_samples` table stores jobs scraped from URLs for client calibr
 - `salary_max` (integer, nullable)
 - `salary_currency` (text, nullable)
 - `company_logo_url` (text, nullable)
-- `scrape_status` (text: pending | complete | failed) - Tracks ParseWork API scraping progress
+- `scrape_status` (text: pending | complete | failed) - Tracks Apify scraping progress
 - `scraped_at` (timestamptz, nullable) - When scraping completed
-- `raw_data` (jsonb, nullable) - Full ParseWork API response for reference
+- `raw_data` (jsonb, nullable) - Full Apify API response for reference
 - `created_at` (timestamptz, default now())
+
+### Apify Integration
+- **API**: Uses Apify's LinkedIn Jobs Scraper (`curious_coder~linkedin-jobs-scraper`)
+- **Secret**: Requires `APIFY_API_TOKEN` environment variable
+- **Workflow**: Admin adds job URLs → samples created with `pending` status → click scrape button → Apify fetches job details → status becomes `complete` or `failed`
+- **Implementation**: `server/apify.ts` contains the scraping logic
 
 ### Supabase client_job_responses Table Schema
 The `client_job_responses` table stores client yes/no verdicts on sample jobs:

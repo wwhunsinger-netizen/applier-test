@@ -3,7 +3,7 @@ import { Link, useRoute } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Client, UpdateClient, ClientDocument } from "@shared/schema";
 import { getClientFullName, calculateClientStatus } from "@shared/schema";
-import { fetchClient, updateClient, requestUploadUrl, uploadToPresignedUrl, saveClientDocument, fetchClientDocuments, deleteClientDocument, fetchJobSamples, createJobSamplesBulk, deleteJobSample } from "@/lib/api";
+import { fetchClient, updateClient, requestUploadUrl, uploadToPresignedUrl, saveClientDocument, fetchClientDocuments, deleteClientDocument, fetchJobSamples, createJobSamplesBulk, deleteJobSample, scrapeJobSample } from "@/lib/api";
 import type { JobCriteriaSample } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -743,6 +743,27 @@ export default function AdminClientDetailPage() {
                           </div>
                         </div>
                         <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          {sample.scrape_status === 'pending' && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-8 w-8 p-0 text-blue-500 hover:text-blue-400 hover:bg-blue-500/10"
+                              data-testid={`button-scrape-${sample.id}`}
+                              onClick={async () => {
+                                try {
+                                  toast.info("Scraping job details...");
+                                  await scrapeJobSample(sample.id);
+                                  toast.success("Job details scraped");
+                                  refetchJobSamples();
+                                } catch (error) {
+                                  console.error("Failed to scrape job sample:", error);
+                                  toast.error("Failed to scrape job details");
+                                }
+                              }}
+                            >
+                              <Download className="w-4 h-4" />
+                            </Button>
+                          )}
                           <Button
                             size="sm"
                             variant="ghost"

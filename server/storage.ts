@@ -34,6 +34,7 @@ export interface IStorage {
   
   // Job criteria sample operations
   getJobSamples(clientId: string): Promise<JobCriteriaSample[]>;
+  getJobSampleById(id: string): Promise<JobCriteriaSample | null>;
   createJobSample(sample: InsertJobCriteriaSample): Promise<JobCriteriaSample>;
   updateJobSample(id: string, updates: UpdateJobCriteriaSample): Promise<JobCriteriaSample | null>;
   deleteJobSample(id: string): Promise<void>;
@@ -256,6 +257,20 @@ export class SupabaseStorage implements IStorage {
     
     if (error) throw error;
     return data || [];
+  }
+
+  async getJobSampleById(id: string): Promise<JobCriteriaSample | null> {
+    const { data, error } = await supabase
+      .from('job_criteria_samples')
+      .select('*')
+      .eq('id', id)
+      .single();
+    
+    if (error) {
+      if (error.code === 'PGRST116') return null;
+      throw error;
+    }
+    return data;
   }
 
   async createJobSample(sample: InsertJobCriteriaSample): Promise<JobCriteriaSample> {

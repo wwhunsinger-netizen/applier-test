@@ -197,6 +197,14 @@ export async function deleteJobSample(id: string): Promise<void> {
   if (!res.ok) throw new Error("Failed to delete job sample");
 }
 
+export async function scrapeJobSample(id: string): Promise<JobCriteriaSample> {
+  const res = await fetch(`${API_BASE}/job-samples/${id}/scrape`, {
+    method: "POST",
+  });
+  if (!res.ok) throw new Error("Failed to scrape job sample");
+  return res.json();
+}
+
 // Client Job Response API
 export async function fetchJobResponses(clientId: string): Promise<ClientJobResponse[]> {
   const res = await fetch(`${API_BASE}/clients/${clientId}/job-responses`);
