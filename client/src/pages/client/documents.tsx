@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion, AnimatePresence } from "framer-motion";
-import { FileText, Linkedin, Check, Lightbulb, RotateCw, CheckCircle2, Sparkles, MessageSquare, X, ArrowLeft, ArrowRight, Upload, Trash2 } from "lucide-react";
+import { FileText, Linkedin, Check, Lightbulb, RotateCw, CheckCircle2, Sparkles, MessageSquare, X, ArrowLeft, ArrowRight, Upload, Trash2, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -224,6 +224,13 @@ export default function ClientDocumentsPage() {
 
   const config = DOC_CONFIG[activeTab];
   const isApproved = approvedDocs[activeTab];
+  
+  // Check if improved document exists for current tab
+  const hasImprovedDocument = activeTab === 'resume' 
+    ? !!uploadedFiles['resume_improved']
+    : activeTab === 'cover-letter'
+    ? !!uploadedFiles['cover_letter_A']
+    : !!uploadedFiles['linkedin_A'];
 
   // Mock highlight logic
   const handleTextClick = (e: React.MouseEvent, top: string) => {
@@ -1028,7 +1035,17 @@ export default function ClientDocumentsPage() {
                          
                          <div className={cn(unlockedDocs[activeTab] ? "mt-16" : "")}>
                            {activeTab === 'resume' ? OLD_RESUME_CONTENT : 
-                            activeTab === 'cover-letter' ? (
+                            !hasImprovedDocument ? (
+                              // Coming Soon state for cover letter and LinkedIn
+                              <div className="flex flex-col items-center justify-center h-full min-h-[600px] w-full text-gray-400">
+                                <Clock className="w-16 h-16 mb-4 opacity-50" />
+                                <h2 className="text-2xl font-bold mb-2">Coming Soon</h2>
+                                <p className="text-center max-w-md">
+                                  Your {config.label.toLowerCase()} is being prepared by your team. 
+                                  You'll be notified when it's ready for review.
+                                </p>
+                              </div>
+                            ) : activeTab === 'cover-letter' ? (
                               <div className="flex flex-col items-center justify-center h-full min-h-[600px] w-full">
                                 <img 
                                   src={noCoverLetterImg} 
@@ -1110,24 +1127,42 @@ export default function ClientDocumentsPage() {
                  <Card className="bg-[#111] border-white/10 flex-1 h-full relative overflow-hidden">
                    <CardContent className="p-6 h-full flex flex-col justify-center items-center text-center space-y-6">
                       {!isFlipped ? (
-                        <>
-                          <div className={cn("p-4 rounded-full mb-2 animate-pulse bg-white/10", config.text)}>
-                            <Sparkles className="w-8 h-8" />
-                          </div>
-                          <div>
-                            <h3 className="text-xl font-bold text-white">
-                              {unlockedDocs[activeTab] ? `This is your old ${config.label.toLowerCase()}` : `Your New ${config.label} Is Ready`}
-                            </h3>
-                            <p className="text-sm text-muted-foreground mt-2">
-                              {activeTab === 'resume' ? "We've crafted a high-impact resume optimized for ATS." : 
-                               activeTab === 'cover-letter' ? "Three versions tailored for different role types." : 
-                               "An optimized LinkedIn profile to attract recruiters."}
-                            </p>
-                          </div>
-                          <Button size="lg" className={cn("w-full font-bold text-lg h-12 shadow-lg hover:scale-105 transition-transform", config.bg, "text-white")} onClick={unlockedDocs[activeTab] ? () => setIsFlipped(true) : handleImprove}>
-                            {unlockedDocs[activeTab] ? "View Improved Version" : "✨ Show Me"}
-                          </Button>
-                        </>
+                        activeTab !== 'resume' && !hasImprovedDocument ? (
+                          // Coming Soon state for cover letter and LinkedIn when no document uploaded
+                          <>
+                            <div className="p-4 rounded-full mb-2 bg-white/5 text-gray-500">
+                              <Clock className="w-8 h-8" />
+                            </div>
+                            <div>
+                              <h3 className="text-xl font-bold text-gray-400">Coming Soon</h3>
+                              <p className="text-sm text-muted-foreground mt-2">
+                                Your {config.label.toLowerCase()} is being prepared by your team.
+                              </p>
+                            </div>
+                            <Button size="lg" disabled className="w-full font-bold text-lg h-12 bg-white/5 text-gray-500 cursor-not-allowed">
+                              Not Yet Available
+                            </Button>
+                          </>
+                        ) : (
+                          <>
+                            <div className={cn("p-4 rounded-full mb-2 animate-pulse bg-white/10", config.text)}>
+                              <Sparkles className="w-8 h-8" />
+                            </div>
+                            <div>
+                              <h3 className="text-xl font-bold text-white">
+                                {unlockedDocs[activeTab] ? `This is your old ${config.label.toLowerCase()}` : `Your New ${config.label} Is Ready`}
+                              </h3>
+                              <p className="text-sm text-muted-foreground mt-2">
+                                {activeTab === 'resume' ? "We've crafted a high-impact resume optimized for ATS." : 
+                                 activeTab === 'cover-letter' ? "Three versions tailored for different role types." : 
+                                 "An optimized LinkedIn profile to attract recruiters."}
+                              </p>
+                            </div>
+                            <Button size="lg" className={cn("w-full font-bold text-lg h-12 shadow-lg hover:scale-105 transition-transform", config.bg, "text-white")} onClick={unlockedDocs[activeTab] ? () => setIsFlipped(true) : handleImprove}>
+                              {unlockedDocs[activeTab] ? "View Improved Version" : "✨ Show Me"}
+                            </Button>
+                          </>
+                        )
                       ) : (
                         revisionStatus[activeTab] === 'requested' ? (
                           <>
