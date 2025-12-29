@@ -85,10 +85,11 @@ The `job_criteria_samples` table stores jobs scraped from URLs for client calibr
 - `created_at` (timestamptz, default now())
 
 ### Apify Integration
-- **API**: Uses Apify's LinkedIn Jobs Scraper (`curious_coder~linkedin-jobs-scraper`)
+- **API**: Uses Apify's Indeed Scraper (`misceres~indeed-scraper`)
 - **Secret**: Requires `APIFY_API_TOKEN` environment variable
 - **Workflow**: Admin adds job URLs → samples created with `pending` status → click scrape button → Apify fetches job details → status becomes `complete` or `failed`
 - **Implementation**: `server/apify.ts` contains the scraping logic
+- **Supported URLs**: Indeed job posting URLs (e.g., `https://www.indeed.com/viewjob?jk=...`)
 
 ### Supabase client_job_responses Table Schema
 The `client_job_responses` table stores client yes/no verdicts on sample jobs:

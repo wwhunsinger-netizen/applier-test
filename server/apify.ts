@@ -1,28 +1,24 @@
 const APIFY_API_TOKEN = process.env.APIFY_API_TOKEN;
 
-interface ApifyJobData {
-  title?: string;
+interface ApifyIndeedJobData {
+  jobTitle?: string;
   company?: string;
-  companyName?: string;
   location?: string;
-  isRemote?: boolean;
-  remote?: boolean;
+  salary?: string;
   jobType?: string;
   employmentType?: string;
-  description?: string;
-  descriptionText?: string;
-  skills?: string[];
-  experienceLevel?: string;
-  seniorityLevel?: string;
-  applyUrl?: string;
-  applyLink?: string;
-  salaryMin?: number;
-  salaryMax?: number;
-  salary?: string;
-  companyLogo?: string;
-  companyLogoUrl?: string;
+  description?: {
+    text?: string;
+    html?: string;
+  };
   url?: string;
-  link?: string;
+  thirdPartyApplyUrl?: string;
+  companyRating?: number;
+  companyBrandingAttributes?: {
+    logoUrl?: string;
+    headerImageUrl?: string;
+  };
+  datePosted?: string;
 }
 
 export interface ScrapedJobData {
@@ -41,20 +37,36 @@ export interface ScrapedJobData {
   raw_data?: Record<string, unknown>;
 }
 
-function normalizeJobData(data: ApifyJobData): ScrapedJobData {
+function parseSalaryRange(salary?: string): { min?: number; max?: number } {
+  if (!salary) return {};
+  
+  const numbers = salary.match(/[\d,]+(?:\.\d+)?/g);
+  if (!numbers || numbers.length === 0) return {};
+  
+  const parsed = numbers.map(n => parseFloat(n.replace(/,/g, '')));
+  
+  if (parsed.length >= 2) {
+    return { min: Math.min(...parsed), max: Math.max(...parsed) };
+  }
+  return { min: parsed[0] };
+}
+
+function normalizeJobData(data: ApifyIndeedJobData): ScrapedJobData {
+  const salaryRange = parseSalaryRange(data.salary);
+  const locationLower = (data.location || '').toLowerCase();
+  const isRemote = locationLower.includes('remote') || locationLower.includes('work from home');
+  
   return {
-    title: data.title,
-    company_name: data.company || data.companyName,
+    title: data.jobTitle,
+    company_name: data.company,
     location: data.location,
-    is_remote: data.isRemote ?? data.remote,
+    is_remote: isRemote,
     job_type: data.jobType || data.employmentType,
-    description: data.description || data.descriptionText,
-    required_skills: data.skills,
-    experience_level: data.experienceLevel || data.seniorityLevel,
-    apply_url: data.applyUrl || data.applyLink || data.url || data.link,
-    salary_min: data.salaryMin,
-    salary_max: data.salaryMax,
-    company_logo_url: data.companyLogo || data.companyLogoUrl,
+    description: data.description?.text || data.description?.html,
+    apply_url: data.url || data.thirdPartyApplyUrl,
+    salary_min: salaryRange.min,
+    salary_max: salaryRange.max,
+    company_logo_url: data.companyBrandingAttributes?.logoUrl,
     raw_data: data as Record<string, unknown>,
   };
 }
@@ -67,7 +79,7 @@ export async function scrapeJobUrl(url: string): Promise<ScrapedJobData | null> 
 
   try {
     const response = await fetch(
-      `https://api.apify.com/v2/acts/curious_coder~linkedin-jobs-scraper/run-sync-get-dataset-items?token=${APIFY_API_TOKEN}`,
+      `https://api.apify.com/v2/acts/misceres~indeed-scraper/run-sync-get-dataset-items?token=${APIFY_API_TOKEN}`,
       {
         method: "POST",
         headers: {
@@ -85,7 +97,7 @@ export async function scrapeJobUrl(url: string): Promise<ScrapedJobData | null> 
       return null;
     }
 
-    const results = await response.json() as ApifyJobData[];
+    const results = await response.json() as ApifyIndeedJobData[];
     
     if (!results || results.length === 0) {
       console.log("No results from Apify for URL:", url);
