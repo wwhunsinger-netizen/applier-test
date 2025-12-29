@@ -30,6 +30,36 @@ Preferred communication style: Simple, everyday language.
 - **Schema Location**: `shared/schema.ts` contains Zod schemas for validation
 - **Local Storage**: Used for session persistence and demo data (admin_clients, user preferences)
 
+### Supabase Clients Table Schema
+The `clients` table in Supabase should have these columns:
+- `id` (uuid, primary key, auto-generated)
+- `first_name` (text, required)
+- `last_name` (text, required)
+- `email` (text, required)
+- `username` (text, required)
+- `status` (text: onboarding_not_started | onboarding_in_progress | active | paused | placed)
+- `resume_approved` (boolean, default false)
+- `cover_letter_approved` (boolean, default false)
+- `job_criteria_signoff` (boolean, default false)
+- `resume_url` (text, nullable)
+- `cover_letter_url` (text, nullable)
+- `resume_text` (text, nullable)
+- `client_gmail` (text, nullable)
+- `client_gmail_password` (text, nullable) - **TODO: Replace with secure credential storage for production**
+- `target_job_titles` (text[], nullable)
+- `required_skills` (text[], nullable)
+- `nice_to_have_skills` (text[], nullable)
+- `exclude_keywords` (text[], nullable)
+- `years_of_experience` (integer, nullable)
+- `seniority_level` (text, nullable)
+- `daily_application_target` (integer, default 10)
+- `onboarding_transcript` (text, nullable)
+- `first_application_date` (timestamptz, nullable) - auto-updated when first application sent
+- `last_application_date` (timestamptz, nullable) - auto-updated on each application
+- `placement_date` (timestamptz, nullable)
+- `created_at` (timestamptz, default now())
+- `updated_at` (timestamptz, auto-updated)
+
 ### Authentication
 - **Current Implementation**: Mock authentication with localStorage-based session
 - **User Roles**: Admin, Client, Applier - each with distinct dashboard views and permissions

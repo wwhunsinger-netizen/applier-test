@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Client, InsertClient } from "@shared/schema";
+import { getClientFullName } from "@shared/schema";
 import { fetchClients, createClient } from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -28,7 +29,8 @@ export default function AdminClientsPage() {
   });
   
   // New Client Form State
-  const [newClientName, setNewClientName] = useState("");
+  const [newClientFirstName, setNewClientFirstName] = useState("");
+  const [newClientLastName, setNewClientLastName] = useState("");
   const [newClientEmail, setNewClientEmail] = useState("");
   const [generatedPassword, setGeneratedPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -50,10 +52,11 @@ export default function AdminClientsPage() {
     }
   });
 
-  const filteredClients = clients.filter(client => 
-    client.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    client.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredClients = clients.filter(client => {
+    const fullName = getClientFullName(client).toLowerCase();
+    return fullName.includes(searchTerm.toLowerCase()) || 
+      client.email.toLowerCase().includes(searchTerm.toLowerCase());
+  });
 
   const handleGenerateCredentials = () => {
     // Mock password generation
@@ -66,15 +69,16 @@ export default function AdminClientsPage() {
   };
 
   const handleCreateClient = () => {
-    if (!newClientName || !newClientEmail) return;
+    if (!newClientFirstName || !newClientLastName || !newClientEmail) return;
     
     handleGenerateCredentials();
     
     const newClient: InsertClient = {
-      name: newClientName,
+      first_name: newClientFirstName,
+      last_name: newClientLastName,
       email: newClientEmail,
       username: newClientEmail.split('@')[0],
-      status: "active",
+      status: "onboarding_not_started",
       applications_sent: 0,
       interviews_scheduled: 0,
       job_criteria_signoff: false,
@@ -97,7 +101,8 @@ export default function AdminClientsPage() {
   const resetForm = () => {
     setIsAddClientOpen(false);
     setIsCreated(false);
-    setNewClientName("");
+    setNewClientFirstName("");
+    setNewClientLastName("");
     setNewClientEmail("");
     setGeneratedPassword("");
     setShowPassword(false);
@@ -151,16 +156,26 @@ export default function AdminClientsPage() {
                     <div className="h-12 w-12 rounded-full bg-white/10 flex items-center justify-center text-muted-foreground">
                       <User className="w-6 h-6" />
                     </div>
-                    {client.status === "action_needed" && (
-                      <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 rounded-full border-2 border-[#111] flex items-center justify-center">
-                        <span className="sr-only">Action needed</span>
+                    {client.status === "onboarding_not_started" && (
+                      <span className="absolute -top-1 -right-1 h-4 w-4 bg-yellow-500 rounded-full border-2 border-[#111] flex items-center justify-center">
+                        <span className="sr-only">Onboarding needed</span>
                       </span>
                     )}
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <h3 className="text-lg font-bold text-white" data-testid={`text-client-name-${client.id}`}>{client.name}</h3>
-                      {client.status === "action_needed" && client.comments_count && (
+                      <h3 className="text-lg font-bold text-white" data-testid={`text-client-name-${client.id}`}>{getClientFullName(client)}</h3>
+                      {client.status === "onboarding_not_started" && (
+                        <Badge variant="outline" className="h-5 text-[10px] px-1.5 bg-yellow-500/10 text-yellow-500 border-yellow-500/20">
+                          Not Started
+                        </Badge>
+                      )}
+                      {client.status === "onboarding_in_progress" && (
+                        <Badge variant="outline" className="h-5 text-[10px] px-1.5 bg-blue-500/10 text-blue-500 border-blue-500/20">
+                          Onboarding
+                        </Badge>
+                      )}
+                      {client.comments_count && client.comments_count > 0 && (
                         <Badge variant="destructive" className="h-5 text-[10px] px-1.5" data-testid={`badge-comments-${client.id}`}>
                           {client.comments_count} Comments
                         </Badge>
@@ -208,16 +223,29 @@ export default function AdminClientsPage() {
 
           {!isCreated ? (
             <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
-                <Input 
-                  id="name" 
-                  data-testid="input-client-name"
-                  value={newClientName} 
-                  onChange={(e) => setNewClientName(e.target.value)} 
-                  className="bg-white/5 border-white/10"
-                  placeholder="e.g. Jane Doe"
-                />
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="firstName">First Name</Label>
+                  <Input 
+                    id="firstName" 
+                    data-testid="input-client-first-name"
+                    value={newClientFirstName} 
+                    onChange={(e) => setNewClientFirstName(e.target.value)} 
+                    className="bg-white/5 border-white/10"
+                    placeholder="e.g. Jane"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="lastName">Last Name</Label>
+                  <Input 
+                    id="lastName" 
+                    data-testid="input-client-last-name"
+                    value={newClientLastName} 
+                    onChange={(e) => setNewClientLastName(e.target.value)} 
+                    className="bg-white/5 border-white/10"
+                    placeholder="e.g. Doe"
+                  />
+                </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email Address</Label>

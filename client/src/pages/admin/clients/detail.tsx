@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { Link, useRoute } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import type { Client } from "@shared/schema";
+import type { Client, UpdateClient } from "@shared/schema";
+import { getClientFullName } from "@shared/schema";
 import { fetchClient, updateClient } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -12,7 +13,8 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { ArrowLeft, Upload, FileText, Download, CheckCircle2, AlertCircle, Plus, Calendar, Clock, Video, Users, Link as LinkIcon, Linkedin, Loader2 } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ArrowLeft, Upload, FileText, Download, CheckCircle2, AlertCircle, Plus, Calendar, Clock, Video, Users, Link as LinkIcon, Linkedin, Loader2, ChevronDown, X, Target, Mail, Lock } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 
@@ -28,9 +30,9 @@ export default function AdminClientDetailPage() {
     enabled: !!clientId
   });
   
-  // Mutation to update client onboarding fields
+  // Mutation to update client fields
   const updateClientMutation = useMutation({
-    mutationFn: (updates: { resume_approved?: boolean; cover_letter_approved?: boolean; job_criteria_signoff?: boolean }) => 
+    mutationFn: (updates: UpdateClient) => 
       updateClient(clientId!, updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['client', clientId] });
@@ -73,6 +75,76 @@ export default function AdminClientDetailPage() {
   const [activeTab, setActiveTab] = useState("resume");
   const [isAddInterviewOpen, setIsAddInterviewOpen] = useState(false);
   const [isCommentsOpen, setIsCommentsOpen] = useState(false);
+  const [isJobCriteriaOpen, setIsJobCriteriaOpen] = useState(true);
+  const [isCredentialsOpen, setIsCredentialsOpen] = useState(false);
+  
+  // Job Criteria State (local editing before save)
+  const [targetJobTitles, setTargetJobTitles] = useState<string[]>(client.target_job_titles || []);
+  const [requiredSkills, setRequiredSkills] = useState<string[]>(client.required_skills || []);
+  const [niceToHaveSkills, setNiceToHaveSkills] = useState<string[]>(client.nice_to_have_skills || []);
+  const [excludeKeywords, setExcludeKeywords] = useState<string[]>(client.exclude_keywords || []);
+  const [yearsOfExperience, setYearsOfExperience] = useState<number>(client.years_of_experience || 0);
+  const [seniorityLevel, setSeniorityLevel] = useState<string>(client.seniority_level || "");
+  const [dailyApplicationTarget, setDailyApplicationTarget] = useState<number>(client.daily_application_target || 10);
+  const [onboardingTranscript, setOnboardingTranscript] = useState<string>(client.onboarding_transcript || "");
+  const [clientGmail, setClientGmail] = useState<string>(client.client_gmail || "");
+  const [clientGmailPassword, setClientGmailPassword] = useState<string>(client.client_gmail_password || "");
+  const [newTagInput, setNewTagInput] = useState<string>("");
+  const [activeTagField, setActiveTagField] = useState<string | null>(null);
+
+  // Add tag to array
+  const addTag = (field: 'targetJobTitles' | 'requiredSkills' | 'niceToHaveSkills' | 'excludeKeywords', value: string) => {
+    if (!value.trim()) return;
+    const setters = {
+      targetJobTitles: setTargetJobTitles,
+      requiredSkills: setRequiredSkills,
+      niceToHaveSkills: setNiceToHaveSkills,
+      excludeKeywords: setExcludeKeywords
+    };
+    const getters = {
+      targetJobTitles,
+      requiredSkills,
+      niceToHaveSkills,
+      excludeKeywords
+    };
+    if (!getters[field].includes(value.trim())) {
+      setters[field]([...getters[field], value.trim()]);
+    }
+    setNewTagInput("");
+  };
+
+  // Remove tag from array
+  const removeTag = (field: 'targetJobTitles' | 'requiredSkills' | 'niceToHaveSkills' | 'excludeKeywords', value: string) => {
+    const setters = {
+      targetJobTitles: setTargetJobTitles,
+      requiredSkills: setRequiredSkills,
+      niceToHaveSkills: setNiceToHaveSkills,
+      excludeKeywords: setExcludeKeywords
+    };
+    const getters = {
+      targetJobTitles,
+      requiredSkills,
+      niceToHaveSkills,
+      excludeKeywords
+    };
+    setters[field](getters[field].filter(t => t !== value));
+  };
+
+  // Save job criteria
+  const handleSaveJobCriteria = () => {
+    updateClientMutation.mutate({
+      target_job_titles: targetJobTitles,
+      required_skills: requiredSkills,
+      nice_to_have_skills: niceToHaveSkills,
+      exclude_keywords: excludeKeywords,
+      years_of_experience: yearsOfExperience,
+      seniority_level: seniorityLevel,
+      daily_application_target: dailyApplicationTarget,
+      onboarding_transcript: onboardingTranscript,
+      client_gmail: clientGmail,
+      client_gmail_password: clientGmailPassword
+    });
+  };
   
   // File Persistence
   const [uploadedFiles, setUploadedFiles] = useState<Record<string, string>>(() => {
@@ -182,7 +254,7 @@ export default function AdminClientDetailPage() {
         </Link>
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-white">{client.name}</h1>
+            <h1 className="text-3xl font-bold tracking-tight text-white">{getClientFullName(client)}</h1>
             <p className="text-muted-foreground">{client.email}</p>
           </div>
           <Button variant="destructive" size="sm" onClick={handleDeleteClient}>Delete Client</Button>
@@ -240,6 +312,238 @@ export default function AdminClientDetailPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Job Criteria & Settings */}
+      <Collapsible open={isJobCriteriaOpen} onOpenChange={setIsJobCriteriaOpen}>
+        <Card className="bg-[#111] border-white/10">
+          <CollapsibleTrigger asChild>
+            <CardHeader className="pb-4 cursor-pointer hover:bg-white/5 transition-colors rounded-t-lg">
+              <CardTitle className="text-lg flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <Target className="w-5 h-5 text-primary" />
+                  Job Criteria & Settings
+                </span>
+                <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform ${isJobCriteriaOpen ? 'rotate-180' : ''}`} />
+              </CardTitle>
+            </CardHeader>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <CardContent className="space-y-6">
+              {/* Target Job Titles */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-white">Target Job Titles</Label>
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {targetJobTitles.map((title, idx) => (
+                    <Badge key={idx} variant="secondary" className="bg-primary/20 text-primary border-primary/30 pl-2 pr-1 py-1">
+                      {title}
+                      <button onClick={() => removeTag('targetJobTitles', title)} className="ml-1 hover:text-white">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <Input 
+                    placeholder="e.g. Senior Software Engineer"
+                    className="bg-white/5 border-white/10"
+                    value={activeTagField === 'targetJobTitles' ? newTagInput : ''}
+                    onChange={(e) => { setActiveTagField('targetJobTitles'); setNewTagInput(e.target.value); }}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addTag('targetJobTitles', newTagInput); } }}
+                  />
+                  <Button variant="outline" size="sm" onClick={() => addTag('targetJobTitles', newTagInput)}>
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+
+              {/* Required Skills */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-white">Required Skills</Label>
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {requiredSkills.map((skill, idx) => (
+                    <Badge key={idx} variant="secondary" className="bg-green-500/20 text-green-400 border-green-500/30 pl-2 pr-1 py-1">
+                      {skill}
+                      <button onClick={() => removeTag('requiredSkills', skill)} className="ml-1 hover:text-white">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <Input 
+                    placeholder="e.g. React, TypeScript"
+                    className="bg-white/5 border-white/10"
+                    value={activeTagField === 'requiredSkills' ? newTagInput : ''}
+                    onChange={(e) => { setActiveTagField('requiredSkills'); setNewTagInput(e.target.value); }}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addTag('requiredSkills', newTagInput); } }}
+                  />
+                  <Button variant="outline" size="sm" onClick={() => addTag('requiredSkills', newTagInput)}>
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+
+              {/* Nice to Have Skills */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-white">Nice-to-Have Skills</Label>
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {niceToHaveSkills.map((skill, idx) => (
+                    <Badge key={idx} variant="secondary" className="bg-blue-500/20 text-blue-400 border-blue-500/30 pl-2 pr-1 py-1">
+                      {skill}
+                      <button onClick={() => removeTag('niceToHaveSkills', skill)} className="ml-1 hover:text-white">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <Input 
+                    placeholder="e.g. AWS, Docker"
+                    className="bg-white/5 border-white/10"
+                    value={activeTagField === 'niceToHaveSkills' ? newTagInput : ''}
+                    onChange={(e) => { setActiveTagField('niceToHaveSkills'); setNewTagInput(e.target.value); }}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addTag('niceToHaveSkills', newTagInput); } }}
+                  />
+                  <Button variant="outline" size="sm" onClick={() => addTag('niceToHaveSkills', newTagInput)}>
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+
+              {/* Exclude Keywords */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-white">Exclude Keywords</Label>
+                <p className="text-xs text-muted-foreground">Jobs with these keywords will be skipped</p>
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {excludeKeywords.map((keyword, idx) => (
+                    <Badge key={idx} variant="secondary" className="bg-red-500/20 text-red-400 border-red-500/30 pl-2 pr-1 py-1">
+                      {keyword}
+                      <button onClick={() => removeTag('excludeKeywords', keyword)} className="ml-1 hover:text-white">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <Input 
+                    placeholder="e.g. Junior, Intern"
+                    className="bg-white/5 border-white/10"
+                    value={activeTagField === 'excludeKeywords' ? newTagInput : ''}
+                    onChange={(e) => { setActiveTagField('excludeKeywords'); setNewTagInput(e.target.value); }}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addTag('excludeKeywords', newTagInput); } }}
+                  />
+                  <Button variant="outline" size="sm" onClick={() => addTag('excludeKeywords', newTagInput)}>
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+
+              {/* Experience & Seniority */}
+              <div className="grid md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-white">Years of Experience</Label>
+                  <Input 
+                    type="number"
+                    min="0"
+                    value={yearsOfExperience}
+                    onChange={(e) => setYearsOfExperience(parseInt(e.target.value) || 0)}
+                    className="bg-white/5 border-white/10"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-white">Seniority Level</Label>
+                  <Select value={seniorityLevel} onValueChange={setSeniorityLevel}>
+                    <SelectTrigger className="bg-white/5 border-white/10">
+                      <SelectValue placeholder="Select level" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="entry">Entry Level</SelectItem>
+                      <SelectItem value="mid">Mid Level</SelectItem>
+                      <SelectItem value="senior">Senior</SelectItem>
+                      <SelectItem value="lead">Lead / Principal</SelectItem>
+                      <SelectItem value="director">Director</SelectItem>
+                      <SelectItem value="executive">Executive</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-white">Daily Application Target</Label>
+                  <Input 
+                    type="number"
+                    min="1"
+                    value={dailyApplicationTarget}
+                    onChange={(e) => setDailyApplicationTarget(parseInt(e.target.value) || 10)}
+                    className="bg-white/5 border-white/10"
+                  />
+                </div>
+              </div>
+
+              {/* Onboarding Transcript */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-white">Onboarding Transcript / Notes</Label>
+                <Textarea 
+                  placeholder="Notes from onboarding call, preferences, special requirements..."
+                  value={onboardingTranscript}
+                  onChange={(e) => setOnboardingTranscript(e.target.value)}
+                  className="bg-white/5 border-white/10 min-h-[100px]"
+                />
+              </div>
+
+              {/* Client Gmail Credentials */}
+              <div className="border-t border-white/10 pt-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <Mail className="w-4 h-4 text-muted-foreground" />
+                  <Label className="text-sm font-medium text-white">Client Gmail Credentials</Label>
+                  <Badge variant="outline" className="text-xs bg-yellow-500/10 text-yellow-500 border-yellow-500/20">
+                    <Lock className="w-3 h-3 mr-1" /> Sensitive
+                  </Badge>
+                </div>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-xs text-muted-foreground">Gmail Address</Label>
+                    <Input 
+                      type="email"
+                      placeholder="client@gmail.com"
+                      value={clientGmail}
+                      onChange={(e) => setClientGmail(e.target.value)}
+                      className="bg-white/5 border-white/10"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs text-muted-foreground">Gmail Password / App Password</Label>
+                    <Input 
+                      type="password"
+                      placeholder="••••••••"
+                      value={clientGmailPassword}
+                      onChange={(e) => setClientGmailPassword(e.target.value)}
+                      className="bg-white/5 border-white/10"
+                    />
+                    <p className="text-xs text-yellow-500">Note: For production, implement secure credential storage</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Save Button */}
+              <div className="flex justify-end pt-4 border-t border-white/10">
+                <Button 
+                  onClick={handleSaveJobCriteria}
+                  disabled={updateClientMutation.isPending}
+                  className="bg-primary hover:bg-primary/90"
+                >
+                  {updateClientMutation.isPending ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    'Save Job Criteria'
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
 
       {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
@@ -592,7 +896,7 @@ export default function AdminClientDetailPage() {
       <Dialog open={isCommentsOpen} onOpenChange={setIsCommentsOpen}>
         <DialogContent className="bg-[#0a0a0a] border-white/10 text-white sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>Client Comments - {client.name}</DialogTitle>
+            <DialogTitle>Client Comments - {getClientFullName(client)}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="bg-white/5 p-4 rounded-lg border border-white/10">
