@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useRoute } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Client, UpdateClient } from "@shared/schema";
-import { getClientFullName } from "@shared/schema";
+import { getClientFullName, calculateClientStatus } from "@shared/schema";
 import { fetchClient, updateClient } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -254,7 +254,31 @@ export default function AdminClientDetailPage() {
         </Link>
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-white">{getClientFullName(client)}</h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-3xl font-bold tracking-tight text-white">{getClientFullName(client)}</h1>
+              {(() => {
+                const status = calculateClientStatus(client);
+                const statusStyles: Record<string, string> = {
+                  'onboarding_not_started': 'bg-gray-500/20 text-gray-400 border-gray-500/30',
+                  'onboarding_in_progress': 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+                  'active': 'bg-green-500/20 text-green-400 border-green-500/30',
+                  'paused': 'bg-orange-500/20 text-orange-400 border-orange-500/30',
+                  'placed': 'bg-primary/20 text-primary border-primary/30'
+                };
+                const statusLabels: Record<string, string> = {
+                  'onboarding_not_started': 'Not Started',
+                  'onboarding_in_progress': 'In Progress',
+                  'active': 'Active',
+                  'paused': 'Paused',
+                  'placed': 'Placed'
+                };
+                return (
+                  <Badge variant="outline" className={statusStyles[status]} data-testid="badge-client-status">
+                    {statusLabels[status]}
+                  </Badge>
+                );
+              })()}
+            </div>
             <p className="text-muted-foreground">{client.email}</p>
           </div>
           <Button variant="destructive" size="sm" onClick={handleDeleteClient}>Delete Client</Button>

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Client, InsertClient } from "@shared/schema";
-import { getClientFullName } from "@shared/schema";
+import { getClientFullName, calculateClientStatus } from "@shared/schema";
 import { fetchClients, createClient } from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -156,7 +156,7 @@ export default function AdminClientsPage() {
                     <div className="h-12 w-12 rounded-full bg-white/10 flex items-center justify-center text-muted-foreground">
                       <User className="w-6 h-6" />
                     </div>
-                    {client.status === "onboarding_not_started" && (
+                    {calculateClientStatus(client) === "onboarding_not_started" && (
                       <span className="absolute -top-1 -right-1 h-4 w-4 bg-yellow-500 rounded-full border-2 border-[#111] flex items-center justify-center">
                         <span className="sr-only">Onboarding needed</span>
                       </span>
@@ -165,16 +165,28 @@ export default function AdminClientsPage() {
                   <div>
                     <div className="flex items-center gap-2">
                       <h3 className="text-lg font-bold text-white" data-testid={`text-client-name-${client.id}`}>{getClientFullName(client)}</h3>
-                      {client.status === "onboarding_not_started" && (
-                        <Badge variant="outline" className="h-5 text-[10px] px-1.5 bg-yellow-500/10 text-yellow-500 border-yellow-500/20">
-                          Not Started
-                        </Badge>
-                      )}
-                      {client.status === "onboarding_in_progress" && (
-                        <Badge variant="outline" className="h-5 text-[10px] px-1.5 bg-blue-500/10 text-blue-500 border-blue-500/20">
-                          Onboarding
-                        </Badge>
-                      )}
+                      {(() => {
+                        const status = calculateClientStatus(client);
+                        const statusStyles: Record<string, string> = {
+                          'onboarding_not_started': 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20',
+                          'onboarding_in_progress': 'bg-blue-500/10 text-blue-500 border-blue-500/20',
+                          'active': 'bg-green-500/10 text-green-400 border-green-500/20',
+                          'paused': 'bg-orange-500/10 text-orange-400 border-orange-500/20',
+                          'placed': 'bg-primary/10 text-primary border-primary/20'
+                        };
+                        const statusLabels: Record<string, string> = {
+                          'onboarding_not_started': 'Not Started',
+                          'onboarding_in_progress': 'Onboarding',
+                          'active': 'Active',
+                          'paused': 'Paused',
+                          'placed': 'Placed'
+                        };
+                        return (
+                          <Badge variant="outline" className={`h-5 text-[10px] px-1.5 ${statusStyles[status]}`} data-testid={`badge-status-${client.id}`}>
+                            {statusLabels[status]}
+                          </Badge>
+                        );
+                      })()}
                       {client.comments_count && client.comments_count > 0 && (
                         <Badge variant="destructive" className="h-5 text-[10px] px-1.5" data-testid={`badge-comments-${client.id}`}>
                           {client.comments_count} Comments
