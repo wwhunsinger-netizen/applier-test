@@ -154,31 +154,24 @@ export default function ClientDocumentsPage() {
     }
   }, [clientData, isRealClientId, currentUser.id]);
   const [activeVersion, setActiveVersion] = useState("A");
-  const [comments, setComments] = useState<Record<DocType, {id: number, text: string, top: string}[]>>(() => {
-    try {
-      const saved = localStorage.getItem(`client_comments_${currentUser.id}`);
-      return saved ? JSON.parse(saved) : {
-        resume: [],
-        "cover-letter": [],
-        linkedin: []
-      };
-    } catch {
-      return {
-        resume: [],
-        "cover-letter": [],
-        linkedin: []
-      };
-    }
+  
+  // Document feedback from database (text + revision status per doc type)
+  const [documentFeedback, setDocumentFeedback] = useState<Record<DocType, { text: string; status: "requested" | "completed" | null }>>({
+    resume: { text: "", status: null },
+    "cover-letter": { text: "", status: null },
+    linkedin: { text: "", status: null }
   });
+  
+  // Sync feedback from database when clientData loads
+  useEffect(() => {
+    if (clientData?.document_feedback) {
+      setDocumentFeedback(clientData.document_feedback);
+    }
+  }, [clientData]);
+  
   const [isRevealing, setIsRevealing] = useState(false);
   const [revealPhase, setRevealPhase] = useState<"intro" | "float" | "distort" | "explode" | "reveal" | "settle">("intro");
   const [showLargeReview, setShowLargeReview] = useState(false);
-  const [revisionStatus, setRevisionStatus] = useState<Record<DocType, "idle" | "requested">>({
-    resume: "idle",
-    "cover-letter": "idle",
-    linkedin: "idle"
-  });
-  const [activeCommentDraft, setActiveCommentDraft] = useState<{top: string, text: string} | null>(null);
   const [unlockedDocs, setUnlockedDocs] = useState<Record<DocType, boolean>>(() => {
     // Persist unlocked state so animation only shows once
     try {
@@ -232,45 +225,6 @@ export default function ClientDocumentsPage() {
     ? !!uploadedFiles['cover_letter_A']
     : !!uploadedFiles['linkedin_A'];
 
-  // Mock highlight logic
-  const handleTextClick = (e: React.MouseEvent, top: string) => {
-    if (!isFlipped || isApproved || revisionStatus[activeTab] === 'requested' || isRequestingRevisions) return;
-    
-    // If we're already editing this one, don't do anything
-    if (activeCommentDraft?.top === top) return;
-
-    setActiveCommentDraft({ top, text: "" });
-  };
-
-  const handleSaveComment = () => {
-    if (activeCommentDraft && activeCommentDraft.text.trim()) {
-      const newComment = { 
-        id: Date.now(), 
-        text: activeCommentDraft.text, 
-        top: activeCommentDraft.top 
-      };
-      
-      const updatedComments = {
-        ...comments,
-        [activeTab]: [...comments[activeTab], newComment]
-      };
-      
-      setComments(updatedComments);
-      setActiveCommentDraft(null);
-
-      // Persist comments to localStorage for Admin visibility
-      try {
-        localStorage.setItem(`client_comments_${currentUser.id}`, JSON.stringify(updatedComments));
-      } catch (e) {
-        console.error("Failed to save comments", e);
-      }
-    }
-  };
-
-  const handleCancelComment = () => {
-    setActiveCommentDraft(null);
-  };
-  
   const handleStartRevisionRequest = () => {
     setIsRequestingRevisions(true);
   };
@@ -281,43 +235,29 @@ export default function ClientDocumentsPage() {
   };
 
   const handleSubmitRevisions = () => {
-    if (!revisionRequestText.trim() && comments[activeTab].length === 0) {
+    if (!revisionRequestText.trim()) {
       toast.error("No feedback provided", {
         description: "Please describe what changes you'd like to see."
       });
       return;
     }
     
-    setRevisionStatus(prev => ({ ...prev, [activeTab]: 'requested' }));
+    // Update local state
+    const updatedFeedback = {
+      ...documentFeedback,
+      [activeTab]: { text: revisionRequestText, status: "requested" as const }
+    };
+    setDocumentFeedback(updatedFeedback);
     setIsRequestingRevisions(false);
+    setRevisionRequestText("");
     
-    let updatedComments = { ...comments };
-    
-    // Add the general feedback as a "comment" if provided
-    if (revisionRequestText.trim()) {
-      const newComment = {
-        id: Date.now(),
-        top: "0%", // General comment
-        text: revisionRequestText
-      };
-      
-      updatedComments = {
-        ...updatedComments,
-        [activeTab]: [...updatedComments[activeTab], newComment]
-      };
-      
-      setComments(updatedComments);
-    }
-    
-    // Persist comments to localStorage
-    try {
-      localStorage.setItem(`client_comments_${currentUser.id}`, JSON.stringify(updatedComments));
-    } catch (e) {
-      console.error("Failed to save comments", e);
+    // Save to database
+    if (isRealClientId) {
+      updateClientMutation.mutate({ document_feedback: updatedFeedback });
     }
     
     toast.success("Revisions Requested", {
-      description: "Wilson has been notified and will update your documents."
+      description: "Your team has been notified and will update your documents."
     });
   };
 
@@ -550,68 +490,7 @@ export default function ClientDocumentsPage() {
   const renderNewResumeContent = () => (
     <div className="w-full min-h-full flex flex-col items-center gap-8 pb-20 origin-top" style={{ transform: !afterPdfUrl ? "scale(0.65)" : "none" }}>
       
-      {/* Active Comment Draft Overlay - Rendered INSIDE scaled container so it moves with it */}
-      {activeCommentDraft && (
-        <div 
-          className="absolute right-[-320px] z-50 w-[300px] bg-white rounded-lg shadow-2xl border border-gray-200 overflow-hidden animate-in fade-in slide-in-from-right-4 duration-200"
-          style={{ 
-            top: activeCommentDraft.top,
-            transform: !afterPdfUrl ? "scale(1.53)" : "none", // Inverse scale to make it look normal size (1 / 0.65 ≈ 1.53)
-            transformOrigin: "top left"
-          }}
-        >
-          <div className="bg-gray-50 px-3 py-2 border-b border-gray-100 flex justify-between items-center">
-            <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Add Feedback</span>
-            <Button variant="ghost" size="icon" className="h-6 w-6 text-gray-400 hover:text-gray-600" onClick={handleCancelComment}>
-              <X className="w-3 h-3" />
-            </Button>
-          </div>
-          <div className="p-3">
-            <Textarea 
-              autoFocus
-              placeholder="What would you like to change?" 
-              className="min-h-[80px] text-sm bg-transparent border-gray-200 focus-visible:ring-offset-0 text-gray-900 resize-none mb-3"
-              value={activeCommentDraft.text}
-              onChange={(e) => setActiveCommentDraft({...activeCommentDraft, text: e.target.value})}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSaveComment();
-                }
-                if (e.key === 'Escape') {
-                  handleCancelComment();
-                }
-              }}
-            />
-            <div className="flex justify-end gap-2">
-              <Button variant="ghost" size="sm" onClick={handleCancelComment} className="text-gray-500 hover:text-gray-700 h-8">
-                Cancel
-              </Button>
-              <Button size="sm" onClick={handleSaveComment} className="bg-blue-600 hover:bg-blue-700 h-8">
-                Post Comment
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
 
-      {/* Comments Overlay - Rendered INSIDE scaled container */}
-      {comments[activeTab].map(comment => (
-        <div 
-          key={comment.id} 
-          className="absolute right-[-220px] z-10 bg-yellow-100 border border-yellow-300 p-2 rounded shadow-lg max-w-[200px]"
-          style={{ 
-            top: comment.top,
-            transform: !afterPdfUrl ? "scale(1.53)" : "none", 
-            transformOrigin: "top left"
-          }}
-        >
-          <div className="flex items-start gap-2">
-            <MessageSquare className="w-4 h-4 text-yellow-600 mt-1 shrink-0" />
-            <p className="text-xs text-yellow-900">{comment.text}</p>
-          </div>
-        </div>
-      ))}
 
       {afterPdfUrl ? (
         <PDFViewer url={afterPdfUrl} scale={0.65} />
@@ -619,21 +498,12 @@ export default function ClientDocumentsPage() {
         <>
       {/* Page 1 */}
       <div className="w-[8.5in] min-h-[11in] bg-white shadow-xl p-[1in] text-sm relative shrink-0">
-          <div 
-            className="text-center border-b pb-6 hover:bg-yellow-50/50 transition-colors rounded p-2 relative group cursor-pointer"
-            onClick={(e) => handleTextClick(e, "10%")}
-          >
+          <div className="text-center border-b pb-6 rounded p-2">
             <h1 className="text-3xl font-bold uppercase tracking-wide text-gray-900">Dimas Gonzales</h1>
             <p className="text-gray-600 mt-2">Dimas@gmail.com | LinkedIn | Dallas, Texas</p>
-            <div className="hidden group-hover:block absolute right-2 top-2 text-gray-400">
-              <MessageSquare className="w-4 h-4" />
-            </div>
           </div>
           
-          <div 
-            className="mt-8 hover:bg-yellow-50/50 transition-colors rounded p-2 relative group cursor-pointer"
-            onClick={(e) => handleTextClick(e, "25%")}
-          >
+          <div className="mt-8 rounded p-2">
             <h4 className="font-bold uppercase text-xs tracking-wider text-gray-500 mb-4 border-b border-gray-200 pb-1">Work Experience (10+ Years Software Engineer)</h4>
             
             <div className="mb-6">
@@ -651,15 +521,9 @@ export default function ClientDocumentsPage() {
               </ul>
               <p className="text-xs text-gray-500 mt-2 font-mono">Tech Stack: Snowflake, Airflow, Apache Spark/Ranger, Azure DevOps, SodaCL, DataHub</p>
             </div>
-            <div className="hidden group-hover:block absolute right-2 top-2 text-gray-400">
-              <MessageSquare className="w-4 h-4" />
-            </div>
           </div>
 
-          <div 
-            className="mt-6 hover:bg-yellow-50/50 transition-colors rounded p-2 relative group cursor-pointer"
-            onClick={(e) => handleTextClick(e, "50%")}
-          >
+          <div className="mt-6 rounded p-2">
             <div className="mb-6">
               <div className="flex justify-between font-bold text-gray-800">
                 <span>Data Architect</span>
@@ -684,18 +548,12 @@ export default function ClientDocumentsPage() {
                 <li>Governance implementations cut monthly compute spend by 16% and reduced environment setup time by 40%+.</li>
               </ul>
             </div>
-            <div className="hidden group-hover:block absolute right-2 top-2 text-gray-400">
-              <MessageSquare className="w-4 h-4" />
-            </div>
           </div>
       </div>
       
       {/* Page 2 - Capabilities & Education */}
       <div className="w-[8.5in] min-h-[11in] bg-white shadow-xl p-[1in] text-sm relative">
-          <div 
-            className="hover:bg-yellow-50/50 transition-colors rounded p-2 relative group cursor-pointer"
-            onClick={(e) => handleTextClick(e, "75%")}
-          >
+          <div className="rounded p-2">
             <h4 className="font-bold uppercase text-xs tracking-wider text-gray-500 mb-4 border-b border-gray-200 pb-1">Capabilities & Curiosities</h4>
             <ul className="list-disc list-inside space-y-1 text-gray-800 mb-8">
               <li><strong>Cloud & Infrastructure:</strong> AWS (EMR, S3, ECS), Azure (Data Lake, DevOps), Terraform, Docker</li>
@@ -1092,25 +950,18 @@ export default function ClientDocumentsPage() {
                            </div>
                            <div className="flex items-center gap-2">
                               {isApproved && <Badge className="bg-green-500 gap-1"><CheckCircle2 className="w-3 h-3" /> Approved</Badge>}
-                              {revisionStatus[activeTab] === 'requested' && <Badge className="bg-yellow-500 gap-1"><RotateCw className="w-3 h-3 animate-spin" /> Revisions Requested</Badge>}
+                              {documentFeedback[activeTab]?.status === 'requested' && <Badge className="bg-yellow-500 gap-1"><RotateCw className="w-3 h-3 animate-spin" /> Revisions Requested</Badge>}
                            </div>
                          </div>
                          
-                         <div className="flex-1 overflow-y-auto p-8 bg-[#111] relative cursor-text scroll-smooth">
+                         <div className="flex-1 overflow-y-auto p-8 bg-[#111] relative scroll-smooth">
                            {activeTab === 'resume' ? renderNewResumeContent() : (
                              <div className="space-y-8 font-serif text-sm leading-relaxed max-w-[800px] mx-auto bg-white min-h-[11in] p-[1in] shadow-xl text-gray-800">
                                {/* Default placeholder content for other document types */}
-                               <div 
-                                 className="text-center border-b pb-6 hover:bg-yellow-50/50 transition-colors rounded p-2 relative group"
-                                 onClick={(e) => handleTextClick(e, "10%")}
-                               >
+                               <div className="text-center border-b pb-6 rounded p-2">
                                  <h1 className="text-3xl font-bold uppercase tracking-wide text-gray-900">John Doe</h1>
                                  <p className="text-gray-600 mt-2">Senior Software Engineer | Full Stack Specialist</p>
-                                 <div className="hidden group-hover:block absolute right-2 top-2 text-gray-400">
-                                   <MessageSquare className="w-4 h-4" />
-                                 </div>
                                </div>
-                               {/* ... other default content ... */}
                                <div className="p-4 text-center text-gray-400 italic">
                                  [Content for {config.label} goes here]
                                </div>
@@ -1164,7 +1015,7 @@ export default function ClientDocumentsPage() {
                           </>
                         )
                       ) : (
-                        revisionStatus[activeTab] === 'requested' ? (
+                        documentFeedback[activeTab]?.status === 'requested' ? (
                           <>
                              <div className="p-4 bg-yellow-500/10 rounded-full text-yellow-500 mb-2">
                                <RotateCw className="w-8 h-8 animate-spin" />
@@ -1172,18 +1023,16 @@ export default function ClientDocumentsPage() {
                              <div>
                                <h3 className="text-xl font-bold text-white">Revisions Requested</h3>
                                <p className="text-sm text-muted-foreground mt-2">
-                                 We are working on your updates based on {comments[activeTab].length} comments.
+                                 We are working on your updates.
                                  You'll be notified when the new version is ready.
                                </p>
                              </div>
-                             <div className="w-full bg-yellow-500/10 border border-yellow-500/20 p-3 rounded text-left mt-4 opacity-70">
-                               <p className="text-xs font-bold text-yellow-500 mb-1">Your Comments:</p>
-                               <ul className="text-xs text-yellow-200/80 list-disc list-inside">
-                                 {comments[activeTab].map(c => (
-                                   <li key={c.id} className="truncate">{c.text}</li>
-                                 ))}
-                               </ul>
-                             </div>
+                             {documentFeedback[activeTab]?.text && (
+                               <div className="w-full bg-yellow-500/10 border border-yellow-500/20 p-3 rounded text-left mt-4 opacity-70">
+                                 <p className="text-xs font-bold text-yellow-500 mb-1">Your Feedback:</p>
+                                 <p className="text-xs text-yellow-200/80">{documentFeedback[activeTab].text}</p>
+                               </div>
+                             )}
                              <Button variant="outline" className="w-full mt-4 border-white/10 opacity-50 cursor-not-allowed">
                                Awaiting Updates
                              </Button>
@@ -1198,17 +1047,6 @@ export default function ClientDocumentsPage() {
                                  <h3 className="text-xl font-bold text-white">Review & Approve</h3>
                                  <p className="text-sm text-muted-foreground mt-2">Request revisions or approve this version.</p>
                                </div>
-                               
-                               {comments[activeTab].length > 0 && (
-                                 <div className="w-full bg-yellow-500/10 border border-yellow-500/20 p-3 rounded text-left">
-                                   <p className="text-xs font-bold text-yellow-500 mb-1">{comments[activeTab].length} Comments Added:</p>
-                                   <ul className="text-xs text-yellow-200/80 list-disc list-inside">
-                                     {comments[activeTab].map(c => (
-                                       <li key={c.id} className="truncate">{c.text}</li>
-                                     ))}
-                                   </ul>
-                                 </div>
-                               )}
 
                                <div className="w-full space-y-3 pt-4">
                                  <Button size="lg" className="w-full bg-green-600 hover:bg-green-700 font-bold h-12" onClick={handleApprove}>
@@ -1233,7 +1071,7 @@ export default function ClientDocumentsPage() {
                       )}
                       
                       {/* Revision Request Text Area Mode */}
-                      {isRequestingRevisions && !isApproved && revisionStatus[activeTab] !== 'requested' && (
+                      {isRequestingRevisions && !isApproved && documentFeedback[activeTab]?.status !== 'requested' && (
                         <div className="absolute inset-0 z-20 bg-[#111] p-6 flex flex-col animate-in fade-in duration-200">
                           <div className="mb-4">
                             <h3 className="text-xl font-bold text-white mb-1">Request Revisions</h3>

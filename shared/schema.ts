@@ -4,6 +4,19 @@ export type UserRole = "Admin" | "Client" | "Applier";
 
 export type ClientStatus = "onboarding_not_started" | "onboarding_in_progress" | "active" | "paused" | "placed";
 
+export type RevisionStatus = "requested" | "completed" | null;
+
+export interface DocumentFeedbackItem {
+  text: string;
+  status: RevisionStatus;
+}
+
+export interface DocumentFeedback {
+  resume: DocumentFeedbackItem;
+  "cover-letter": DocumentFeedbackItem;
+  linkedin: DocumentFeedbackItem;
+}
+
 export interface Client {
   id: string;
   first_name: string;
@@ -35,6 +48,7 @@ export interface Client {
   first_application_date?: string;
   last_application_date?: string;
   placement_date?: string;
+  document_feedback?: DocumentFeedback;
 }
 
 export interface Applier {
@@ -138,6 +152,11 @@ export const updateClientSchema = z.object({
   onboarding_transcript: z.string().optional(),
   daily_application_target: z.number().optional(),
   placement_date: z.string().optional(),
+  document_feedback: z.object({
+    resume: z.object({ text: z.string(), status: z.enum(["requested", "completed"]).nullable() }),
+    "cover-letter": z.object({ text: z.string(), status: z.enum(["requested", "completed"]).nullable() }),
+    linkedin: z.object({ text: z.string(), status: z.enum(["requested", "completed"]).nullable() }),
+  }).optional(),
 });
 
 export const insertApplicationSchema = z.object({
