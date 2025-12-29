@@ -105,6 +105,18 @@ export default function AdminClientDetailPage() {
     }
   });
 
+  // Sync clientDocuments to uploadedFiles for UI display (must be before early returns)
+  useEffect(() => {
+    if (clientDocuments) {
+      const files: Record<string, string> = {};
+      clientDocuments.forEach(doc => {
+        // Store the object path for rendering (files are served from /objects/...)
+        files[doc.document_type] = doc.object_path;
+      });
+      setUploadedFiles(files);
+    }
+  }, [clientDocuments]);
+
   const handleDeleteClient = () => {
     if (confirm("Are you sure you want to delete this client? This action cannot be undone and will remove all associated documents and data.")) {
       // TODO: Implement delete API call
@@ -186,18 +198,6 @@ export default function AdminClientDetailPage() {
       client_gmail_password: clientGmailPassword
     });
   };
-
-  // Sync clientDocuments to uploadedFiles for UI display
-  useEffect(() => {
-    if (clientDocuments) {
-      const files: Record<string, string> = {};
-      clientDocuments.forEach(doc => {
-        // Store the object path for rendering (files are served from /objects/...)
-        files[doc.document_type] = doc.object_path;
-      });
-      setUploadedFiles(files);
-    }
-  }, [clientDocuments]);
 
   const handleFileUpload = async (key: string, e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || !e.target.files[0] || !clientId) return;
