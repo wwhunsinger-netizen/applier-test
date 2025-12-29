@@ -53,6 +53,8 @@ export default function AdminClientDetailPage() {
   const [isJobSamplesOpen, setIsJobSamplesOpen] = useState(false);
   const [jobUrlInput, setJobUrlInput] = useState("");
   const [isAddingJobUrls, setIsAddingJobUrls] = useState(false);
+  const [isScrapingAll, setIsScrapingAll] = useState(false);
+  const [scrapeProgress, setScrapeProgress] = useState({ current: 0, total: 0 });
   
   // Fetch client documents from database
   const { data: clientDocuments, refetch: refetchDocuments } = useQuery({
@@ -719,21 +721,26 @@ export default function AdminClientDetailPage() {
                         variant="outline"
                         className="text-blue-500 border-blue-500/30 hover:bg-blue-500/10"
                         data-testid="button-scrape-all"
+                        disabled={isScrapingAll}
                         onClick={async () => {
                           const pendingSamples = jobSamples.filter((s: JobCriteriaSample) => s.scrape_status === 'pending');
-                          toast.info(`Scraping ${pendingSamples.length} jobs... This may take a while.`);
+                          setIsScrapingAll(true);
+                          setScrapeProgress({ current: 0, total: pendingSamples.length });
                           let completed = 0;
                           let failed = 0;
                           for (const sample of pendingSamples) {
                             try {
                               await scrapeJobSample(sample.id);
                               completed++;
+                              setScrapeProgress({ current: completed + failed, total: pendingSamples.length });
+                              refetchJobSamples();
                             } catch (error) {
                               console.error(`Failed to scrape ${sample.id}:`, error);
                               failed++;
+                              setScrapeProgress({ current: completed + failed, total: pendingSamples.length });
                             }
                           }
-                          refetchJobSamples();
+                          setIsScrapingAll(false);
                           if (failed === 0) {
                             toast.success(`Scraped ${completed} jobs successfully`);
                           } else {
@@ -741,8 +748,17 @@ export default function AdminClientDetailPage() {
                           }
                         }}
                       >
-                        <RefreshCw className="w-4 h-4 mr-2" />
-                        Scrape All Pending
+                        {isScrapingAll ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Scraping {scrapeProgress.current}/{scrapeProgress.total}...
+                          </>
+                        ) : (
+                          <>
+                            <RefreshCw className="w-4 h-4 mr-2" />
+                            Scrape All Pending
+                          </>
+                        )}
                       </Button>
                     )}
                   </div>
