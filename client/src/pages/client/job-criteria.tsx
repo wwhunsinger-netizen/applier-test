@@ -1,22 +1,21 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MOCK_JOBS } from "@/lib/mockData";
-import { Check, X, MapPin, Building, CheckCircle2 } from "lucide-react";
+import { Check, X, MapPin, Building, CheckCircle2, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { fetchClient, updateClient } from "@/lib/api";
+import { fetchClient, updateClient, fetchJobSamples } from "@/lib/api";
 import { useUser } from "@/lib/userContext";
+import type { JobCriteriaSample } from "@shared/schema";
 
 export default function ClientJobCriteriaPage() {
   const { currentUser } = useUser();
   const queryClient = useQueryClient();
   const [expandedJobId, setExpandedJobId] = useState<string | null>(null);
-  const [jobs, setJobs] = useState(MOCK_JOBS);
   const [rejectingJobId, setRejectingJobId] = useState<string | null>(null);
   const [rejectionComment, setRejectionComment] = useState("");
   const [rejectedJobs, setRejectedJobs] = useState<Record<string, string>>({}); // jobId -> comment
@@ -31,6 +30,16 @@ export default function ClientJobCriteriaPage() {
     queryFn: () => fetchClient(currentUser.id),
     enabled: isRealClientId,
   });
+  
+  // Fetch job samples for this client
+  const { data: jobSamples, isLoading: isLoadingJobs } = useQuery({
+    queryKey: ['job-samples', currentUser.id],
+    queryFn: () => fetchJobSamples(currentUser.id),
+    enabled: isRealClientId,
+  });
+  
+  // Filter to only show completed job samples (scraped successfully)
+  const jobs = (jobSamples || []).filter((s: JobCriteriaSample) => s.scrape_status === 'complete');
   
   // Mutation to update client job_criteria_signoff
   const updateClientMutation = useMutation({
@@ -188,6 +197,35 @@ export default function ClientJobCriteriaPage() {
     );
   }
 
+  // Show loading state
+  if (isLoadingJobs) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center text-center">
+        <Loader2 className="w-12 h-12 animate-spin text-primary mb-4" />
+        <p className="text-muted-foreground">Loading job samples...</p>
+      </div>
+    );
+  }
+
+  // Show empty state if no jobs
+  if (jobs.length === 0) {
+    return (
+      <div className="space-y-8 pb-32 max-w-4xl mx-auto relative">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-white">Confirm Job Criteria</h1>
+          <p className="text-muted-foreground mt-1">Review sample jobs to help us calibrate your search.</p>
+        </div>
+        <div className="min-h-[40vh] flex flex-col items-center justify-center text-center">
+          <Building className="w-16 h-16 text-muted-foreground/30 mb-4" />
+          <h2 className="text-xl font-semibold text-white mb-2">No Job Samples Yet</h2>
+          <p className="text-muted-foreground max-w-md">
+            Your job search consultant is preparing sample jobs for you to review. Check back soon!
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8 pb-32 max-w-4xl mx-auto relative">
       <div>
@@ -200,7 +238,7 @@ export default function ClientJobCriteriaPage() {
         animate={isSubmitting ? { opacity: 0, height: 0, overflow: "hidden" } : { opacity: 1, height: "auto" }}
         transition={{ duration: 0.5 }}
       >
-        {jobs.map((job) => {
+        {jobs.map((job: JobCriteriaSample) => {
           const isRejected = !!rejectedJobs[job.id];
           const isApproved = approvedJobs.includes(job.id);
 
@@ -233,10 +271,10 @@ export default function ClientJobCriteriaPage() {
                     <div className="flex-1 space-y-3">
                       <div className="flex items-center justify-between">
                         <div>
-                          <h3 className="text-xl font-bold text-white group-hover:text-primary transition-colors">{job.role}</h3>
+                          <h3 className="text-xl font-bold text-white group-hover:text-primary transition-colors">{job.title}</h3>
                           <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
-                            <span className="flex items-center gap-1"><Building className="w-3.5 h-3.5" /> {job.company}</span>
-                            <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" /> {job.location}</span>
+                            <span className="flex items-center gap-1"><Building className="w-3.5 h-3.5" /> {job.company_name}</span>
+                            <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" /> {job.location || 'Remote'}</span>
                           </div>
                         </div>
                       </div>
