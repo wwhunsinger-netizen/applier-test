@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { MOCK_JOBS } from "@/lib/mockData";
-import { Check, X, MapPin, Building, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Check, X, MapPin, Building, CheckCircle2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
@@ -289,26 +289,10 @@ export default function ClientJobCriteriaPage() {
                         exit={{ height: 0, opacity: 0 }}
                         className="border-t border-white/10 bg-white/5"
                       >
-                        <div className="p-6 space-y-6">
+                        <div className="p-6">
                           <div>
                             <h4 className="font-semibold text-white mb-2">Job Description</h4>
                             <p className="text-sm text-gray-400 leading-relaxed">{job.description}</p>
-                          </div>
-                          
-                          <div>
-                            <h4 className="font-semibold text-white mb-3">Requirements Analysis</h4>
-                            <div className="grid grid-cols-1 gap-3">
-                              {job.requirements.map((req, idx) => (
-                                <div key={idx} className="flex items-center gap-3 text-sm bg-black/20 p-3 rounded border border-white/5">
-                                  {req.met ? (
-                                    <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />
-                                  ) : (
-                                    <AlertCircle className="w-5 h-5 text-yellow-500 shrink-0" />
-                                  )}
-                                  <span className={req.met ? "text-white" : "text-gray-400"}>{req.text}</span>
-                                </div>
-                              ))}
-                            </div>
                           </div>
                         </div>
                       </motion.div>
