@@ -83,7 +83,7 @@ export default function AdminClientsPage() {
   };
 
   const handleCopyInvite = () => {
-    const inviteText = `Welcome to Jumpseat!\n\nHere are your login details:\nUsername: ${newClientEmail.split('@')[0]}\nPassword: ${generatedPassword}\n\nLog in at: ${window.location.origin}/login`;
+    const inviteText = `Welcome to Jumpseat!\n\nHere are your login details:\nEmail: ${newClientEmail}\nPassword: ${generatedPassword}\n\nLog in at: ${window.location.origin}/login`;
     navigator.clipboard.writeText(inviteText);
     toast({
       title: "Invite Copied",
@@ -279,10 +279,10 @@ export default function AdminClientsPage() {
 
               <div className="space-y-4">
                 <div className="space-y-1">
-                  <Label className="text-xs uppercase text-muted-foreground">Username</Label>
+                  <Label className="text-xs uppercase text-muted-foreground">Email</Label>
                   <div className="flex gap-2">
-                    <Input readOnly value={newClientEmail.split('@')[0]} className="bg-white/5 border-white/10 font-mono" />
-                    <Button size="icon" variant="outline" onClick={() => navigator.clipboard.writeText(newClientEmail.split('@')[0])}>
+                    <Input readOnly value={newClientEmail} className="bg-white/5 border-white/10 font-mono" />
+                    <Button size="icon" variant="outline" onClick={() => navigator.clipboard.writeText(newClientEmail)}>
                       <Copy className="w-4 h-4" />
                     </Button>
                   </div>
