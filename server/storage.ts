@@ -1,4 +1,4 @@
-import type { Client, Application, Interview, Job, Applier, InsertClient, UpdateClient, InsertApplication, InsertInterview, ClientDocument, InsertClientDocument } from "@shared/schema";
+import type { Client, Application, Interview, Job, Applier, InsertClient, UpdateClient, InsertApplication, InsertInterview, ClientDocument, InsertClientDocument, JobCriteriaSample, InsertJobCriteriaSample, UpdateJobCriteriaSample, ClientJobResponse, InsertClientJobResponse } from "@shared/schema";
 import { supabase } from "./supabase";
 
 export interface IStorage {
@@ -31,6 +31,16 @@ export interface IStorage {
   getClientDocuments(clientId: string): Promise<ClientDocument[]>;
   createClientDocument(document: InsertClientDocument): Promise<ClientDocument>;
   deleteClientDocument(clientId: string, documentType: string): Promise<void>;
+  
+  // Job criteria sample operations
+  getJobSamples(clientId: string): Promise<JobCriteriaSample[]>;
+  createJobSample(sample: InsertJobCriteriaSample): Promise<JobCriteriaSample>;
+  updateJobSample(id: string, updates: UpdateJobCriteriaSample): Promise<JobCriteriaSample | null>;
+  deleteJobSample(id: string): Promise<void>;
+  
+  // Client job response operations
+  getJobResponses(clientId: string): Promise<ClientJobResponse[]>;
+  createJobResponse(response: InsertClientJobResponse): Promise<ClientJobResponse>;
 }
 
 export class SupabaseStorage implements IStorage {
@@ -234,6 +244,80 @@ export class SupabaseStorage implements IStorage {
       .eq('document_type', documentType);
     
     if (error) throw error;
+  }
+
+  // Job criteria sample operations
+  async getJobSamples(clientId: string): Promise<JobCriteriaSample[]> {
+    const { data, error } = await supabase
+      .from('job_criteria_samples')
+      .select('*')
+      .eq('client_id', clientId)
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    return data || [];
+  }
+
+  async createJobSample(sample: InsertJobCriteriaSample): Promise<JobCriteriaSample> {
+    const { data, error } = await supabase
+      .from('job_criteria_samples')
+      .insert(sample)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  }
+
+  async updateJobSample(id: string, updates: UpdateJobCriteriaSample): Promise<JobCriteriaSample | null> {
+    const { data, error } = await supabase
+      .from('job_criteria_samples')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) {
+      if (error.code === 'PGRST116') return null;
+      throw error;
+    }
+    return data;
+  }
+
+  async deleteJobSample(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('job_criteria_samples')
+      .delete()
+      .eq('id', id);
+    
+    if (error) throw error;
+  }
+
+  // Client job response operations
+  async getJobResponses(clientId: string): Promise<ClientJobResponse[]> {
+    const { data, error } = await supabase
+      .from('client_job_responses')
+      .select('*')
+      .eq('client_id', clientId);
+    
+    if (error) throw error;
+    return data || [];
+  }
+
+  async createJobResponse(response: InsertClientJobResponse): Promise<ClientJobResponse> {
+    const sampleData = {
+      ...response,
+      responded_at: new Date().toISOString(),
+    };
+    
+    const { data, error } = await supabase
+      .from('client_job_responses')
+      .insert(sampleData)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
   }
 }
 

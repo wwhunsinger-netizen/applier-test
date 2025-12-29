@@ -3,7 +3,8 @@ import { Link, useRoute } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Client, UpdateClient, ClientDocument } from "@shared/schema";
 import { getClientFullName, calculateClientStatus } from "@shared/schema";
-import { fetchClient, updateClient, requestUploadUrl, uploadToPresignedUrl, saveClientDocument, fetchClientDocuments, deleteClientDocument } from "@/lib/api";
+import { fetchClient, updateClient, requestUploadUrl, uploadToPresignedUrl, saveClientDocument, fetchClientDocuments, deleteClientDocument, fetchJobSamples, createJobSamplesBulk, deleteJobSample } from "@/lib/api";
+import type { JobCriteriaSample } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,7 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ArrowLeft, Upload, FileText, Download, CheckCircle2, AlertCircle, Plus, Calendar, Clock, Video, Users, Link as LinkIcon, Linkedin, Loader2, ChevronDown, X, Target, Mail, Lock } from "lucide-react";
+import { ArrowLeft, Upload, FileText, Download, CheckCircle2, AlertCircle, Plus, Calendar, Clock, Video, Users, Link as LinkIcon, Linkedin, Loader2, ChevronDown, X, Target, Mail, Lock, Briefcase, ExternalLink, Trash2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 
@@ -48,10 +49,22 @@ export default function AdminClientDetailPage() {
   const [uploadedFiles, setUploadedFiles] = useState<Record<string, string>>({});
   const [isUploading, setIsUploading] = useState<Record<string, boolean>>({});
   
+  // Job Samples State
+  const [isJobSamplesOpen, setIsJobSamplesOpen] = useState(false);
+  const [jobUrlInput, setJobUrlInput] = useState("");
+  const [isAddingJobUrls, setIsAddingJobUrls] = useState(false);
+  
   // Fetch client documents from database
   const { data: clientDocuments, refetch: refetchDocuments } = useQuery({
     queryKey: ['client-documents', clientId],
     queryFn: () => fetchClientDocuments(clientId!),
+    enabled: !!clientId
+  });
+  
+  // Fetch job samples for this client
+  const { data: jobSamples, refetch: refetchJobSamples } = useQuery({
+    queryKey: ['job-samples', clientId],
+    queryFn: () => fetchJobSamples(clientId!),
     enabled: !!clientId
   });
 
@@ -619,6 +632,156 @@ export default function AdminClientDetailPage() {
                   )}
                 </Button>
               </div>
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
+
+      {/* Job Samples Section */}
+      <Collapsible open={isJobSamplesOpen} onOpenChange={setIsJobSamplesOpen}>
+        <Card className="bg-[#111] border-white/10">
+          <CollapsibleTrigger asChild>
+            <CardHeader className="pb-4 cursor-pointer hover:bg-white/5 transition-colors rounded-t-lg">
+              <CardTitle className="text-lg flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <Briefcase className="w-5 h-5 text-primary" />
+                  Job Samples
+                  {jobSamples && jobSamples.length > 0 && (
+                    <Badge variant="secondary" className="ml-2">{jobSamples.length}</Badge>
+                  )}
+                </span>
+                <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform ${isJobSamplesOpen ? 'rotate-180' : ''}`} />
+              </CardTitle>
+            </CardHeader>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <CardContent className="space-y-6">
+              {/* Add Job URLs */}
+              <div className="space-y-3">
+                <Label className="text-sm font-medium text-white">Add Job URLs</Label>
+                <p className="text-xs text-muted-foreground">Paste job posting URLs (one per line) to add them for client calibration.</p>
+                <Textarea
+                  placeholder="https://example.com/job/123&#10;https://example.com/job/456&#10;https://example.com/job/789"
+                  value={jobUrlInput}
+                  onChange={(e) => setJobUrlInput(e.target.value)}
+                  className="bg-white/5 border-white/10 min-h-[120px] font-mono text-sm"
+                />
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-muted-foreground">
+                    {jobUrlInput.trim() ? jobUrlInput.trim().split('\n').filter(u => u.trim()).length : 0} URLs
+                  </span>
+                  <Button
+                    onClick={async () => {
+                      const urls = jobUrlInput.trim().split('\n').filter(u => u.trim());
+                      if (urls.length === 0) {
+                        toast.error("Please enter at least one URL");
+                        return;
+                      }
+                      setIsAddingJobUrls(true);
+                      try {
+                        await createJobSamplesBulk(clientId!, urls);
+                        toast.success(`Added ${urls.length} job samples`);
+                        setJobUrlInput("");
+                        refetchJobSamples();
+                      } catch (error) {
+                        console.error("Failed to add job samples:", error);
+                        toast.error("Failed to add job samples");
+                      } finally {
+                        setIsAddingJobUrls(false);
+                      }
+                    }}
+                    disabled={isAddingJobUrls || !jobUrlInput.trim()}
+                    className="bg-primary hover:bg-primary/90"
+                  >
+                    {isAddingJobUrls ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Adding...
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add URLs
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+
+              {/* Job Samples List */}
+              {jobSamples && jobSamples.length > 0 && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-medium text-white">Added Job Samples ({jobSamples.length})</Label>
+                  </div>
+                  <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                    {jobSamples.map((sample: JobCriteriaSample) => (
+                      <div key={sample.id} className="flex items-center justify-between p-3 bg-white/5 rounded border border-white/10 group">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-white truncate">
+                              {sample.title === "Pending Scrape" ? (
+                                <span className="text-muted-foreground italic">Pending...</span>
+                              ) : sample.title}
+                            </span>
+                            <Badge 
+                              variant="outline" 
+                              className={
+                                sample.scrape_status === 'complete' ? 'bg-green-500/10 text-green-500 border-green-500/20' :
+                                sample.scrape_status === 'failed' ? 'bg-red-500/10 text-red-500 border-red-500/20' :
+                                'bg-yellow-500/10 text-yellow-500 border-yellow-500/20'
+                              }
+                            >
+                              {sample.scrape_status}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-xs text-muted-foreground truncate max-w-[300px]">
+                              {sample.company_name !== "Unknown" && `${sample.company_name} • `}
+                              {sample.source_url}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-8 w-8 p-0"
+                            onClick={() => window.open(sample.source_url, '_blank')}
+                          >
+                            <ExternalLink className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-8 w-8 p-0 text-red-500 hover:text-red-400 hover:bg-red-500/10"
+                            onClick={async () => {
+                              try {
+                                await deleteJobSample(sample.id);
+                                toast.success("Job sample deleted");
+                                refetchJobSamples();
+                              } catch (error) {
+                                console.error("Failed to delete job sample:", error);
+                                toast.error("Failed to delete job sample");
+                              }
+                            }}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {(!jobSamples || jobSamples.length === 0) && (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Briefcase className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                  <p className="text-sm">No job samples added yet</p>
+                  <p className="text-xs mt-1">Add job URLs above to create samples for client calibration</p>
+                </div>
+              )}
             </CardContent>
           </CollapsibleContent>
         </Card>

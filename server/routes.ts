@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertClientSchema, updateClientSchema, insertApplicationSchema, insertInterviewSchema, insertClientDocumentSchema } from "@shared/schema";
+import { insertClientSchema, updateClientSchema, insertApplicationSchema, insertInterviewSchema, insertClientDocumentSchema, insertJobCriteriaSampleSchema, insertClientJobResponseSchema, updateJobCriteriaSampleSchema } from "@shared/schema";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
 
 export async function registerRoutes(
@@ -189,6 +189,116 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error deleting client document:", error);
       res.status(500).json({ error: "Failed to delete client document" });
+    }
+  });
+
+  // Job sample routes
+  app.get("/api/clients/:clientId/job-samples", async (req, res) => {
+    try {
+      const samples = await storage.getJobSamples(req.params.clientId);
+      res.json(samples);
+    } catch (error) {
+      console.error("Error fetching job samples:", error);
+      res.status(500).json({ error: "Failed to fetch job samples" });
+    }
+  });
+
+  app.post("/api/clients/:clientId/job-samples", async (req, res) => {
+    try {
+      const validatedData = insertJobCriteriaSampleSchema.parse({
+        ...req.body,
+        client_id: req.params.clientId,
+      });
+      const sample = await storage.createJobSample(validatedData);
+      res.status(201).json(sample);
+    } catch (error) {
+      console.error("Error creating job sample:", error);
+      res.status(400).json({ error: "Failed to create job sample" });
+    }
+  });
+
+  app.post("/api/clients/:clientId/job-samples/bulk", async (req, res) => {
+    try {
+      const { urls } = req.body;
+      if (!Array.isArray(urls)) {
+        return res.status(400).json({ error: "urls must be an array" });
+      }
+      
+      const samples = [];
+      for (const url of urls) {
+        if (typeof url !== 'string' || !url.trim()) continue;
+        
+        const sample = await storage.createJobSample({
+          client_id: req.params.clientId,
+          source_url: url.trim(),
+          title: "Pending Scrape",
+          company_name: "Unknown",
+          scrape_status: "pending",
+        });
+        samples.push(sample);
+      }
+      
+      res.status(201).json(samples);
+    } catch (error) {
+      console.error("Error creating bulk job samples:", error);
+      res.status(500).json({ error: "Failed to create job samples" });
+    }
+  });
+
+  app.patch("/api/job-samples/:id", async (req, res) => {
+    try {
+      const validatedData = updateJobCriteriaSampleSchema.parse(req.body);
+      const sample = await storage.updateJobSample(req.params.id, validatedData);
+      if (!sample) {
+        return res.status(404).json({ error: "Job sample not found" });
+      }
+      res.json(sample);
+    } catch (error: any) {
+      console.error("Error updating job sample:", error);
+      if (error?.name === 'ZodError') {
+        return res.status(400).json({ error: "Invalid update data", details: error.errors });
+      }
+      res.status(500).json({ error: "Failed to update job sample" });
+    }
+  });
+
+  app.delete("/api/job-samples/:id", async (req, res) => {
+    try {
+      await storage.deleteJobSample(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting job sample:", error);
+      res.status(500).json({ error: "Failed to delete job sample" });
+    }
+  });
+
+  // Client job response routes
+  app.get("/api/clients/:clientId/job-responses", async (req, res) => {
+    try {
+      const responses = await storage.getJobResponses(req.params.clientId);
+      res.json(responses);
+    } catch (error) {
+      console.error("Error fetching job responses:", error);
+      res.status(500).json({ error: "Failed to fetch job responses" });
+    }
+  });
+
+  app.post("/api/clients/:clientId/job-responses", async (req, res) => {
+    try {
+      const validatedData = insertClientJobResponseSchema.parse({
+        ...req.body,
+        client_id: req.params.clientId,
+      });
+      
+      if (validatedData.verdict === 'no' && !validatedData.comment?.trim()) {
+        return res.status(400).json({ error: "Comment is required when verdict is 'no'" });
+      }
+      
+      const response = await storage.createJobResponse(validatedData);
+      res.status(201).json(response);
+    } catch (error) {
+      console.error("Error creating job response:", error);
+      res.status(400).json({ error: "Failed to create job response" });
     }
   });
 

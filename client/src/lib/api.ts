@@ -1,4 +1,4 @@
-import type { Client, Application, Interview, Job, Applier, InsertClient, UpdateClient, InsertApplication, InsertInterview, ClientDocument, InsertClientDocument } from "@shared/schema";
+import type { Client, Application, Interview, Job, Applier, InsertClient, UpdateClient, InsertApplication, InsertInterview, ClientDocument, InsertClientDocument, JobCriteriaSample, ClientJobResponse, InsertClientJobResponse } from "@shared/schema";
 
 const API_BASE = "/api";
 
@@ -160,5 +160,56 @@ export async function fetchAppliers(): Promise<Applier[]> {
 export async function fetchApplier(id: string): Promise<Applier> {
   const res = await fetch(`${API_BASE}/appliers/${id}`);
   if (!res.ok) throw new Error("Failed to fetch applier");
+  return res.json();
+}
+
+// Job Sample API
+export async function fetchJobSamples(clientId: string): Promise<JobCriteriaSample[]> {
+  const res = await fetch(`${API_BASE}/clients/${clientId}/job-samples`);
+  if (!res.ok) throw new Error("Failed to fetch job samples");
+  return res.json();
+}
+
+export async function createJobSamplesBulk(clientId: string, urls: string[]): Promise<JobCriteriaSample[]> {
+  const res = await fetch(`${API_BASE}/clients/${clientId}/job-samples/bulk`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ urls }),
+  });
+  if (!res.ok) throw new Error("Failed to create job samples");
+  return res.json();
+}
+
+export async function updateJobSample(id: string, updates: Partial<JobCriteriaSample>): Promise<JobCriteriaSample> {
+  const res = await fetch(`${API_BASE}/job-samples/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(updates),
+  });
+  if (!res.ok) throw new Error("Failed to update job sample");
+  return res.json();
+}
+
+export async function deleteJobSample(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/job-samples/${id}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) throw new Error("Failed to delete job sample");
+}
+
+// Client Job Response API
+export async function fetchJobResponses(clientId: string): Promise<ClientJobResponse[]> {
+  const res = await fetch(`${API_BASE}/clients/${clientId}/job-responses`);
+  if (!res.ok) throw new Error("Failed to fetch job responses");
+  return res.json();
+}
+
+export async function createJobResponse(clientId: string, response: Omit<InsertClientJobResponse, 'client_id'>): Promise<ClientJobResponse> {
+  const res = await fetch(`${API_BASE}/clients/${clientId}/job-responses`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(response),
+  });
+  if (!res.ok) throw new Error("Failed to create job response");
   return res.json();
 }

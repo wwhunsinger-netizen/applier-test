@@ -253,7 +253,27 @@ export const insertClientJobResponseSchema = z.object({
   comment: z.string().optional(),
 });
 
+export const updateJobCriteriaSampleSchema = z.object({
+  title: z.string().min(1).optional(),
+  company_name: z.string().min(1).optional(),
+  location: z.string().optional(),
+  is_remote: z.boolean().optional(),
+  job_type: z.string().optional(),
+  description: z.string().optional(),
+  required_skills: z.array(z.string()).optional(),
+  experience_level: z.string().optional(),
+  apply_url: z.string().url().optional(),
+  salary_min: z.number().optional(),
+  salary_max: z.number().optional(),
+  salary_currency: z.string().optional(),
+  company_logo_url: z.string().url().optional(),
+  scrape_status: z.enum(["pending", "complete", "failed"]).optional(),
+  scraped_at: z.string().optional(),
+  raw_data: z.record(z.unknown()).optional(),
+});
+
 export type InsertJobCriteriaSample = z.infer<typeof insertJobCriteriaSampleSchema>;
+export type UpdateJobCriteriaSample = z.infer<typeof updateJobCriteriaSampleSchema>;
 export type InsertClientJobResponse = z.infer<typeof insertClientJobResponseSchema>;
 
 export type InsertClient = z.input<typeof insertClientSchema>;
