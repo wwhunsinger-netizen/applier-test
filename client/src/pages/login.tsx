@@ -10,14 +10,7 @@ import LoadingScreen from "@/components/loading";
 import { MOCK_USERS } from "@/lib/mockData";
 import { useUser } from "@/lib/userContext";
 import { cn } from "@/lib/utils";
-
-// Helper interface for locally stored clients
-interface StoredClient {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-}
+import { fetchClients } from "@/lib/api";
 
 export default function LoginPage() {
   const [, setLocation] = useLocation();
@@ -26,31 +19,26 @@ export default function LoginPage() {
   const [showAppLoader, setShowAppLoader] = useState(false);
   const [email, setEmail] = useState("admin@jumpseat.com");
   
-  // Combine MOCK_USERS with locally stored clients for demo purposes
-  const [demoUsers, setDemoUsers] = useState(MOCK_USERS);
+  // Combine MOCK_USERS with clients from Supabase for demo purposes
+  const [demoUsers, setDemoUsers] = useState<Array<{id: string; name: string; email: string; role: string; avatar: string | null}>>(MOCK_USERS);
 
   useEffect(() => {
-    try {
-      const savedClientsStr = localStorage.getItem("admin_clients");
-      if (savedClientsStr) {
-        const savedClients = JSON.parse(savedClientsStr);
-        const newDemoUsers = savedClients.map((client: StoredClient) => ({
+    // Fetch clients from Supabase API
+    fetchClients()
+      .then((clients) => {
+        const clientUsers = clients.map((client) => ({
           id: client.id,
-          name: client.name,
+          name: `${client.first_name} ${client.last_name}`.trim(),
           email: client.email,
           role: "Client",
-          avatar: null // Default avatar logic handles null
+          avatar: null as string | null
         }));
         
-        // Filter out any duplicates if they exist in MOCK_USERS (though IDs should be different)
-        const existingIds = new Set(MOCK_USERS.map(u => u.id));
-        const uniqueNewUsers = newDemoUsers.filter((u: any) => !existingIds.has(u.id));
-        
-        setDemoUsers([...MOCK_USERS, ...uniqueNewUsers]);
-      }
-    } catch (e) {
-      console.error("Failed to load local clients for demo login", e);
-    }
+        setDemoUsers([...MOCK_USERS, ...clientUsers]);
+      })
+      .catch((e) => {
+        console.error("Failed to load clients for demo login", e);
+      });
   }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
