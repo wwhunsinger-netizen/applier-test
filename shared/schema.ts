@@ -93,8 +93,6 @@ export const insertClientSchema = z.object({
   email: z.string().email(),
   username: z.string().min(1),
   status: z.enum(["onboarding_not_started", "onboarding_in_progress", "active", "paused", "placed"]).default("onboarding_not_started"),
-  applications_sent: z.number().default(0),
-  interviews_scheduled: z.number().default(0),
   job_criteria_signoff: z.boolean().default(false),
   resume_approved: z.boolean().default(false),
   cover_letter_approved: z.boolean().default(false),
