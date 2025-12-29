@@ -15,7 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ArrowLeft, Upload, FileText, Download, CheckCircle2, AlertCircle, Plus, Calendar, Clock, Video, Users, Link as LinkIcon, Linkedin, Loader2, ChevronDown, X, Target, Mail, Lock, Briefcase, ExternalLink, Trash2 } from "lucide-react";
+import { ArrowLeft, Upload, FileText, Download, CheckCircle2, AlertCircle, Plus, Calendar, Clock, Video, Users, Link as LinkIcon, Linkedin, Loader2, ChevronDown, X, Target, Mail, Lock, Briefcase, ExternalLink, Trash2, RefreshCw } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 
@@ -713,6 +713,38 @@ export default function AdminClientDetailPage() {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <Label className="text-sm font-medium text-white">Added Job Samples ({jobSamples.length})</Label>
+                    {jobSamples.some((s: JobCriteriaSample) => s.scrape_status === 'pending') && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-blue-500 border-blue-500/30 hover:bg-blue-500/10"
+                        data-testid="button-scrape-all"
+                        onClick={async () => {
+                          const pendingSamples = jobSamples.filter((s: JobCriteriaSample) => s.scrape_status === 'pending');
+                          toast.info(`Scraping ${pendingSamples.length} jobs... This may take a while.`);
+                          let completed = 0;
+                          let failed = 0;
+                          for (const sample of pendingSamples) {
+                            try {
+                              await scrapeJobSample(sample.id);
+                              completed++;
+                            } catch (error) {
+                              console.error(`Failed to scrape ${sample.id}:`, error);
+                              failed++;
+                            }
+                          }
+                          refetchJobSamples();
+                          if (failed === 0) {
+                            toast.success(`Scraped ${completed} jobs successfully`);
+                          } else {
+                            toast.warning(`Scraped ${completed} jobs, ${failed} failed`);
+                          }
+                        }}
+                      >
+                        <RefreshCw className="w-4 h-4 mr-2" />
+                        Scrape All Pending
+                      </Button>
+                    )}
                   </div>
                   <div className="space-y-2 max-h-[400px] overflow-y-auto">
                     {jobSamples.map((sample: JobCriteriaSample) => (
