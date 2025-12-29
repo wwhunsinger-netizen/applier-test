@@ -231,8 +231,6 @@ export async function registerRoutes(
         const sample = await storage.createJobSample({
           client_id: req.params.clientId,
           source_url: url.trim(),
-          title: "Pending Scrape",
-          company_name: "Unknown",
           scrape_status: "pending",
         });
         samples.push(sample);

@@ -720,7 +720,7 @@ export default function AdminClientDetailPage() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
                             <span className="text-sm font-medium text-white truncate">
-                              {sample.title === "Pending Scrape" ? (
+                              {!sample.title ? (
                                 <span className="text-muted-foreground italic">Pending...</span>
                               ) : sample.title}
                             </span>
@@ -737,7 +737,7 @@ export default function AdminClientDetailPage() {
                           </div>
                           <div className="flex items-center gap-2 mt-1">
                             <span className="text-xs text-muted-foreground truncate max-w-[300px]">
-                              {sample.company_name !== "Unknown" && `${sample.company_name} • `}
+                              {sample.company_name && `${sample.company_name} • `}
                               {sample.source_url}
                             </span>
                           </div>

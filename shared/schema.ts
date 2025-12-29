@@ -193,8 +193,8 @@ export type ScrapeStatus = "pending" | "complete" | "failed";
 export interface JobCriteriaSample {
   id: string;
   client_id: string;
-  title: string;
-  company_name: string;
+  title?: string | null;
+  company_name?: string | null;
   location?: string;
   is_remote?: boolean;
   job_type?: string; // full-time, part-time, contract, etc.
@@ -215,8 +215,8 @@ export interface JobCriteriaSample {
 
 export const insertJobCriteriaSampleSchema = z.object({
   client_id: z.string().uuid(),
-  title: z.string().min(1),
-  company_name: z.string().min(1),
+  title: z.string().nullable().optional(),
+  company_name: z.string().nullable().optional(),
   location: z.string().optional(),
   is_remote: z.boolean().optional(),
   job_type: z.string().optional(),
