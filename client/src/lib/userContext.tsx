@@ -1,7 +1,13 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { MOCK_USERS } from "./mockData";
+import { fetchClients } from "./api";
 
-type User = typeof MOCK_USERS[0] & {
+type User = {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  avatar: string | null;
   applicationsSent?: number;
   interviewsScheduled?: number;
 };
@@ -14,48 +20,88 @@ interface UserContextType {
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
+// Cache for Supabase clients
+let cachedClients: Array<{id: string; name: string; email: string}> = [];
+
 export function UserProvider({ children }: { children: ReactNode }) {
-  // Default to first user (Alex) if no one is logged in, or check localStorage
+  // Default to first user (Admin) if no one is logged in
   const [currentUser, setCurrentUser] = useState<User>(() => {
     const savedEmail = localStorage.getItem("jumpseat_user_email");
+    const savedUser = localStorage.getItem("jumpseat_user_data");
+    
+    if (savedUser) {
+      try {
+        return JSON.parse(savedUser);
+      } catch {
+        // Fall through to default
+      }
+    }
+    
     return MOCK_USERS.find(u => u.email === savedEmail) || MOCK_USERS[0];
   });
 
-  const login = (email: string) => {
-    let user: User | undefined = MOCK_USERS.find(u => u.email === email);
-    
-    // If not found in mocks, check local storage for admin created clients
-    if (!user) {
-      try {
-        const savedClientsStr = localStorage.getItem("admin_clients");
-        if (savedClientsStr) {
-          const savedClients = JSON.parse(savedClientsStr);
-          const foundClient = savedClients.find((c: any) => c.email === email);
-          if (foundClient) {
-            user = {
-              id: foundClient.id,
-              name: foundClient.name,
-              email: foundClient.email,
-              role: "Client", // Force role to Client for these users
-              avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(foundClient.name)}&background=random`, // Generate avatar
-              applicationsSent: foundClient.applicationsSent,
-              interviewsScheduled: foundClient.interviewsScheduled
-            };
-          }
-        }
-      } catch (e) {
-        console.error("Error reading admin_clients", e);
-      }
-    }
+  // Fetch clients from Supabase on mount
+  useEffect(() => {
+    fetchClients()
+      .then((clients) => {
+        cachedClients = clients.map(c => ({
+          id: c.id,
+          name: `${c.first_name} ${c.last_name}`.trim(),
+          email: c.email
+        }));
+      })
+      .catch(console.error);
+  }, []);
 
-    if (user) {
+  const login = (email: string) => {
+    // First check MOCK_USERS
+    let mockUser = MOCK_USERS.find(u => u.email === email);
+    if (mockUser) {
+      setCurrentUser(mockUser);
+      localStorage.setItem("jumpseat_user_email", email);
+      localStorage.setItem("jumpseat_user_data", JSON.stringify(mockUser));
+      return;
+    }
+    
+    // Check cached Supabase clients
+    const foundClient = cachedClients.find(c => c.email === email);
+    if (foundClient) {
+      const user: User = {
+        id: foundClient.id,
+        name: foundClient.name,
+        email: foundClient.email,
+        role: "Client",
+        avatar: null
+      };
       setCurrentUser(user);
       localStorage.setItem("jumpseat_user_email", email);
+      localStorage.setItem("jumpseat_user_data", JSON.stringify(user));
+      return;
     }
+    
+    // If still not found, try fetching fresh from API
+    fetchClients()
+      .then((clients) => {
+        const client = clients.find(c => c.email === email);
+        if (client) {
+          const user: User = {
+            id: client.id,
+            name: `${client.first_name} ${client.last_name}`.trim(),
+            email: client.email,
+            role: "Client",
+            avatar: null
+          };
+          setCurrentUser(user);
+          localStorage.setItem("jumpseat_user_email", email);
+          localStorage.setItem("jumpseat_user_data", JSON.stringify(user));
+        }
+      })
+      .catch(console.error);
   };
 
   const logout = () => {
     localStorage.removeItem("jumpseat_user_email");
+    localStorage.removeItem("jumpseat_user_data");
     setCurrentUser(MOCK_USERS[0]); // Reset to default user
     window.location.href = "/login"; // Redirect to login page
   };
