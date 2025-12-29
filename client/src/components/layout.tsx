@@ -33,8 +33,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const clientNavItems = [
     { icon: LayoutDashboard, label: "Overview", href: "/" },
     { icon: ClipboardCheck, label: "Job Criteria", href: "/client/job-criteria" },
-    { icon: Calendar, label: "Interviews", href: "/client/interviews" },
     { icon: FileText, label: "Documents", href: "/client/documents" },
+    { icon: Calendar, label: "Interviews", href: "/client/interviews" },
     { icon: Send, label: "Applications", href: "/client/applications" },
   ];
 
