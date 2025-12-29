@@ -61,6 +61,38 @@ The `clients` table in Supabase should have these columns:
 - `created_at` (timestamptz, default now())
 - `updated_at` (timestamptz, auto-updated)
 
+### Supabase job_criteria_samples Table Schema
+The `job_criteria_samples` table stores jobs scraped from URLs for client calibration:
+- `id` (uuid, primary key, auto-generated)
+- `client_id` (uuid, FK to clients)
+- `title` (text, required)
+- `company_name` (text, required)
+- `location` (text, nullable)
+- `is_remote` (boolean, nullable)
+- `job_type` (text, nullable) - full-time, part-time, contract, etc.
+- `description` (text, nullable)
+- `required_skills` (jsonb/text[], nullable) - Skills extracted from job posting
+- `experience_level` (text, nullable) - junior, mid, senior, etc.
+- `source_url` (text, required) - Original job posting URL
+- `apply_url` (text, nullable) - Direct apply link
+- `salary_min` (integer, nullable)
+- `salary_max` (integer, nullable)
+- `salary_currency` (text, nullable)
+- `company_logo_url` (text, nullable)
+- `scrape_status` (text: pending | complete | failed) - Tracks ParseWork API scraping progress
+- `scraped_at` (timestamptz, nullable) - When scraping completed
+- `raw_data` (jsonb, nullable) - Full ParseWork API response for reference
+- `created_at` (timestamptz, default now())
+
+### Supabase client_job_responses Table Schema
+The `client_job_responses` table stores client yes/no verdicts on sample jobs:
+- `id` (uuid, primary key, auto-generated)
+- `client_id` (uuid, FK to clients)
+- `sample_id` (uuid, FK to job_criteria_samples)
+- `verdict` (text: yes | no)
+- `comment` (text, nullable) - Required if verdict = "no" (validated in app logic)
+- `responded_at` (timestamptz, required)
+
 ### Authentication
 - **Current Implementation**: Mock authentication with localStorage-based session
 - **User Roles**: Admin, Client, Applier - each with distinct dashboard views and permissions

@@ -187,6 +187,75 @@ export const insertClientDocumentSchema = z.object({
   file_size: z.number().optional(),
 });
 
+// Job Criteria Sample - jobs scraped from URLs for client calibration
+export type ScrapeStatus = "pending" | "complete" | "failed";
+
+export interface JobCriteriaSample {
+  id: string;
+  client_id: string;
+  title: string;
+  company_name: string;
+  location?: string;
+  is_remote?: boolean;
+  job_type?: string; // full-time, part-time, contract, etc.
+  description?: string;
+  required_skills?: string[]; // Extracted from job posting
+  experience_level?: string; // junior, mid, senior, etc.
+  source_url: string; // Original job posting URL
+  apply_url?: string; // Direct apply link
+  salary_min?: number;
+  salary_max?: number;
+  salary_currency?: string;
+  company_logo_url?: string;
+  scrape_status: ScrapeStatus;
+  scraped_at?: string;
+  raw_data?: Record<string, unknown>; // Full ParseWork API response
+  created_at?: string;
+}
+
+export const insertJobCriteriaSampleSchema = z.object({
+  client_id: z.string().uuid(),
+  title: z.string().min(1),
+  company_name: z.string().min(1),
+  location: z.string().optional(),
+  is_remote: z.boolean().optional(),
+  job_type: z.string().optional(),
+  description: z.string().optional(),
+  required_skills: z.array(z.string()).optional(),
+  experience_level: z.string().optional(),
+  source_url: z.string().url(),
+  apply_url: z.string().url().optional(),
+  salary_min: z.number().optional(),
+  salary_max: z.number().optional(),
+  salary_currency: z.string().optional(),
+  company_logo_url: z.string().url().optional(),
+  scrape_status: z.enum(["pending", "complete", "failed"]).default("pending"),
+  scraped_at: z.string().optional(),
+  raw_data: z.record(z.unknown()).optional(),
+});
+
+// Client Job Response - client's yes/no verdict on sample jobs
+export type JobVerdict = "yes" | "no";
+
+export interface ClientJobResponse {
+  id: string;
+  client_id: string;
+  sample_id: string; // FK to job_criteria_samples
+  verdict: JobVerdict;
+  comment?: string; // Required if verdict = "no"
+  responded_at: string;
+}
+
+export const insertClientJobResponseSchema = z.object({
+  client_id: z.string().uuid(),
+  sample_id: z.string().uuid(),
+  verdict: z.enum(["yes", "no"]),
+  comment: z.string().optional(),
+});
+
+export type InsertJobCriteriaSample = z.infer<typeof insertJobCriteriaSampleSchema>;
+export type InsertClientJobResponse = z.infer<typeof insertClientJobResponseSchema>;
+
 export type InsertClient = z.input<typeof insertClientSchema>;
 export type UpdateClient = z.infer<typeof updateClientSchema>;
 export type InsertApplication = z.infer<typeof insertApplicationSchema>;
