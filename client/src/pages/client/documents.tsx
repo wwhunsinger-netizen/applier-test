@@ -345,15 +345,21 @@ export default function ClientDocumentsPage() {
 
   const handleApprove = () => {
     setApprovedDocs(prev => ({ ...prev, [activeTab]: true }));
-    setComments(prev => ({ ...prev, [activeTab]: [] })); 
+    
+    // Clear feedback and mark as approved
+    const updatedFeedback = {
+      ...documentFeedback,
+      [activeTab]: { text: '', status: 'completed' as const }
+    };
+    setDocumentFeedback(updatedFeedback);
     
     // Save approval status to API (for real clients) or localStorage (for mock clients)
     if (isRealClientId) {
       // Map document type to API field
       if (activeTab === "resume") {
-        updateClientMutation.mutate({ resume_approved: true });
+        updateClientMutation.mutate({ resume_approved: true, document_feedback: updatedFeedback });
       } else if (activeTab === "cover-letter") {
-        updateClientMutation.mutate({ cover_letter_approved: true });
+        updateClientMutation.mutate({ cover_letter_approved: true, document_feedback: updatedFeedback });
       }
       toast.success(`${DOC_CONFIG[activeTab].label} approved!`);
     } else {
@@ -366,12 +372,6 @@ export default function ClientDocumentsPage() {
       } catch (e) {
         console.error("Failed to save approval status", e);
       }
-    }
-  };
-
-  const handleRequestRevisions = () => {
-    if (confirm("Request revisions based on your comments?")) {
-      setRevisionStatus(prev => ({ ...prev, [activeTab]: 'requested' }));
     }
   };
 

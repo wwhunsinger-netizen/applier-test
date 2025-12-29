@@ -46,7 +46,6 @@ export default function AdminClientDetailPage() {
   
   // File Persistence - must be before early returns
   const [uploadedFiles, setUploadedFiles] = useState<Record<string, string>>({});
-  const [clientComments, setClientComments] = useState<Record<string, {id: number, text: string, top: string}[]>>({});
   const [isUploading, setIsUploading] = useState<Record<string, boolean>>({});
   
   // Fetch client documents from database
@@ -79,17 +78,6 @@ export default function AdminClientDetailPage() {
     }
   }, [client]);
   
-  // Load localStorage data for comments only (files now come from database)
-  useEffect(() => {
-    if (clientId) {
-      try {
-        const savedComments = localStorage.getItem(`client_comments_${clientId}`);
-        if (savedComments) setClientComments(JSON.parse(savedComments));
-      } catch (e) {
-        console.error('Error loading localStorage data:', e);
-      }
-    }
-  }, [clientId]);
   
   // Mutation to update client fields
   const updateClientMutation = useMutation({
@@ -287,14 +275,25 @@ export default function AdminClientDetailPage() {
       // Step 4: Refresh documents list
       refetchDocuments();
       
-      // Step 5: Clear comments and reset approval status
-      const newComments = { ...clientComments, [activeTab]: [] };
-      setClientComments(newComments);
+      // Step 5: Clear feedback and reset approval status when new document uploaded
+      const feedbackKey = activeTab === 'cover-letters' ? 'cover-letter' : activeTab;
+      const defaultFeedback = { text: '', status: null as 'requested' | 'completed' | null };
+      const currentFeedback = client?.document_feedback || {
+        resume: { ...defaultFeedback },
+        'cover-letter': { ...defaultFeedback },
+        linkedin: { ...defaultFeedback }
+      };
+      const updatedFeedback = { 
+        ...currentFeedback, 
+        [feedbackKey]: { text: '', status: null as 'requested' | 'completed' | null } 
+      };
       
       if (activeTab === 'resume') {
-        updateClientMutation.mutate({ resume_approved: false });
+        updateClientMutation.mutate({ resume_approved: false, document_feedback: updatedFeedback });
       } else if (activeTab === 'cover-letters') {
-        updateClientMutation.mutate({ cover_letter_approved: false });
+        updateClientMutation.mutate({ cover_letter_approved: false, document_feedback: updatedFeedback });
+      } else {
+        updateClientMutation.mutate({ document_feedback: updatedFeedback });
       }
       
       toast.success(`${file.name} uploaded successfully`);
@@ -682,7 +681,7 @@ export default function AdminClientDetailPage() {
                 {uploadedFiles['resume_improved'] ? (
                   client.resume_approved ? (
                     <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/20">Approved</Badge>
-                  ) : clientComments['resume'] && clientComments['resume'].length > 0 ? (
+                  ) : client?.document_feedback?.resume?.status === 'requested' ? (
                     <Badge variant="destructive" className="bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500/20">Changes Requested</Badge>
                   ) : (
                     <Badge variant="outline" className="bg-yellow-500/10 text-yellow-500 border-yellow-500/20">Uploaded - Pending Client Review</Badge>
@@ -719,30 +718,26 @@ export default function AdminClientDetailPage() {
                 )}
 
                 {/* Client Feedback Section */}
-                {clientComments['resume'] && clientComments['resume'].length > 0 && (
+                {client?.document_feedback?.resume?.text && (
                   <div className="mt-8 pt-6 border-t border-white/10">
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="text-sm font-bold text-white flex items-center gap-2">
                          <AlertCircle className="w-4 h-4 text-red-400" />
-                         Client Feedback ({clientComments['resume'].length})
+                         Client Feedback
                       </h3>
+                      {client?.document_feedback?.resume?.status === 'requested' && (
+                        <Badge variant="outline" className="bg-yellow-500/10 text-yellow-500 border-yellow-500/20">Revisions Requested</Badge>
+                      )}
                     </div>
                     
-                    <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar mb-6">
-                      {clientComments['resume'].map(comment => (
-                        <div key={comment.id} className="p-3 bg-red-500/5 border border-red-500/20 rounded-lg text-sm">
-                           <p className="text-white/90">{comment.text}</p>
-                           {comment.top !== "0%" && (
-                             <p className="text-xs text-red-400 mt-2">Location: {comment.top}</p>
-                           )}
-                        </div>
-                      ))}
+                    <div className="p-3 bg-red-500/5 border border-red-500/20 rounded-lg text-sm mb-6">
+                      <p className="text-white/90 whitespace-pre-wrap">{client.document_feedback.resume.text}</p>
                     </div>
 
                     {/* Upload Revised Version Section */}
                     <div className="bg-white/5 rounded-lg border border-white/10 p-4">
                       <h4 className="text-sm font-bold text-white mb-2">Upload Revised Version</h4>
-                      <p className="text-xs text-muted-foreground mb-3">Uploading a new version will resolve all comments and reset the status to 'Pending Review'.</p>
+                      <p className="text-xs text-muted-foreground mb-3">Uploading a new version will resolve all feedback and reset the status to 'Pending Review'.</p>
                       
                       <div className="relative border-2 border-dashed border-white/10 rounded bg-[#0a0a0a] hover:bg-white/5 transition-colors cursor-pointer p-4 flex items-center justify-center gap-3">
                         <Upload className="w-4 h-4 text-primary" />

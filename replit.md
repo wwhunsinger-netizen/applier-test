@@ -57,6 +57,7 @@ The `clients` table in Supabase should have these columns:
 - `first_application_date` (timestamptz, nullable) - auto-updated when first application sent
 - `last_application_date` (timestamptz, nullable) - auto-updated on each application
 - `placement_date` (timestamptz, nullable)
+- `document_feedback` (jsonb, nullable) - Stores client feedback per document type: `{"resume": {"text": "...", "status": "requested|completed|null"}, "cover-letter": {...}, "linkedin": {...}}`
 - `created_at` (timestamptz, default now())
 - `updated_at` (timestamptz, auto-updated)
 
