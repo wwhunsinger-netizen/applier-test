@@ -9,7 +9,7 @@ export interface Client {
   first_name: string;
   last_name: string;
   email: string;
-  username: string;
+  username?: string;
   created_at?: string;
   updated_at?: string;
   status: ClientStatus;
@@ -93,7 +93,10 @@ export const insertClientSchema = z.object({
   first_name: z.string().min(1),
   last_name: z.string().min(1),
   email: z.string().email(),
-  username: z.string().min(1),
+  status: z.enum(["onboarding_not_started", "onboarding_in_progress", "active", "paused", "placed"]).default("onboarding_not_started"),
+  resume_approved: z.boolean().default(false),
+  cover_letter_approved: z.boolean().default(false),
+  job_criteria_signoff: z.boolean().default(false),
 });
 
 export const updateClientSchema = z.object({
@@ -141,7 +144,7 @@ export const insertInterviewSchema = z.object({
   prep_doc_complete: z.boolean().default(false),
 });
 
-export type InsertClient = z.infer<typeof insertClientSchema>;
+export type InsertClient = z.input<typeof insertClientSchema>;
 export type UpdateClient = z.infer<typeof updateClientSchema>;
 export type InsertApplication = z.infer<typeof insertApplicationSchema>;
 export type InsertInterview = z.infer<typeof insertInterviewSchema>;

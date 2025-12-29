@@ -77,13 +77,6 @@ export default function AdminClientsPage() {
       first_name: newClientFirstName,
       last_name: newClientLastName,
       email: newClientEmail,
-      username: newClientEmail.split('@')[0],
-      status: "onboarding_not_started",
-      applications_sent: 0,
-      interviews_scheduled: 0,
-      job_criteria_signoff: false,
-      resume_approved: false,
-      cover_letter_approved: false
     };
 
     createClientMutation.mutate(newClient);
