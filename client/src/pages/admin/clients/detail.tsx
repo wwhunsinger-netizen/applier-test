@@ -23,12 +23,68 @@ export default function AdminClientDetailPage() {
   const clientId = params?.id;
   const queryClient = useQueryClient();
 
+  // All useState hooks must be declared before any early returns
+  const [activeTab, setActiveTab] = useState("resume");
+  const [isAddInterviewOpen, setIsAddInterviewOpen] = useState(false);
+  const [isCommentsOpen, setIsCommentsOpen] = useState(false);
+  const [isJobCriteriaOpen, setIsJobCriteriaOpen] = useState(true);
+  const [isCredentialsOpen, setIsCredentialsOpen] = useState(false);
+  
+  // Job Criteria State (local editing before save)
+  const [targetJobTitles, setTargetJobTitles] = useState<string[]>([]);
+  const [requiredSkills, setRequiredSkills] = useState<string[]>([]);
+  const [niceToHaveSkills, setNiceToHaveSkills] = useState<string[]>([]);
+  const [excludeKeywords, setExcludeKeywords] = useState<string[]>([]);
+  const [yearsOfExperience, setYearsOfExperience] = useState<number>(0);
+  const [seniorityLevel, setSeniorityLevel] = useState<string>("");
+  const [dailyApplicationTarget, setDailyApplicationTarget] = useState<number>(10);
+  const [onboardingTranscript, setOnboardingTranscript] = useState<string>("");
+  const [clientGmail, setClientGmail] = useState<string>("");
+  const [clientGmailPassword, setClientGmailPassword] = useState<string>("");
+  const [newTagInput, setNewTagInput] = useState<string>("");
+  const [activeTagField, setActiveTagField] = useState<string | null>(null);
+  
+  // File Persistence - must be before early returns
+  const [uploadedFiles, setUploadedFiles] = useState<Record<string, string>>({});
+  const [clientComments, setClientComments] = useState<Record<string, {id: number, text: string, top: string}[]>>({});
+
   // Fetch client from API
   const { data: client, isLoading, error } = useQuery({
     queryKey: ['client', clientId],
     queryFn: () => fetchClient(clientId!),
     enabled: !!clientId
   });
+  
+  // Sync local state with fetched client data and load localStorage
+  useEffect(() => {
+    if (client) {
+      setTargetJobTitles(client.target_job_titles || []);
+      setRequiredSkills(client.required_skills || []);
+      setNiceToHaveSkills(client.nice_to_have_skills || []);
+      setExcludeKeywords(client.exclude_keywords || []);
+      setYearsOfExperience(client.years_of_experience || 0);
+      setSeniorityLevel(client.seniority_level || "");
+      setDailyApplicationTarget(client.daily_application_target || 10);
+      setOnboardingTranscript(client.onboarding_transcript || "");
+      setClientGmail(client.client_gmail || "");
+      setClientGmailPassword(client.client_gmail_password || "");
+    }
+  }, [client]);
+  
+  // Load localStorage data for files and comments
+  useEffect(() => {
+    if (clientId) {
+      try {
+        const savedFiles = localStorage.getItem(`client_files_${clientId}`);
+        if (savedFiles) setUploadedFiles(JSON.parse(savedFiles));
+        
+        const savedComments = localStorage.getItem(`client_comments_${clientId}`);
+        if (savedComments) setClientComments(JSON.parse(savedComments));
+      } catch (e) {
+        console.error('Error loading localStorage data:', e);
+      }
+    }
+  }, [clientId]);
   
   // Mutation to update client fields
   const updateClientMutation = useMutation({
@@ -71,26 +127,6 @@ export default function AdminClientDetailPage() {
       </div>
     );
   }
-
-  const [activeTab, setActiveTab] = useState("resume");
-  const [isAddInterviewOpen, setIsAddInterviewOpen] = useState(false);
-  const [isCommentsOpen, setIsCommentsOpen] = useState(false);
-  const [isJobCriteriaOpen, setIsJobCriteriaOpen] = useState(true);
-  const [isCredentialsOpen, setIsCredentialsOpen] = useState(false);
-  
-  // Job Criteria State (local editing before save)
-  const [targetJobTitles, setTargetJobTitles] = useState<string[]>(client.target_job_titles || []);
-  const [requiredSkills, setRequiredSkills] = useState<string[]>(client.required_skills || []);
-  const [niceToHaveSkills, setNiceToHaveSkills] = useState<string[]>(client.nice_to_have_skills || []);
-  const [excludeKeywords, setExcludeKeywords] = useState<string[]>(client.exclude_keywords || []);
-  const [yearsOfExperience, setYearsOfExperience] = useState<number>(client.years_of_experience || 0);
-  const [seniorityLevel, setSeniorityLevel] = useState<string>(client.seniority_level || "");
-  const [dailyApplicationTarget, setDailyApplicationTarget] = useState<number>(client.daily_application_target || 10);
-  const [onboardingTranscript, setOnboardingTranscript] = useState<string>(client.onboarding_transcript || "");
-  const [clientGmail, setClientGmail] = useState<string>(client.client_gmail || "");
-  const [clientGmailPassword, setClientGmailPassword] = useState<string>(client.client_gmail_password || "");
-  const [newTagInput, setNewTagInput] = useState<string>("");
-  const [activeTagField, setActiveTagField] = useState<string | null>(null);
 
   // Add tag to array
   const addTag = (field: 'targetJobTitles' | 'requiredSkills' | 'niceToHaveSkills' | 'excludeKeywords', value: string) => {
@@ -145,38 +181,6 @@ export default function AdminClientDetailPage() {
       client_gmail_password: clientGmailPassword
     });
   };
-  
-  // File Persistence
-  const [uploadedFiles, setUploadedFiles] = useState<Record<string, string>>(() => {
-    const saved = localStorage.getItem(`client_files_${clientId}`);
-    return saved ? JSON.parse(saved) : {};
-  });
-
-  // Load comments from localStorage (documents feedback system)
-  const [clientComments, setClientComments] = useState<Record<string, {id: number, text: string, top: string}[]>>(() => {
-    try {
-      const saved = localStorage.getItem(`client_comments_${clientId}`);
-      return saved ? JSON.parse(saved) : {};
-    } catch {
-      return {};
-    }
-  });
-
-  // Listen for storage updates (for comments only - approvals come from API now)
-  useEffect(() => {
-    const loadData = () => {
-      try {
-        const savedComments = localStorage.getItem(`client_comments_${clientId}`);
-        if (savedComments) setClientComments(JSON.parse(savedComments));
-      } catch (e) {
-        console.error(e);
-      }
-    };
-    
-    // Check periodically for comment updates from client
-    const interval = setInterval(loadData, 5000);
-    return () => clearInterval(interval);
-  }, [clientId]);
 
   const handleFileUpload = (key: string, e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
