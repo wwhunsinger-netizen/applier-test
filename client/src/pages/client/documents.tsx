@@ -139,11 +139,11 @@ export default function ClientDocumentsPage() {
   // Sync approval state from API data when available
   useEffect(() => {
     if (clientData) {
-      setApprovedDocs(prev => ({
-        ...prev,
+      setApprovedDocs({
         resume: clientData.resume_approved ?? false,
         "cover-letter": clientData.cover_letter_approved ?? false,
-      }));
+        linkedin: false, // No linkedin approval field in API yet
+      });
     } else if (!isRealClientId) {
       // Fallback to localStorage for mock users
       try {
@@ -182,10 +182,22 @@ export default function ClientDocumentsPage() {
     linkedin: "idle"
   });
   const [activeCommentDraft, setActiveCommentDraft] = useState<{top: string, text: string} | null>(null);
-  const [unlockedDocs, setUnlockedDocs] = useState<Record<DocType, boolean>>({
-    resume: false,
-    "cover-letter": false,
-    linkedin: false
+  const [unlockedDocs, setUnlockedDocs] = useState<Record<DocType, boolean>>(() => {
+    // Persist unlocked state so animation only shows once
+    try {
+      const saved = localStorage.getItem(`client_unlocked_${currentUser.id}`);
+      return saved ? JSON.parse(saved) : {
+        resume: false,
+        "cover-letter": false,
+        linkedin: false
+      };
+    } catch {
+      return {
+        resume: false,
+        "cover-letter": false,
+        linkedin: false
+      };
+    }
   });
   
   // New State for Revision Request
@@ -377,7 +389,14 @@ export default function ClientDocumentsPage() {
   const handleReviewClick = () => {
     setShowLargeReview(false);
     // Mark as unlocked ONLY when they close the review modal
-    setUnlockedDocs(prev => ({ ...prev, [activeTab]: true }));
+    const newUnlockedDocs = { ...unlockedDocs, [activeTab]: true };
+    setUnlockedDocs(newUnlockedDocs);
+    // Persist to localStorage so animation only shows once
+    try {
+      localStorage.setItem(`client_unlocked_${currentUser.id}`, JSON.stringify(newUnlockedDocs));
+    } catch (e) {
+      console.error("Failed to save unlocked state", e);
+    }
   };
 
   const handleApprove = () => {
