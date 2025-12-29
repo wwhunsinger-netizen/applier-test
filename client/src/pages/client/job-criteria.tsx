@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Check, X, MapPin, Building, CheckCircle2, Loader2 } from "lucide-react";
+import { Check, X, MapPin, Building, CheckCircle2, Loader2, ChevronDown, ChevronUp, Briefcase, GraduationCap, Star } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,6 +11,154 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchClient, updateClient, fetchJobSamples } from "@/lib/api";
 import { useUser } from "@/lib/userContext";
 import type { JobCriteriaSample } from "@shared/schema";
+import { parseJobDescription } from "@/lib/job-parser";
+import { Badge } from "@/components/ui/badge";
+
+function JobDescriptionContent({ description }: { description: string }) {
+  const [showFullDescription, setShowFullDescription] = useState(false);
+  const parsed = useMemo(() => parseJobDescription(description), [description]);
+  
+  const hasStructuredContent = parsed.responsibilities.length > 0 || parsed.qualifications.length > 0;
+  
+  return (
+    <div className="p-6 space-y-6">
+      {/* Skills Tags */}
+      {parsed.skills.length > 0 && (
+        <div>
+          <h4 className="font-semibold text-white mb-3 flex items-center gap-2">
+            <Star className="w-4 h-4 text-yellow-500" />
+            Key Skills
+          </h4>
+          <div className="flex flex-wrap gap-2">
+            {parsed.skills.map((skill, index) => (
+              <Badge 
+                key={index} 
+                variant="outline" 
+                className="bg-primary/10 border-primary/30 text-primary hover:bg-primary/20"
+              >
+                {skill}
+              </Badge>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* About Company - Shortened */}
+      {parsed.aboutCompany && (
+        <div>
+          <h4 className="font-semibold text-white mb-2 flex items-center gap-2">
+            <Building className="w-4 h-4 text-blue-400" />
+            About the Company
+          </h4>
+          <p className="text-sm text-gray-400 leading-relaxed">{parsed.aboutCompany}</p>
+        </div>
+      )}
+
+      {/* Summary */}
+      {parsed.summary && !parsed.aboutCompany && (
+        <div>
+          <p className="text-sm text-gray-300 leading-relaxed">{parsed.summary}</p>
+        </div>
+      )}
+
+      {/* Responsibilities */}
+      {parsed.responsibilities.length > 0 && (
+        <div>
+          <h4 className="font-semibold text-white mb-3 flex items-center gap-2">
+            <Briefcase className="w-4 h-4 text-green-400" />
+            Responsibilities
+          </h4>
+          <ul className="space-y-2">
+            {parsed.responsibilities.map((item, index) => (
+              <li key={index} className="text-sm text-gray-400 flex items-start gap-2">
+                <span className="text-green-500 mt-1">•</span>
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Qualifications */}
+      {parsed.qualifications.length > 0 && (
+        <div>
+          <h4 className="font-semibold text-white mb-3 flex items-center gap-2">
+            <GraduationCap className="w-4 h-4 text-purple-400" />
+            Qualifications
+          </h4>
+          <ul className="space-y-2">
+            {parsed.qualifications.map((item, index) => (
+              <li key={index} className="text-sm text-gray-400 flex items-start gap-2">
+                <span className="text-purple-500 mt-1">•</span>
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Nice to Have */}
+      {parsed.niceToHave.length > 0 && (
+        <div>
+          <h4 className="font-semibold text-white mb-3">Nice to Have</h4>
+          <ul className="space-y-2">
+            {parsed.niceToHave.map((item, index) => (
+              <li key={index} className="text-sm text-gray-400 flex items-start gap-2">
+                <span className="text-yellow-500 mt-1">•</span>
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Fallback: Show full description if parsing found nothing */}
+      {!hasStructuredContent && (
+        <div>
+          <h4 className="font-semibold text-white mb-2">Job Description</h4>
+          <p className="text-sm text-gray-400 leading-relaxed whitespace-pre-wrap">
+            {showFullDescription ? description : description.slice(0, 500) + (description.length > 500 ? '...' : '')}
+          </p>
+          {description.length > 500 && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={(e) => { e.stopPropagation(); setShowFullDescription(!showFullDescription); }}
+              className="mt-2 text-primary hover:text-primary/80"
+            >
+              {showFullDescription ? (
+                <><ChevronUp className="w-4 h-4 mr-1" /> Show Less</>
+              ) : (
+                <><ChevronDown className="w-4 h-4 mr-1" /> Read More</>
+              )}
+            </Button>
+          )}
+        </div>
+      )}
+
+      {/* Show full description toggle for structured content */}
+      {hasStructuredContent && (
+        <div className="pt-2 border-t border-white/10">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={(e) => { e.stopPropagation(); setShowFullDescription(!showFullDescription); }}
+            className="text-muted-foreground hover:text-white"
+          >
+            {showFullDescription ? (
+              <><ChevronUp className="w-4 h-4 mr-1" /> Hide Full Description</>
+            ) : (
+              <><ChevronDown className="w-4 h-4 mr-1" /> View Full Description</>
+            )}
+          </Button>
+          {showFullDescription && (
+            <p className="text-sm text-gray-500 leading-relaxed mt-3 whitespace-pre-wrap">{description}</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function ClientJobCriteriaPage() {
   const { currentUser } = useUser();
@@ -325,14 +473,9 @@ export default function ClientJobCriteriaPage() {
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: "auto", opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
-                        className="border-t border-white/10 bg-white/5"
+                        className="border-t border-white/10 bg-white/5 overflow-hidden"
                       >
-                        <div className="p-6">
-                          <div>
-                            <h4 className="font-semibold text-white mb-2">Job Description</h4>
-                            <p className="text-sm text-gray-400 leading-relaxed">{job.description}</p>
-                          </div>
-                        </div>
+                        <JobDescriptionContent description={job.description || ''} />
                       </motion.div>
                     )}
                   </AnimatePresence>
