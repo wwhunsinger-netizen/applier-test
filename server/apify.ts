@@ -1,24 +1,17 @@
 const APIFY_API_TOKEN = process.env.APIFY_API_TOKEN;
 
 interface ApifyIndeedJobData {
-  jobTitle?: string;
+  positionName?: string;
   company?: string;
   location?: string;
   salary?: string;
-  jobType?: string;
-  employmentType?: string;
-  description?: {
-    text?: string;
-    html?: string;
-  };
+  jobType?: string[] | string;
+  description?: string;
+  descriptionHTML?: string;
   url?: string;
-  thirdPartyApplyUrl?: string;
-  companyRating?: number;
-  companyBrandingAttributes?: {
-    logoUrl?: string;
-    headerImageUrl?: string;
-  };
-  datePosted?: string;
+  rating?: number;
+  postedAt?: string;
+  isExpired?: boolean;
 }
 
 export interface ScrapedJobData {
@@ -56,17 +49,18 @@ function normalizeJobData(data: ApifyIndeedJobData): ScrapedJobData {
   const locationLower = (data.location || '').toLowerCase();
   const isRemote = locationLower.includes('remote') || locationLower.includes('work from home');
   
+  const jobType = Array.isArray(data.jobType) ? data.jobType.join(', ') : data.jobType;
+  
   return {
-    title: data.jobTitle,
+    title: data.positionName,
     company_name: data.company,
     location: data.location,
     is_remote: isRemote,
-    job_type: data.jobType || data.employmentType,
-    description: data.description?.text || data.description?.html,
-    apply_url: data.url || data.thirdPartyApplyUrl,
+    job_type: jobType,
+    description: data.description || data.descriptionHTML,
+    apply_url: data.url,
     salary_min: salaryRange.min,
     salary_max: salaryRange.max,
-    company_logo_url: data.companyBrandingAttributes?.logoUrl,
     raw_data: data as Record<string, unknown>,
   };
 }
@@ -77,7 +71,12 @@ export async function scrapeJobUrl(url: string): Promise<ScrapedJobData | null> 
     return null;
   }
 
+  console.log(`[Apify] Starting scrape for URL: ${url}`);
+
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 120000);
+
     const response = await fetch(
       `https://api.apify.com/v2/acts/misceres~indeed-scraper/run-sync-get-dataset-items?token=${APIFY_API_TOKEN}`,
       {
@@ -89,24 +88,36 @@ export async function scrapeJobUrl(url: string): Promise<ScrapedJobData | null> 
           startUrls: [{ url }],
           maxItems: 1,
         }),
+        signal: controller.signal,
       }
     );
 
+    clearTimeout(timeoutId);
+
+    console.log(`[Apify] Response status: ${response.status}`);
+
     if (!response.ok) {
-      console.error(`Apify API error: ${response.status} ${response.statusText}`);
+      const errorText = await response.text();
+      console.error(`[Apify] API error: ${response.status} ${response.statusText} - ${errorText}`);
       return null;
     }
 
     const results = await response.json() as ApifyIndeedJobData[];
+    console.log(`[Apify] Got ${results?.length || 0} results`);
     
     if (!results || results.length === 0) {
-      console.log("No results from Apify for URL:", url);
+      console.log("[Apify] No results returned for URL:", url);
       return null;
     }
 
+    console.log(`[Apify] Successfully scraped: ${results[0].positionName} at ${results[0].company}`);
     return normalizeJobData(results[0]);
   } catch (error) {
-    console.error("Error scraping job URL:", error);
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.error(`[Apify] Request timed out after 120 seconds for URL: ${url}`);
+    } else {
+      console.error("[Apify] Error scraping job URL:", error);
+    }
     return null;
   }
 }
