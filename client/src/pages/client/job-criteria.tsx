@@ -241,19 +241,6 @@ export default function ClientJobCriteriaPage() {
                         </div>
                       </div>
 
-                      {/* Requirements Preview */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
-                        {job.requirements.slice(0, 2).map((req, idx) => (
-                          <div key={idx} className="flex items-center gap-2 text-sm">
-                            {req.met ? (
-                              <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />
-                            ) : (
-                              <AlertCircle className="w-4 h-4 text-yellow-500 shrink-0" />
-                            )}
-                            <span className="text-gray-300">{req.text}</span>
-                          </div>
-                        ))}
-                      </div>
                     </div>
 
                     {/* Action Buttons */}
