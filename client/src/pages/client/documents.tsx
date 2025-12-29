@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import noCoverLetterImg from "@assets/No_cover_letter_1766359371139.png";
 import { useUser } from "@/lib/userContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { fetchClient, updateClient } from "@/lib/api";
+import { fetchClient, updateClient, fetchClientDocuments } from "@/lib/api";
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   'pdfjs-dist/build/pdf.worker.min.mjs',
@@ -105,30 +105,27 @@ export default function ClientDocumentsPage() {
     }
   });
   
-  // Load uploaded files from the Admin Context (localStorage)
+  // Load uploaded files from the database
   const [uploadedFiles, setUploadedFiles] = useState<Record<string, string>>({});
+  
+  // Fetch client documents from database
+  const { data: clientDocuments } = useQuery({
+    queryKey: ['client-documents', currentUser.id],
+    queryFn: () => fetchClientDocuments(currentUser.id),
+    enabled: isRealClientId,
+  });
 
+  // Sync clientDocuments to uploadedFiles for UI display
   useEffect(() => {
-    // Refresh files when the user or component mounts
-    const loadFiles = () => {
-      try {
-        const saved = localStorage.getItem(`client_files_${currentUser.id}`);
-        if (saved) {
-          setUploadedFiles(JSON.parse(saved));
-        } else {
-          setUploadedFiles({});
-        }
-      } catch (e) {
-        console.error("Error loading files", e);
-      }
-    };
-    
-    loadFiles();
-    
-    // Optional: Listen for storage events if we want real-time updates across tabs
-    window.addEventListener('storage', loadFiles);
-    return () => window.removeEventListener('storage', loadFiles);
-  }, [currentUser.id]);
+    if (clientDocuments) {
+      const files: Record<string, string> = {};
+      clientDocuments.forEach(doc => {
+        // Store the object path for rendering (files are served from /objects/...)
+        files[doc.document_type] = doc.object_path;
+      });
+      setUploadedFiles(files);
+    }
+  }, [clientDocuments]);
 
   const [approvedDocs, setApprovedDocs] = useState<Record<DocType, boolean>>({
     resume: false,

@@ -94,8 +94,10 @@ export interface ClientDocument {
   id: string;
   client_id: string;
   document_type: DocumentType;
-  file_data: string; // Base64 encoded file data
+  object_path: string; // Path to file in object storage (e.g., /objects/uploads/uuid)
   file_name: string;
+  content_type?: string;
+  file_size?: number;
   created_at?: string;
   updated_at?: string;
 }
@@ -160,8 +162,10 @@ export const insertInterviewSchema = z.object({
 export const insertClientDocumentSchema = z.object({
   client_id: z.string().uuid(),
   document_type: z.enum(["resume_original", "resume_improved", "cover_letter_original", "cover_letter_A", "cover_letter_B", "cover_letter_C", "linkedin_original", "linkedin_improved"]),
-  file_data: z.string(), // Base64 encoded file data
+  object_path: z.string(), // Path to file in object storage
   file_name: z.string(),
+  content_type: z.string().optional(),
+  file_size: z.number().optional(),
 });
 
 export type InsertClient = z.input<typeof insertClientSchema>;

@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { Link, useRoute } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import type { Client, UpdateClient } from "@shared/schema";
+import type { Client, UpdateClient, ClientDocument } from "@shared/schema";
 import { getClientFullName, calculateClientStatus } from "@shared/schema";
-import { fetchClient, updateClient } from "@/lib/api";
+import { fetchClient, updateClient, requestUploadUrl, uploadToPresignedUrl, saveClientDocument, fetchClientDocuments, deleteClientDocument } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -47,6 +47,14 @@ export default function AdminClientDetailPage() {
   // File Persistence - must be before early returns
   const [uploadedFiles, setUploadedFiles] = useState<Record<string, string>>({});
   const [clientComments, setClientComments] = useState<Record<string, {id: number, text: string, top: string}[]>>({});
+  const [isUploading, setIsUploading] = useState<Record<string, boolean>>({});
+  
+  // Fetch client documents from database
+  const { data: clientDocuments, refetch: refetchDocuments } = useQuery({
+    queryKey: ['client-documents', clientId],
+    queryFn: () => fetchClientDocuments(clientId!),
+    enabled: !!clientId
+  });
 
   // Fetch client from API
   const { data: client, isLoading, error } = useQuery({
@@ -71,13 +79,10 @@ export default function AdminClientDetailPage() {
     }
   }, [client]);
   
-  // Load localStorage data for files and comments
+  // Load localStorage data for comments only (files now come from database)
   useEffect(() => {
     if (clientId) {
       try {
-        const savedFiles = localStorage.getItem(`client_files_${clientId}`);
-        if (savedFiles) setUploadedFiles(JSON.parse(savedFiles));
-        
         const savedComments = localStorage.getItem(`client_comments_${clientId}`);
         if (savedComments) setClientComments(JSON.parse(savedComments));
       } catch (e) {
@@ -182,68 +187,123 @@ export default function AdminClientDetailPage() {
     });
   };
 
-  const handleFileUpload = (key: string, e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      const reader = new FileReader();
+  // Sync clientDocuments to uploadedFiles for UI display
+  useEffect(() => {
+    if (clientDocuments) {
+      const files: Record<string, string> = {};
+      clientDocuments.forEach(doc => {
+        // Store the object path for rendering (files are served from /objects/...)
+        files[doc.document_type] = doc.object_path;
+      });
+      setUploadedFiles(files);
+    }
+  }, [clientDocuments]);
+
+  const handleFileUpload = async (key: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || !e.target.files[0] || !clientId) return;
+    
+    const file = e.target.files[0];
+    setIsUploading(prev => ({ ...prev, [key]: true }));
+    
+    try {
+      // Step 1: Request presigned URL
+      const { uploadURL, objectPath } = await requestUploadUrl({
+        name: file.name,
+        size: file.size,
+        type: file.type,
+      });
       
-      reader.onload = () => {
-        const result = reader.result as string;
-        // Save the Data URL instead of just the filename
-        const newFiles = { ...uploadedFiles, [key]: result };
-        setUploadedFiles(newFiles);
-        try {
-          localStorage.setItem(`client_files_${clientId}`, JSON.stringify(newFiles));
-        } catch (e) {
-          console.error("Storage quota exceeded", e);
-          // Fallback to just saving the name if too big, but this will break preview
-          // Ideally we warn user
-        }
-      };
+      // Step 2: Upload file directly to cloud storage
+      await uploadToPresignedUrl(file, uploadURL);
       
-      reader.readAsDataURL(file);
+      // Step 3: Save document metadata to database
+      await saveClientDocument(clientId, {
+        document_type: key as any,
+        object_path: objectPath,
+        file_name: file.name,
+        content_type: file.type,
+        file_size: file.size,
+      });
+      
+      // Step 4: Refresh documents list
+      refetchDocuments();
+      toast.success(`${file.name} uploaded successfully`);
+      
+    } catch (error) {
+      console.error("Upload failed:", error);
+      toast.error("Failed to upload file. Please try again.");
+    } finally {
+      setIsUploading(prev => ({ ...prev, [key]: false }));
     }
   };
 
   const handleDownload = (fileKey: string, fileName: string) => {
-    const fileData = uploadedFiles[fileKey];
-    if (!fileData) return;
+    const objectPath = uploadedFiles[fileKey];
+    if (!objectPath) return;
 
-    const link = document.createElement('a');
-    link.href = fileData;
-    link.download = fileName;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    // Open the object storage file in a new tab
+    window.open(objectPath, '_blank');
   };
 
-  const handleRevisionUpload = (key: string, e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      const reader = new FileReader();
-      
-      reader.onload = () => {
-        const result = reader.result as string;
-        
-        // 1. Update the file (supersede previous)
-        const newFiles = { ...uploadedFiles, [key]: result };
-        setUploadedFiles(newFiles);
-        localStorage.setItem(`client_files_${clientId}`, JSON.stringify(newFiles));
+  const handleDeleteDocument = async (documentType: string) => {
+    if (!clientId) return;
+    
+    try {
+      await deleteClientDocument(clientId, documentType);
+      refetchDocuments();
+      toast.success("Document removed");
+    } catch (error) {
+      console.error("Failed to delete document:", error);
+      toast.error("Failed to remove document");
+    }
+  };
 
-        // 2. Clear comments (resolve them)
-        const newComments = { ...clientComments, [activeTab]: [] };
-        setClientComments(newComments);
-        localStorage.setItem(`client_comments_${clientId}`, JSON.stringify(newComments));
-
-        // 3. Reset approval status via API - when uploading a new revision, reset the approval
-        if (activeTab === 'resume') {
-          updateClientMutation.mutate({ resume_approved: false });
-        } else if (activeTab === 'cover-letters') {
-          updateClientMutation.mutate({ cover_letter_approved: false });
-        }
-      };
+  const handleRevisionUpload = async (key: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || !e.target.files[0] || !clientId) return;
+    
+    const file = e.target.files[0];
+    setIsUploading(prev => ({ ...prev, [key]: true }));
+    
+    try {
+      // Step 1: Request presigned URL
+      const { uploadURL, objectPath } = await requestUploadUrl({
+        name: file.name,
+        size: file.size,
+        type: file.type,
+      });
       
-      reader.readAsDataURL(file);
+      // Step 2: Upload file directly to cloud storage
+      await uploadToPresignedUrl(file, uploadURL);
+      
+      // Step 3: Save document metadata to database
+      await saveClientDocument(clientId, {
+        document_type: key as any,
+        object_path: objectPath,
+        file_name: file.name,
+        content_type: file.type,
+        file_size: file.size,
+      });
+      
+      // Step 4: Refresh documents list
+      refetchDocuments();
+      
+      // Step 5: Clear comments and reset approval status
+      const newComments = { ...clientComments, [activeTab]: [] };
+      setClientComments(newComments);
+      
+      if (activeTab === 'resume') {
+        updateClientMutation.mutate({ resume_approved: false });
+      } else if (activeTab === 'cover-letters') {
+        updateClientMutation.mutate({ cover_letter_approved: false });
+      }
+      
+      toast.success(`${file.name} uploaded successfully`);
+      
+    } catch (error) {
+      console.error("Revision upload failed:", error);
+      toast.error("Failed to upload revision. Please try again.");
+    } finally {
+      setIsUploading(prev => ({ ...prev, [key]: false }));
     }
   };
 
@@ -603,13 +663,8 @@ export default function AdminClientDetailPage() {
                       </span>
                     </div>
                     <div className="flex gap-2">
-                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => {
-                        const newFiles = {...uploadedFiles};
-                        delete newFiles['resume_original'];
-                        setUploadedFiles(newFiles);
-                        localStorage.setItem(`client_files_${clientId}`, JSON.stringify(newFiles));
-                      }}>
-                        <Upload className="w-4 h-4 rotate-45" /> {/* Use as generic remove/reset for now or just re-upload */}
+                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => handleDeleteDocument('resume_original')}>
+                        <X className="w-4 h-4" />
                       </Button>
                       <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => handleDownload('resume_original', 'Resume (Original).pdf')}>
                         <Download className="w-4 h-4" />
@@ -805,13 +860,8 @@ export default function AdminClientDetailPage() {
                       </span>
                     </div>
                     <div className="flex gap-2">
-                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => {
-                        const newFiles = {...uploadedFiles};
-                        delete newFiles['linkedin_original'];
-                        setUploadedFiles(newFiles);
-                        localStorage.setItem(`client_files_${clientId}`, JSON.stringify(newFiles));
-                      }}>
-                        <Upload className="w-4 h-4 rotate-45" />
+                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => handleDeleteDocument('linkedin_original')}>
+                        <X className="w-4 h-4" />
                       </Button>
                     </div>
                   </div>
@@ -844,13 +894,8 @@ export default function AdminClientDetailPage() {
                       </span>
                     </div>
                     <div className="flex gap-2">
-                       <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => {
-                        const newFiles = {...uploadedFiles};
-                        delete newFiles['linkedin_A'];
-                        setUploadedFiles(newFiles);
-                        localStorage.setItem(`client_files_${clientId}`, JSON.stringify(newFiles));
-                      }}>
-                        <Upload className="w-4 h-4 rotate-45" />
+                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => handleDeleteDocument('linkedin_A')}>
+                        <X className="w-4 h-4" />
                       </Button>
                     </div>
                   </div>

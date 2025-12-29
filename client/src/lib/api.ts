@@ -1,6 +1,58 @@
-import type { Client, Application, Interview, Job, Applier, InsertClient, UpdateClient, InsertApplication, InsertInterview } from "@shared/schema";
+import type { Client, Application, Interview, Job, Applier, InsertClient, UpdateClient, InsertApplication, InsertInterview, ClientDocument, InsertClientDocument } from "@shared/schema";
 
 const API_BASE = "/api";
+
+// Document upload - get presigned URL
+export async function requestUploadUrl(file: { name: string; size: number; type: string }) {
+  const res = await fetch(`${API_BASE}/uploads/request-url`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      name: file.name,
+      size: file.size,
+      contentType: file.type,
+    }),
+  });
+  if (!res.ok) throw new Error("Failed to get upload URL");
+  return res.json() as Promise<{ uploadURL: string; objectPath: string }>;
+}
+
+// Upload file to presigned URL
+export async function uploadToPresignedUrl(file: File, uploadURL: string) {
+  const res = await fetch(uploadURL, {
+    method: "PUT",
+    body: file,
+    headers: { "Content-Type": file.type || "application/octet-stream" },
+  });
+  if (!res.ok) throw new Error("Failed to upload file");
+}
+
+// Client documents API
+export async function fetchClientDocuments(clientId: string): Promise<ClientDocument[]> {
+  const res = await fetch(`${API_BASE}/clients/${clientId}/documents`);
+  if (!res.ok) throw new Error("Failed to fetch client documents");
+  return res.json();
+}
+
+export async function saveClientDocument(
+  clientId: string, 
+  document: Omit<InsertClientDocument, 'client_id'>
+): Promise<ClientDocument> {
+  const res = await fetch(`${API_BASE}/clients/${clientId}/documents`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(document),
+  });
+  if (!res.ok) throw new Error("Failed to save client document");
+  return res.json();
+}
+
+export async function deleteClientDocument(clientId: string, documentType: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/clients/${clientId}/documents/${documentType}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) throw new Error("Failed to delete client document");
+}
 
 // Client API
 export async function fetchClients(): Promise<Client[]> {
