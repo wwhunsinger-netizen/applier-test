@@ -94,7 +94,7 @@ export default function ClientDocumentsPage() {
   
   // Mutation to update client onboarding fields
   const updateClientMutation = useMutation({
-    mutationFn: (updates: { resume_approved?: boolean; cover_letter_approved?: boolean }) => 
+    mutationFn: (updates: Parameters<typeof updateClient>[1]) => 
       updateClient(currentUser.id, updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['client', currentUser.id] });
@@ -375,219 +375,41 @@ export default function ClientDocumentsPage() {
     }
   };
 
-  // Reconstruct OLD_RESUME_CONTENT with HTML and Red Pen Markups
+  // Render original document - shows PDF if available, otherwise "Coming Soon"
   const OLD_RESUME_CONTENT = (
-    <div className="w-full min-h-full flex flex-col items-center gap-8 pb-20 origin-top" style={{ transform: !beforePdfUrl ? "scale(0.65)" : "none" }}>
+    <div className="w-full min-h-full flex flex-col items-center gap-8 pb-20 origin-top">
       {beforePdfUrl ? (
          <PDFViewer url={beforePdfUrl} scale={0.65} />
       ) : (
-      <div className="w-[8.5in] min-h-[11in] bg-white shadow-xl p-[1in] text-sm relative font-serif text-gray-800 shrink-0">
-        {/* Red Pen Markups Overlay */}
-        <div className="absolute inset-0 pointer-events-none z-10 opacity-90 mix-blend-multiply">
-           {/* Circle around Name */}
-           <svg className="absolute top-[0.8in] left-[3.5in] w-[300px] h-[60px]" viewBox="0 0 300 60">
-             <path d="M10,30 Q150,-10 290,30 Q150,70 10,30" fill="none" stroke="red" strokeWidth="2" strokeDasharray="400" strokeDashoffset="0" style={{filter: 'url(#rough)'}} />
-           </svg>
-           
-           {/* Cross out email */}
-           <svg className="absolute top-[1.4in] left-[1in] w-[200px] h-[20px]" viewBox="0 0 200 20">
-             <path d="M0,10 L200,10" fill="none" stroke="red" strokeWidth="2" />
-           </svg>
-           <div className="absolute top-[1.2in] left-[0.5in] text-red-600 font-handwriting transform -rotate-12 text-lg font-bold">Format?</div>
-
-           {/* Big Question Mark on Experience */}
-           <div className="absolute top-[3in] right-[1in] text-red-600 font-handwriting text-4xl font-bold">?</div>
-           
-           {/* Underline Skills */}
-           <svg className="absolute bottom-[2in] left-[1in] w-[400px] h-[20px]" viewBox="0 0 400 20">
-             <path d="M0,5 Q200,15 400,5" fill="none" stroke="red" strokeWidth="2" />
-           </svg>
-           <div className="absolute bottom-[2.2in] left-[0.5in] text-red-600 font-handwriting transform -rotate-6">Expand this!</div>
-        </div>
-
-        <div className="text-center mb-6">
-          <h2 className="text-xl font-bold uppercase">Dimas Gonzales</h2>
-          <p>dimas.o.gonzales@gmail.com | +1 (832) 493-3416 | United States</p>
-          <p className="mt-4 text-xs text-gray-600 text-left">
-            Senior Data Engineer with deep expertise in banking and insurance sectors. Specializes in building scalable cloud data platforms (AWS, Azure, Snowflake) and automating high-volume ELT pipelines. Proven track record of reducing infrastructure costs, minimizing data latency, and enforcing strict governance standards.
+        <div className="flex flex-col items-center justify-center h-full min-h-[600px] w-full text-gray-400">
+          <Clock className="w-16 h-16 mb-4 opacity-50" />
+          <h2 className="text-2xl font-bold mb-2 text-gray-800">Documents Coming Soon</h2>
+          <p className="text-center max-w-md text-gray-500">
+            Your original {config.label.toLowerCase()} will appear here once uploaded by your team.
           </p>
         </div>
-
-        <div>
-          <h3 className="font-bold border-b border-gray-400 mb-2 uppercase text-xs tracking-wider">Education</h3>
-          <div className="flex justify-between font-bold">
-            <span>Texas A&M University</span>
-            <span>Aug 2012 - May 2017</span>
-          </div>
-          <p>Bachelor of Science in Computer Engineering</p>
-        </div>
-
-        <div>
-          <h3 className="font-bold border-b border-gray-400 mb-2 mt-4 uppercase text-xs tracking-wider">Experience</h3>
-          
-          <div className="mb-4">
-            <div className="flex justify-between font-bold">
-              <span>GEICO - Senior Software Engineer</span>
-              <span>Aug 2024 - present</span>
-            </div>
-            <ul className="list-disc list-inside mt-1 space-y-1 text-gray-600 text-xs">
-              <li>Lead engineer for the Billing data warehouse, designing scalable solutions.</li>
-              <li>Architected micro-batching ELT pipelines using dbt, Spark, Airflow.</li>
-              <li>Implemented Snowflake zero-copy solution with Apache Iceberg.</li>
-            </ul>
-          </div>
-
-          <div className="mb-4">
-            <div className="flex justify-between font-bold">
-              <span>Texas Capital Bank - Data Architect</span>
-              <span>Feb 2022 - Aug 2024</span>
-            </div>
-            <ul className="list-disc list-inside mt-1 space-y-1 text-gray-600 text-xs">
-              <li>Led strategic design and modernization of enterprise cloud data platform.</li>
-              <li>Established RFC process for data modeling standardization.</li>
-            </ul>
-          </div>
-
-          <div className="mb-4">
-            <div className="flex justify-between font-bold">
-              <span>Master Engineer</span>
-              <span>Feb 2022 - Aug 2023</span>
-            </div>
-            <ul className="list-disc list-inside mt-1 space-y-1 text-gray-600 text-xs">
-              <li>Tech Lead for 8-person team building cloud data lake.</li>
-              <li>Architected Terraform IaC solutions reducing setup time by 40%.</li>
-            </ul>
-          </div>
-
-           <div className="mb-4">
-            <div className="flex justify-between font-bold">
-              <span>Tiger Analytics - Senior Data Engineer</span>
-              <span>Jul 2021 - Feb 2022</span>
-            </div>
-            <ul className="list-disc list-inside mt-1 space-y-1 text-gray-600 text-xs">
-              <li>Migrated 37 manual batch jobs to automated CI/CD pipelines.</li>
-              <li>Optimized data models to enhance warehouse performance.</li>
-            </ul>
-          </div>
-        </div>
-
-        <div>
-           <h3 className="font-bold border-b border-gray-400 mb-2 mt-4 uppercase text-xs tracking-wider">Technical Skills</h3>
-           <ul className="list-disc list-inside text-xs text-gray-600">
-             <li>Cloud & Infrastructure: AWS, Azure, Terraform, Docker</li>
-             <li>Modern Data Stack: Snowflake, dbt, SQL, Apache Iceberg</li>
-             <li>Big Data: Spark, Python, Kafka</li>
-           </ul>
-        </div>
-      </div>
       )}
     </div>
   );
 
 // ... existing code ...
 
-  // Update the NEW_RESUME_CONTENT structure to look like a PDF viewer
-  const renderNewResumeContent = () => (
-    <div className="w-full min-h-full flex flex-col items-center gap-8 pb-20 origin-top" style={{ transform: !afterPdfUrl ? "scale(0.65)" : "none" }}>
-      
-
-
+  // Render the improved document content - shows PDF if available, otherwise "Coming Soon"
+  const renderImprovedDocument = () => (
+    <div className="w-full min-h-full flex flex-col items-center gap-8 pb-20 origin-top">
       {afterPdfUrl ? (
         <PDFViewer url={afterPdfUrl} scale={0.65} />
       ) : (
-        <>
-      {/* Page 1 */}
-      <div className="w-[8.5in] min-h-[11in] bg-white shadow-xl p-[1in] text-sm relative shrink-0">
-          <div className="text-center border-b pb-6 rounded p-2">
-            <h1 className="text-3xl font-bold uppercase tracking-wide text-gray-900">Dimas Gonzales</h1>
-            <p className="text-gray-600 mt-2">Dimas@gmail.com | LinkedIn | Dallas, Texas</p>
-          </div>
-          
-          <div className="mt-8 rounded p-2">
-            <h4 className="font-bold uppercase text-xs tracking-wider text-gray-500 mb-4 border-b border-gray-200 pb-1">Work Experience (10+ Years Software Engineer)</h4>
-            
-            <div className="mb-6">
-              <div className="flex justify-between font-bold text-gray-800">
-                <span>Senior Software Engineer</span>
-                <span>June 2024 – Present</span>
-              </div>
-              <div className="italic text-gray-600 mb-2">Geico (Remote)</div>
-              <ul className="list-disc list-inside space-y-2 text-gray-800">
-                <li>Lead Engineer for the Billing Data Warehouse team.</li>
-                <li>Enforced data quality and governance using SodaCL and DataHub, integrating automated lineage and RBAC for PII protection with Apache Ranger.</li>
-                <li>Architected micro-batching ELT pipelines using dbt, Apache Spark, and Airflow, establishing 30 minute data freshness.</li>
-                <li>Implemented a custom Snowflake 'zero-copy' solution with Apache Iceberg on Azure Data Lake.</li>
-                <li>Automated testing and deployment via Azure DevOps CI/CD pipelines.</li>
-              </ul>
-              <p className="text-xs text-gray-500 mt-2 font-mono">Tech Stack: Snowflake, Airflow, Apache Spark/Ranger, Azure DevOps, SodaCL, DataHub</p>
-            </div>
-          </div>
-
-          <div className="mt-6 rounded p-2">
-            <div className="mb-6">
-              <div className="flex justify-between font-bold text-gray-800">
-                <span>Data Architect</span>
-                <span>Feb 2022 - June 2024</span>
-              </div>
-              <div className="italic text-gray-600 mb-2">Texas Capital Bank (Remote)</div>
-              <ul className="list-disc list-inside space-y-2 text-gray-800">
-                <li>Promoted to Data Architect to lead a larger migration of legacy warehouses to modern cloud architecture.</li>
-                <li>Established an RFC process to standardize data modeling and architectural decisions, improving code quality and reducing technical debt.</li>
-              </ul>
-              <p className="text-xs text-gray-500 mt-2 font-mono">Tech Stack: Terraform IaC, Cloud Architecture</p>
-            </div>
-            
-            <div className="mb-6">
-              <div className="flex justify-between font-bold text-gray-800">
-                <span>Master Engineer</span>
-                <span>Feb 2022 - Aug 2023</span>
-              </div>
-              <ul className="list-disc list-inside space-y-2 text-gray-800">
-                <li>Prior to promotion, served as tech lead for three major migrations to AWS/Snowflake.</li>
-                <li>Team won the 'BullDog' CTO award for platform excellence.</li>
-                <li>Governance implementations cut monthly compute spend by 16% and reduced environment setup time by 40%+.</li>
-              </ul>
-            </div>
-          </div>
-      </div>
-      
-      {/* Page 2 - Capabilities & Education */}
-      <div className="w-[8.5in] min-h-[11in] bg-white shadow-xl p-[1in] text-sm relative">
-          <div className="rounded p-2">
-            <h4 className="font-bold uppercase text-xs tracking-wider text-gray-500 mb-4 border-b border-gray-200 pb-1">Capabilities & Curiosities</h4>
-            <ul className="list-disc list-inside space-y-1 text-gray-800 mb-8">
-              <li><strong>Cloud & Infrastructure:</strong> AWS (EMR, S3, ECS), Azure (Data Lake, DevOps), Terraform, Docker</li>
-              <li><strong>Data & Streaming:</strong> Snowflake, SQL, Apache Iceberg, Spark, Python, Kafka, Airflow</li>
-              <li><strong>Skills:</strong> Business Agile, Project Management, Public Speaking, Technical Leadership</li>
-              <li><strong>For Fun:</strong> Videography, Competitive Ping-pong, Weightlifting, Psychological-Thriller Movies</li>
-            </ul>
-            
-            <h4 className="font-bold uppercase text-xs tracking-wider text-gray-500 mb-4 border-b border-gray-200 pb-1">Education</h4>
-             <div className="mb-6">
-              <div className="flex justify-between font-bold text-gray-800">
-                <span>Texas A&M University</span>
-                <span>Aug 2012 - May 2017</span>
-              </div>
-              <div className="text-gray-800">Bachelor of Science in Computer Engineering</div>
-              <ul className="list-disc list-inside space-y-1 text-gray-600 mt-2">
-                 <li>GPA: 3.62/4.0</li>
-                 <li>IM&T Specializations: Project Management and Web Design</li>
-              </ul>
-            </div>
-            
-            <div className="hidden group-hover:block absolute right-2 top-2 text-gray-400">
-              <MessageSquare className="w-4 h-4" />
-            </div>
-          </div>
-      </div>
-      </>
+        <div className="flex flex-col items-center justify-center h-full min-h-[600px] w-full text-gray-400">
+          <Clock className="w-16 h-16 mb-4 opacity-50" />
+          <h2 className="text-2xl font-bold mb-2 text-white">Coming Soon</h2>
+          <p className="text-center max-w-md text-gray-400">
+            Your improved {config.label.toLowerCase()} is being prepared by your team.
+          </p>
+        </div>
       )}
     </div>
   );
-
-// ... then inside the return, update the "new-doc" container to remove border and padding
-// and ensure it uses full height/width for the viewer
-
 
   return (
     <div className="space-y-6 h-[calc(100vh-6rem)] flex flex-col relative overflow-hidden">
@@ -796,24 +618,9 @@ export default function ClientDocumentsPage() {
                 <div className="flex-1 overflow-y-auto">
                     {/* Simplified Content Preview */}
                     <div className={cn("mx-auto space-y-8", activeTab === "resume" ? "w-full" : "max-w-2xl blur-[0.5px]")}>
-                       {activeTab === "resume" ? (
-                          <div className="py-8 transform scale-90 origin-top flex justify-center w-full">
-                            {renderNewResumeContent()}
-                          </div>
-                       ) : (
-                          <>
-                           <div className="text-center pb-8 border-b">
-                             <h1 className="text-4xl font-bold text-gray-900">John Doe</h1>
-                             <p className="text-xl text-gray-600 mt-2">Senior Software Engineer</p>
-                           </div>
-                           <div className="space-y-4">
-                             <div className="h-6 bg-gray-200 rounded w-1/3" />
-                             <div className="h-4 bg-gray-100 rounded w-full" />
-                             <div className="h-4 bg-gray-100 rounded w-full" />
-                             <div className="h-4 bg-gray-100 rounded w-5/6" />
-                           </div>
-                          </>
-                       )}
+                       <div className="py-8 transform scale-90 origin-top flex justify-center w-full">
+                         {renderImprovedDocument()}
+                       </div>
                     </div>
                 </div>
                 
@@ -892,32 +699,20 @@ export default function ClientDocumentsPage() {
                          )}
                          
                          <div className={cn(unlockedDocs[activeTab] ? "mt-16" : "")}>
-                           {activeTab === 'resume' ? OLD_RESUME_CONTENT : 
-                            !hasImprovedDocument ? (
-                              // Coming Soon state for cover letter and LinkedIn
+                           {/* Show "Awaiting Documents" when no original document uploaded */}
+                           {!beforePdfUrl ? (
                               <div className="flex flex-col items-center justify-center h-full min-h-[600px] w-full text-gray-400">
                                 <Clock className="w-16 h-16 mb-4 opacity-50" />
-                                <h2 className="text-2xl font-bold mb-2">Coming Soon</h2>
+                                <h2 className="text-2xl font-bold mb-2">Documents Coming Soon</h2>
                                 <p className="text-center max-w-md">
                                   Your {config.label.toLowerCase()} is being prepared by your team. 
                                   You'll be notified when it's ready for review.
                                 </p>
                               </div>
-                            ) : activeTab === 'cover-letter' ? (
-                              <div className="flex flex-col items-center justify-center h-full min-h-[600px] w-full">
-                                <img 
-                                  src={noCoverLetterImg} 
-                                  alt="No cover letter?" 
-                                  className="max-w-full max-h-[500px] object-contain opacity-80 hover:opacity-100 transition-opacity"
-                                />
-                              </div>
-                            ) : (
-                             <div className="space-y-6 font-serif text-gray-500 blur-[0.5px]">
-                               <p>John Doe <br/> Software Developer</p>
-                               <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                               <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                               <div className="h-4 bg-gray-200 rounded w-5/6"></div>
-                               <p>[Old content placeholder...]</p>
+                           ) : (
+                             /* Show actual PDF when document exists */
+                             <div className="w-full min-h-full flex flex-col items-center gap-8 pb-20">
+                               <PDFViewer url={beforePdfUrl} scale={0.65} />
                              </div>
                            )}
                          </div>
@@ -955,18 +750,7 @@ export default function ClientDocumentsPage() {
                          </div>
                          
                          <div className="flex-1 overflow-y-auto p-8 bg-[#111] relative scroll-smooth">
-                           {activeTab === 'resume' ? renderNewResumeContent() : (
-                             <div className="space-y-8 font-serif text-sm leading-relaxed max-w-[800px] mx-auto bg-white min-h-[11in] p-[1in] shadow-xl text-gray-800">
-                               {/* Default placeholder content for other document types */}
-                               <div className="text-center border-b pb-6 rounded p-2">
-                                 <h1 className="text-3xl font-bold uppercase tracking-wide text-gray-900">John Doe</h1>
-                                 <p className="text-gray-600 mt-2">Senior Software Engineer | Full Stack Specialist</p>
-                               </div>
-                               <div className="p-4 text-center text-gray-400 italic">
-                                 [Content for {config.label} goes here]
-                               </div>
-                             </div>
-                           )}
+                           {renderImprovedDocument()}
                          </div>
                       </motion.div>
                     )}
@@ -978,8 +762,8 @@ export default function ClientDocumentsPage() {
                  <Card className="bg-[#111] border-white/10 flex-1 h-full relative overflow-hidden">
                    <CardContent className="p-6 h-full flex flex-col justify-center items-center text-center space-y-6">
                       {!isFlipped ? (
-                        activeTab !== 'resume' && !hasImprovedDocument ? (
-                          // Coming Soon state for cover letter and LinkedIn when no document uploaded
+                        !hasImprovedDocument ? (
+                          // Coming Soon state when no improved document uploaded
                           <>
                             <div className="p-4 rounded-full mb-2 bg-white/5 text-gray-500">
                               <Clock className="w-8 h-8" />
