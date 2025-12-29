@@ -87,6 +87,19 @@ export interface User {
   avatar?: string;
 }
 
+// Document types: resume_original, resume_improved, cover_letter_original, cover_letter_A, cover_letter_B, cover_letter_C, linkedin_original, linkedin_improved
+export type DocumentType = "resume_original" | "resume_improved" | "cover_letter_original" | "cover_letter_A" | "cover_letter_B" | "cover_letter_C" | "linkedin_original" | "linkedin_improved";
+
+export interface ClientDocument {
+  id: string;
+  client_id: string;
+  document_type: DocumentType;
+  file_data: string; // Base64 encoded file data
+  file_name: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
 // Minimal insert schema - only fields required to create a client
 // Additional fields can be added via update after creation
 export const insertClientSchema = z.object({
@@ -144,10 +157,18 @@ export const insertInterviewSchema = z.object({
   prep_doc_complete: z.boolean().default(false),
 });
 
+export const insertClientDocumentSchema = z.object({
+  client_id: z.string().uuid(),
+  document_type: z.enum(["resume_original", "resume_improved", "cover_letter_original", "cover_letter_A", "cover_letter_B", "cover_letter_C", "linkedin_original", "linkedin_improved"]),
+  file_data: z.string(), // Base64 encoded file data
+  file_name: z.string(),
+});
+
 export type InsertClient = z.input<typeof insertClientSchema>;
 export type UpdateClient = z.infer<typeof updateClientSchema>;
 export type InsertApplication = z.infer<typeof insertApplicationSchema>;
 export type InsertInterview = z.infer<typeof insertInterviewSchema>;
+export type InsertClientDocument = z.infer<typeof insertClientDocumentSchema>;
 
 export function getClientFullName(client: Client): string {
   return `${client.first_name} ${client.last_name}`.trim();

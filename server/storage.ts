@@ -1,4 +1,4 @@
-import type { Client, Application, Interview, Job, Applier, InsertClient, UpdateClient, InsertApplication, InsertInterview } from "@shared/schema";
+import type { Client, Application, Interview, Job, Applier, InsertClient, UpdateClient, InsertApplication, InsertInterview, ClientDocument, InsertClientDocument } from "@shared/schema";
 import { supabase } from "./supabase";
 
 export interface IStorage {
@@ -26,6 +26,11 @@ export interface IStorage {
   // Applier operations
   getAppliers(): Promise<Applier[]>;
   getApplier(id: string): Promise<Applier | null>;
+  
+  // Client document operations
+  getClientDocuments(clientId: string): Promise<ClientDocument[]>;
+  createClientDocument(document: InsertClientDocument): Promise<ClientDocument>;
+  deleteClientDocument(clientId: string, documentType: string): Promise<void>;
 }
 
 export class SupabaseStorage implements IStorage {
@@ -193,6 +198,42 @@ export class SupabaseStorage implements IStorage {
       throw error;
     }
     return data;
+  }
+
+  // Client document operations
+  async getClientDocuments(clientId: string): Promise<ClientDocument[]> {
+    const { data, error } = await supabase
+      .from('client_documents')
+      .select('*')
+      .eq('client_id', clientId);
+    
+    if (error) throw error;
+    return data || [];
+  }
+
+  async createClientDocument(document: InsertClientDocument): Promise<ClientDocument> {
+    // Upsert - update if same client_id + document_type exists, otherwise insert
+    const { data, error } = await supabase
+      .from('client_documents')
+      .upsert(document, { 
+        onConflict: 'client_id,document_type',
+        ignoreDuplicates: false 
+      })
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  }
+
+  async deleteClientDocument(clientId: string, documentType: string): Promise<void> {
+    const { error } = await supabase
+      .from('client_documents')
+      .delete()
+      .eq('client_id', clientId)
+      .eq('document_type', documentType);
+    
+    if (error) throw error;
   }
 }
 

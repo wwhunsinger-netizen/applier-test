@@ -1,7 +1,8 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertClientSchema, updateClientSchema, insertApplicationSchema, insertInterviewSchema } from "@shared/schema";
+import { insertClientSchema, updateClientSchema, insertApplicationSchema, insertInterviewSchema, insertClientDocumentSchema } from "@shared/schema";
+import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -155,6 +156,44 @@ export async function registerRoutes(
       res.status(500).json({ error: "Failed to fetch applier" });
     }
   });
+
+  // Client document routes
+  app.get("/api/clients/:clientId/documents", async (req, res) => {
+    try {
+      const documents = await storage.getClientDocuments(req.params.clientId);
+      res.json(documents);
+    } catch (error) {
+      console.error("Error fetching client documents:", error);
+      res.status(500).json({ error: "Failed to fetch client documents" });
+    }
+  });
+
+  app.post("/api/clients/:clientId/documents", async (req, res) => {
+    try {
+      const validatedData = insertClientDocumentSchema.parse({
+        ...req.body,
+        client_id: req.params.clientId,
+      });
+      const document = await storage.createClientDocument(validatedData);
+      res.status(201).json(document);
+    } catch (error) {
+      console.error("Error creating client document:", error);
+      res.status(400).json({ error: "Failed to create client document" });
+    }
+  });
+
+  app.delete("/api/clients/:clientId/documents/:documentType", async (req, res) => {
+    try {
+      await storage.deleteClientDocument(req.params.clientId, req.params.documentType);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting client document:", error);
+      res.status(500).json({ error: "Failed to delete client document" });
+    }
+  });
+
+  // Register object storage routes for file uploads
+  registerObjectStorageRoutes(app);
 
   return httpServer;
 }
