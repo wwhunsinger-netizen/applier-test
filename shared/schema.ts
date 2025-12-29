@@ -87,29 +87,13 @@ export interface User {
   avatar?: string;
 }
 
+// Minimal insert schema - only fields required to create a client
+// Additional fields can be added via update after creation
 export const insertClientSchema = z.object({
   first_name: z.string().min(1),
   last_name: z.string().min(1),
   email: z.string().email(),
   username: z.string().min(1),
-  status: z.enum(["onboarding_not_started", "onboarding_in_progress", "active", "paused", "placed"]).default("onboarding_not_started"),
-  job_criteria_signoff: z.boolean().default(false),
-  resume_approved: z.boolean().default(false),
-  cover_letter_approved: z.boolean().default(false),
-  resume_url: z.string().optional(),
-  cover_letter_url: z.string().optional(),
-  resume_text: z.string().optional(),
-  client_gmail: z.string().optional(),
-  client_gmail_password: z.string().optional(),
-  target_job_titles: z.array(z.string()).optional(),
-  required_skills: z.array(z.string()).optional(),
-  nice_to_have_skills: z.array(z.string()).optional(),
-  exclude_keywords: z.array(z.string()).optional(),
-  years_of_experience: z.number().optional(),
-  seniority_level: z.string().optional(),
-  onboarding_transcript: z.string().optional(),
-  daily_application_target: z.number().optional(),
-  placement_date: z.string().optional(),
 });
 
 export const updateClientSchema = z.object({
