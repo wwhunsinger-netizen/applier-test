@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MOCK_JOBS } from "@/lib/mockData";
-import { Check, X, ChevronDown, ChevronUp, MapPin, Clock, Building, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Check, X, ChevronDown, ChevronUp, MapPin, Building, AlertCircle, CheckCircle2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
@@ -238,15 +238,8 @@ export default function ClientJobCriteriaPage() {
                           <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
                             <span className="flex items-center gap-1"><Building className="w-3.5 h-3.5" /> {job.company}</span>
                             <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" /> {job.location}</span>
-                            <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> {job.postedTime}</span>
                           </div>
                         </div>
-                        <Badge variant="secondary" className={cn(
-                          "ml-2", 
-                          job.matchScore >= 90 ? "bg-green-500/10 text-green-500 border-green-500/20" : "bg-yellow-500/10 text-yellow-500 border-yellow-500/20"
-                        )}>
-                          {job.matchScore}% Match
-                        </Badge>
                       </div>
 
                       {/* Requirements Preview */}
