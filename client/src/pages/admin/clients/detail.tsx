@@ -289,53 +289,45 @@ export default function AdminClientDetailPage() {
         </div>
       </div>
 
-      {/* Onboarding Status Controls */}
+      {/* Onboarding Status (Read-only - controlled by client approvals) */}
       <Card className="bg-[#111] border-white/10">
         <CardHeader className="pb-4">
           <CardTitle className="text-lg flex items-center gap-2">
             <CheckCircle2 className="w-5 h-5 text-primary" />
             Onboarding Status
+            <span className="text-xs font-normal text-muted-foreground ml-2">(Updated by client)</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid md:grid-cols-3 gap-6">
-            <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/10">
+            <div className={`flex items-center justify-between p-3 rounded-lg border ${client.resume_approved ? 'bg-green-500/10 border-green-500/30' : 'bg-white/5 border-white/10'}`}>
               <div>
                 <Label className="text-sm font-medium text-white">Resume Approved</Label>
                 <p className="text-xs text-muted-foreground">Client has approved their resume</p>
               </div>
-              <Switch
-                checked={client.resume_approved ?? false}
-                onCheckedChange={(checked) => updateClientMutation.mutate({ resume_approved: checked })}
-                disabled={updateClientMutation.isPending}
-                data-testid="switch-resume-approved"
-              />
+              <div className={`h-8 w-8 rounded-full flex items-center justify-center ${client.resume_approved ? 'bg-green-500/20 text-green-400' : 'bg-white/10 text-muted-foreground'}`} data-testid="status-resume-approved">
+                {client.resume_approved ? <CheckCircle2 className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
+              </div>
             </div>
             
-            <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/10">
+            <div className={`flex items-center justify-between p-3 rounded-lg border ${client.cover_letter_approved ? 'bg-green-500/10 border-green-500/30' : 'bg-white/5 border-white/10'}`}>
               <div>
                 <Label className="text-sm font-medium text-white">Cover Letter Approved</Label>
                 <p className="text-xs text-muted-foreground">Client has approved cover letter</p>
               </div>
-              <Switch
-                checked={client.cover_letter_approved ?? false}
-                onCheckedChange={(checked) => updateClientMutation.mutate({ cover_letter_approved: checked })}
-                disabled={updateClientMutation.isPending}
-                data-testid="switch-cover-letter-approved"
-              />
+              <div className={`h-8 w-8 rounded-full flex items-center justify-center ${client.cover_letter_approved ? 'bg-green-500/20 text-green-400' : 'bg-white/10 text-muted-foreground'}`} data-testid="status-cover-letter-approved">
+                {client.cover_letter_approved ? <CheckCircle2 className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
+              </div>
             </div>
             
-            <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/10">
+            <div className={`flex items-center justify-between p-3 rounded-lg border ${client.job_criteria_signoff ? 'bg-green-500/10 border-green-500/30' : 'bg-white/5 border-white/10'}`}>
               <div>
                 <Label className="text-sm font-medium text-white">Job Criteria Signoff</Label>
                 <p className="text-xs text-muted-foreground">Client has approved job criteria</p>
               </div>
-              <Switch
-                checked={client.job_criteria_signoff ?? false}
-                onCheckedChange={(checked) => updateClientMutation.mutate({ job_criteria_signoff: checked })}
-                disabled={updateClientMutation.isPending}
-                data-testid="switch-job-criteria-signoff"
-              />
+              <div className={`h-8 w-8 rounded-full flex items-center justify-center ${client.job_criteria_signoff ? 'bg-green-500/20 text-green-400' : 'bg-white/10 text-muted-foreground'}`} data-testid="status-job-criteria-signoff">
+                {client.job_criteria_signoff ? <CheckCircle2 className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
+              </div>
             </div>
           </div>
         </CardContent>
