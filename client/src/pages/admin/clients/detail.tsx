@@ -178,6 +178,25 @@ export default function AdminClientDetailPage() {
     setters[field](getters[field].filter(t => t !== value));
   };
 
+  // Check if job criteria has changed from saved values
+  const isJobCriteriaDirty = () => {
+    if (!client) return false;
+    const arraysEqual = (a: string[] | null | undefined, b: string[]) => {
+      const arr1 = a || [];
+      const arr2 = b || [];
+      if (arr1.length !== arr2.length) return false;
+      return arr1.every((val, i) => val === arr2[i]);
+    };
+    return (
+      !arraysEqual(client.target_job_titles, targetJobTitles) ||
+      !arraysEqual(client.required_skills, requiredSkills) ||
+      !arraysEqual(client.nice_to_have_skills, niceToHaveSkills) ||
+      !arraysEqual(client.exclude_keywords, excludeKeywords) ||
+      (client.years_of_experience || 0) !== yearsOfExperience ||
+      !arraysEqual(client.seniority_levels, seniorityLevels)
+    );
+  };
+
   // Save job criteria
   const handleSaveJobCriteria = () => {
     updateClientMutation.mutate({
@@ -187,6 +206,10 @@ export default function AdminClientDetailPage() {
       exclude_keywords: excludeKeywords,
       years_of_experience: yearsOfExperience,
       seniority_levels: seniorityLevels
+    }, {
+      onSuccess: () => {
+        toast.success("Job criteria saved successfully!");
+      }
     });
   };
 
@@ -571,16 +594,21 @@ export default function AdminClientDetailPage() {
               <div className="flex justify-end pt-4 border-t border-white/10">
                 <Button 
                   onClick={handleSaveJobCriteria}
-                  disabled={updateClientMutation.isPending}
-                  className="bg-primary hover:bg-primary/90"
+                  disabled={updateClientMutation.isPending || !isJobCriteriaDirty()}
+                  className={`${isJobCriteriaDirty() ? 'bg-primary hover:bg-primary/90' : 'bg-muted text-muted-foreground cursor-not-allowed'}`}
                 >
                   {updateClientMutation.isPending ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                       Saving...
                     </>
+                  ) : isJobCriteriaDirty() ? (
+                    <>
+                      <CheckCircle2 className="w-4 h-4 mr-2" />
+                      Save Job Criteria
+                    </>
                   ) : (
-                    'Save Job Criteria'
+                    'No Changes'
                   )}
                 </Button>
               </div>
