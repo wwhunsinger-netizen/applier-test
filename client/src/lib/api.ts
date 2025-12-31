@@ -1,4 +1,4 @@
-import type { Client, Application, Interview, Job, Applier, InsertClient, UpdateClient, InsertApplication, InsertInterview, ClientDocument, InsertClientDocument, JobCriteriaSample, ClientJobResponse, InsertClientJobResponse } from "@shared/schema";
+import type { Client, Application, Interview, Job, Applier, InsertClient, UpdateClient, InsertApplication, InsertInterview, ClientDocument, InsertClientDocument, JobCriteriaSample, ClientJobResponse, InsertClientJobResponse, ApplierJobSession, FlaggedApplication } from "@shared/schema";
 
 const API_BASE = "/api";
 
@@ -219,5 +219,67 @@ export async function createJobResponse(clientId: string, response: Omit<InsertC
     body: JSON.stringify(response),
   });
   if (!res.ok) throw new Error("Failed to create job response");
+  return res.json();
+}
+
+// Applier Session API
+export async function fetchApplierSessions(applierId: string): Promise<ApplierJobSession[]> {
+  const res = await fetch(`${API_BASE}/applier-sessions?applier_id=${applierId}`);
+  if (!res.ok) throw new Error("Failed to fetch applier sessions");
+  return res.json();
+}
+
+export async function startReviewSession(data: {
+  job_id: string;
+  applier_id: string;
+  client_id: string;
+  job_url: string;
+  job_title?: string;
+  company_name?: string;
+}): Promise<ApplierJobSession> {
+  const res = await fetch(`${API_BASE}/applier-sessions/start-review`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error("Failed to start review session");
+  return res.json();
+}
+
+export async function markSessionApplied(sessionId: string): Promise<{ session: ApplierJobSession; application: Application }> {
+  const res = await fetch(`${API_BASE}/applier-sessions/${sessionId}/applied`, {
+    method: "POST",
+  });
+  if (!res.ok) throw new Error("Failed to mark as applied");
+  return res.json();
+}
+
+export async function flagSession(sessionId: string, comment: string): Promise<{ session: ApplierJobSession; flaggedApplication: FlaggedApplication }> {
+  const res = await fetch(`${API_BASE}/applier-sessions/${sessionId}/flag`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ comment }),
+  });
+  if (!res.ok) throw new Error("Failed to flag job");
+  return res.json();
+}
+
+// Flagged Applications API (Admin)
+export async function fetchFlaggedApplications(status?: "open" | "resolved"): Promise<FlaggedApplication[]> {
+  const url = status 
+    ? `${API_BASE}/flagged-applications?status=${status}`
+    : `${API_BASE}/flagged-applications`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("Failed to fetch flagged applications");
+  return res.json();
+}
+
+export async function resolveFlaggedApplication(id: string, data: { resolved_by: string; resolution_note?: string }): Promise<FlaggedApplication> {
+  const res = await fetch(`${API_BASE}/flagged-applications/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status: "resolved", ...data }),
+  });
+  if (!res.ok) throw new Error("Failed to resolve flagged application");
   return res.json();
 }
