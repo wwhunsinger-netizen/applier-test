@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Building, MapPin, Clock, Search, ArrowRight } from "lucide-react";
+import { Building, Clock, Search, ArrowRight } from "lucide-react";
 
 export default function QueuePage() {
   const [filter, setFilter] = useState("all");
@@ -71,7 +71,6 @@ export default function QueuePage() {
                     <h3 className="text-xl font-bold font-heading">{job.role}</h3>
                     <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
                       <span className="flex items-center gap-1"><Building className="w-3 h-3" /> {job.company}</span>
-                      <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {job.location}</span>
                       <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {job.postedTime}</span>
                     </div>
                   </div>
