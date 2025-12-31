@@ -1,13 +1,11 @@
 import { useState } from "react";
 import { Link } from "wouter";
 import { MOCK_JOBS } from "@/lib/mockData";
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Check, AlertTriangle, Building, MapPin, Clock, Search, ArrowRight } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Building, MapPin, Clock, Search, ArrowRight } from "lucide-react";
 
 export default function QueuePage() {
   const [filter, setFilter] = useState("all");
@@ -70,38 +68,12 @@ export default function QueuePage() {
               <div className="flex flex-col md:flex-row gap-6">
                 <div className="flex-1 space-y-4">
                   <div>
-                    <div className="flex items-start justify-between">
-                      <h3 className="text-xl font-bold font-heading">{job.role}</h3>
-                      <Badge 
-                        variant="secondary" 
-                        className={cn(
-                          "ml-2", 
-                          job.matchScore >= 90 ? "bg-green-100 text-green-700 hover:bg-green-100" : 
-                          job.matchScore >= 80 ? "bg-yellow-100 text-yellow-700 hover:bg-yellow-100" : 
-                          "bg-gray-100 text-gray-700"
-                        )}
-                      >
-                        {job.matchScore}% Match
-                      </Badge>
-                    </div>
+                    <h3 className="text-xl font-bold font-heading">{job.role}</h3>
                     <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
                       <span className="flex items-center gap-1"><Building className="w-3 h-3" /> {job.company}</span>
                       <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {job.location}</span>
                       <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {job.postedTime}</span>
                     </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                    {job.requirements.map((req, i) => (
-                      <div key={i} className="flex items-center gap-2">
-                        {req.met ? (
-                          <Check className="w-4 h-4 text-green-500 flex-shrink-0" />
-                        ) : (
-                          <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0" />
-                        )}
-                        <span className={cn(req.met ? "text-foreground" : "text-muted-foreground")}>{req.text}</span>
-                      </div>
-                    ))}
                   </div>
                 </div>
 
