@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertClientSchema, updateClientSchema, insertApplicationSchema, insertInterviewSchema, insertClientDocumentSchema, insertJobCriteriaSampleSchema, insertClientJobResponseSchema, updateJobCriteriaSampleSchema } from "@shared/schema";
+import { insertClientSchema, updateClientSchema, insertApplicationSchema, insertInterviewSchema, insertClientDocumentSchema, insertJobCriteriaSampleSchema, insertClientJobResponseSchema, updateJobCriteriaSampleSchema, insertApplierJobSessionSchema, insertFlaggedApplicationSchema, updateFlaggedApplicationSchema } from "@shared/schema";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
 import { scrapeJobUrl } from "./apify";
 
@@ -346,6 +346,207 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error creating job response:", error);
       res.status(400).json({ error: "Failed to create job response" });
+    }
+  });
+
+  // ========================================
+  // APPLIER JOB SESSION ROUTES
+  // ========================================
+  
+  // Get applier's sessions
+  app.get("/api/applier-sessions", async (req, res) => {
+    try {
+      const { applier_id, client_id } = req.query;
+      
+      let sessions;
+      if (applier_id) {
+        sessions = await storage.getApplierSessions(applier_id as string);
+      } else if (client_id) {
+        sessions = await storage.getApplierSessionsByClient(client_id as string);
+      } else {
+        return res.status(400).json({ error: "applier_id or client_id query parameter required" });
+      }
+      
+      res.json(sessions);
+    } catch (error) {
+      console.error("Error fetching applier sessions:", error);
+      res.status(500).json({ error: "Failed to fetch applier sessions" });
+    }
+  });
+
+  // Start review - creates session with in_progress status and records start time
+  app.post("/api/applier-sessions/start-review", async (req, res) => {
+    try {
+      const { job_id, applier_id, client_id, job_url, job_title, company_name } = req.body;
+      
+      if (!job_id || !applier_id || !client_id || !job_url) {
+        return res.status(400).json({ error: "job_id, applier_id, client_id, and job_url are required" });
+      }
+      
+      // Check if session already exists for this job/applier
+      const existingSession = await storage.getApplierSessionByJob(job_id, applier_id);
+      
+      if (existingSession) {
+        // Update existing session to in_progress with new start time
+        const updated = await storage.updateApplierSession(existingSession.id, {
+          status: "in_progress",
+          started_at: new Date().toISOString(),
+        });
+        return res.json(updated);
+      }
+      
+      // Create new session
+      const session = await storage.createApplierSession({
+        job_id,
+        applier_id,
+        client_id,
+        job_url,
+        job_title,
+        company_name,
+        status: "in_progress",
+      });
+      
+      // Update the session with started_at
+      const updated = await storage.updateApplierSession(session.id, {
+        started_at: new Date().toISOString(),
+      });
+      
+      res.status(201).json(updated || session);
+    } catch (error) {
+      console.error("Error starting review session:", error);
+      res.status(500).json({ error: "Failed to start review session" });
+    }
+  });
+
+  // Mark applied - updates session, creates application record
+  app.post("/api/applier-sessions/:sessionId/applied", async (req, res) => {
+    try {
+      const session = await storage.getApplierSession(req.params.sessionId);
+      
+      if (!session) {
+        return res.status(404).json({ error: "Session not found" });
+      }
+      
+      if (session.status !== "in_progress") {
+        return res.status(400).json({ error: "Can only mark applied for in_progress sessions" });
+      }
+      
+      const completedAt = new Date();
+      const startedAt = session.started_at ? new Date(session.started_at) : completedAt;
+      const durationSeconds = Math.floor((completedAt.getTime() - startedAt.getTime()) / 1000);
+      
+      // Update session to applied
+      const updatedSession = await storage.updateApplierSession(req.params.sessionId, {
+        status: "applied",
+        completed_at: completedAt.toISOString(),
+        duration_seconds: durationSeconds,
+      });
+      
+      // Create application record
+      const application = await storage.createApplication({
+        job_id: session.job_id,
+        applier_id: session.applier_id,
+        client_id: session.client_id,
+        status: "Applied",
+        qa_status: "None",
+        applied_date: completedAt.toISOString(),
+      });
+      
+      res.json({ session: updatedSession, application });
+    } catch (error) {
+      console.error("Error marking session as applied:", error);
+      res.status(500).json({ error: "Failed to mark as applied" });
+    }
+  });
+
+  // Flag job - creates flagged application for admin review
+  app.post("/api/applier-sessions/:sessionId/flag", async (req, res) => {
+    try {
+      const { comment } = req.body;
+      
+      if (!comment?.trim()) {
+        return res.status(400).json({ error: "Comment is required when flagging a job" });
+      }
+      
+      const session = await storage.getApplierSession(req.params.sessionId);
+      
+      if (!session) {
+        return res.status(404).json({ error: "Session not found" });
+      }
+      
+      if (session.status === "flagged") {
+        return res.status(400).json({ error: "Job is already flagged" });
+      }
+      
+      if (session.status === "applied") {
+        return res.status(400).json({ error: "Cannot flag an already applied job" });
+      }
+      
+      // Update session to flagged
+      const updatedSession = await storage.updateApplierSession(req.params.sessionId, {
+        status: "flagged",
+        flag_comment: comment.trim(),
+      });
+      
+      // Create flagged application for admin review
+      const flaggedApp = await storage.createFlaggedApplication({
+        session_id: session.id,
+        job_id: session.job_id,
+        applier_id: session.applier_id,
+        client_id: session.client_id,
+        job_title: session.job_title,
+        company_name: session.company_name,
+        job_url: session.job_url,
+        comment: comment.trim(),
+        status: "open",
+      });
+      
+      res.json({ session: updatedSession, flaggedApplication: flaggedApp });
+    } catch (error) {
+      console.error("Error flagging job:", error);
+      res.status(500).json({ error: "Failed to flag job" });
+    }
+  });
+
+  // ========================================
+  // FLAGGED APPLICATIONS ROUTES (Admin)
+  // ========================================
+  
+  app.get("/api/flagged-applications", async (req, res) => {
+    try {
+      const { status } = req.query;
+      
+      let flaggedApps;
+      if (status === "open" || status === "resolved") {
+        flaggedApps = await storage.getFlaggedApplicationsByStatus(status);
+      } else {
+        flaggedApps = await storage.getFlaggedApplications();
+      }
+      
+      res.json(flaggedApps);
+    } catch (error) {
+      console.error("Error fetching flagged applications:", error);
+      res.status(500).json({ error: "Failed to fetch flagged applications" });
+    }
+  });
+
+  app.patch("/api/flagged-applications/:id", async (req, res) => {
+    try {
+      const validatedData = updateFlaggedApplicationSchema.parse(req.body);
+      
+      // Auto-set resolved_at when status changes to resolved
+      if (validatedData.status === "resolved" && !validatedData.resolved_at) {
+        validatedData.resolved_at = new Date().toISOString();
+      }
+      
+      const updated = await storage.updateFlaggedApplication(req.params.id, validatedData);
+      if (!updated) {
+        return res.status(404).json({ error: "Flagged application not found" });
+      }
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating flagged application:", error);
+      res.status(400).json({ error: "Failed to update flagged application" });
     }
   });
 
