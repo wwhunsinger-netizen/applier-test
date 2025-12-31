@@ -38,8 +38,6 @@ export default function AdminClientDetailPage() {
   const [excludeKeywords, setExcludeKeywords] = useState<string[]>([]);
   const [yearsOfExperience, setYearsOfExperience] = useState<number>(0);
   const [seniorityLevels, setSeniorityLevels] = useState<string[]>([]);
-  const [dailyApplicationTarget, setDailyApplicationTarget] = useState<number>(10);
-  const [onboardingTranscript, setOnboardingTranscript] = useState<string>("");
   const [newTagInput, setNewTagInput] = useState<string>("");
   const [activeTagField, setActiveTagField] = useState<string | null>(null);
   
@@ -84,8 +82,6 @@ export default function AdminClientDetailPage() {
       setExcludeKeywords(client.exclude_keywords || []);
       setYearsOfExperience(client.years_of_experience || 0);
       setSeniorityLevels(client.seniority_levels || []);
-      setDailyApplicationTarget(client.daily_application_target || 10);
-      setOnboardingTranscript(client.onboarding_transcript || "");
     }
   }, [client]);
   
@@ -190,9 +186,7 @@ export default function AdminClientDetailPage() {
       nice_to_have_skills: niceToHaveSkills,
       exclude_keywords: excludeKeywords,
       years_of_experience: yearsOfExperience,
-      seniority_levels: seniorityLevels,
-      daily_application_target: dailyApplicationTarget,
-      onboarding_transcript: onboardingTranscript
+      seniority_levels: seniorityLevels
     });
   };
 
@@ -571,27 +565,6 @@ export default function AdminClientDetailPage() {
                     ))}
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium text-white">Daily Application Target</Label>
-                  <Input 
-                    type="number"
-                    min="1"
-                    value={dailyApplicationTarget}
-                    onChange={(e) => setDailyApplicationTarget(parseInt(e.target.value) || 10)}
-                    className="bg-white/5 border-white/10"
-                  />
-                </div>
-              </div>
-
-              {/* Onboarding Transcript */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium text-white">Onboarding Transcript / Notes</Label>
-                <Textarea 
-                  placeholder="Notes from onboarding call, preferences, special requirements..."
-                  value={onboardingTranscript}
-                  onChange={(e) => setOnboardingTranscript(e.target.value)}
-                  className="bg-white/5 border-white/10 min-h-[100px]"
-                />
               </div>
 
               {/* Save Button */}
