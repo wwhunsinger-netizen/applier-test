@@ -15,7 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ArrowLeft, Upload, FileText, Download, CheckCircle2, AlertCircle, Plus, Calendar, Clock, Video, Users, Link as LinkIcon, Linkedin, Loader2, ChevronDown, X, Target, Mail, Lock, Briefcase, ExternalLink, Trash2, RefreshCw } from "lucide-react";
+import { ArrowLeft, Upload, FileText, Download, CheckCircle2, AlertCircle, Plus, Calendar, Clock, Video, Users, Link as LinkIcon, Linkedin, Loader2, ChevronDown, X, Target, Briefcase, ExternalLink, Trash2, RefreshCw } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 
@@ -40,8 +40,6 @@ export default function AdminClientDetailPage() {
   const [seniorityLevels, setSeniorityLevels] = useState<string[]>([]);
   const [dailyApplicationTarget, setDailyApplicationTarget] = useState<number>(10);
   const [onboardingTranscript, setOnboardingTranscript] = useState<string>("");
-  const [clientGmail, setClientGmail] = useState<string>("");
-  const [clientGmailPassword, setClientGmailPassword] = useState<string>("");
   const [newTagInput, setNewTagInput] = useState<string>("");
   const [activeTagField, setActiveTagField] = useState<string | null>(null);
   
@@ -88,8 +86,6 @@ export default function AdminClientDetailPage() {
       setSeniorityLevels(client.seniority_levels || []);
       setDailyApplicationTarget(client.daily_application_target || 10);
       setOnboardingTranscript(client.onboarding_transcript || "");
-      setClientGmail(client.client_gmail || "");
-      setClientGmailPassword(client.client_gmail_password || "");
     }
   }, [client]);
   
@@ -196,9 +192,7 @@ export default function AdminClientDetailPage() {
       years_of_experience: yearsOfExperience,
       seniority_levels: seniorityLevels,
       daily_application_target: dailyApplicationTarget,
-      onboarding_transcript: onboardingTranscript,
-      client_gmail: clientGmail,
-      client_gmail_password: clientGmailPassword
+      onboarding_transcript: onboardingTranscript
     });
   };
 
@@ -598,40 +592,6 @@ export default function AdminClientDetailPage() {
                   onChange={(e) => setOnboardingTranscript(e.target.value)}
                   className="bg-white/5 border-white/10 min-h-[100px]"
                 />
-              </div>
-
-              {/* Client Gmail Credentials */}
-              <div className="border-t border-white/10 pt-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <Mail className="w-4 h-4 text-muted-foreground" />
-                  <Label className="text-sm font-medium text-white">Client Gmail Credentials</Label>
-                  <Badge variant="outline" className="text-xs bg-yellow-500/10 text-yellow-500 border-yellow-500/20">
-                    <Lock className="w-3 h-3 mr-1" /> Sensitive
-                  </Badge>
-                </div>
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label className="text-xs text-muted-foreground">Gmail Address</Label>
-                    <Input 
-                      type="email"
-                      placeholder="client@gmail.com"
-                      value={clientGmail}
-                      onChange={(e) => setClientGmail(e.target.value)}
-                      className="bg-white/5 border-white/10"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs text-muted-foreground">Gmail Password / App Password</Label>
-                    <Input 
-                      type="password"
-                      placeholder="••••••••"
-                      value={clientGmailPassword}
-                      onChange={(e) => setClientGmailPassword(e.target.value)}
-                      className="bg-white/5 border-white/10"
-                    />
-                    <p className="text-xs text-yellow-500">Note: For production, implement secure credential storage</p>
-                  </div>
-                </div>
               </div>
 
               {/* Save Button */}
