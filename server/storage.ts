@@ -81,15 +81,39 @@ export class SupabaseStorage implements IStorage {
   }
 
   async updateClient(id: string, updates: UpdateClient): Promise<Client | null> {
+    // Clean up empty strings to null for fields with unique constraints
+    // Using Record type to allow null values for Supabase
+    const cleanedUpdates: Record<string, unknown> = { ...updates };
+    if (cleanedUpdates.client_gmail === '') {
+      cleanedUpdates.client_gmail = null;
+    }
+    if (cleanedUpdates.email === '') {
+      cleanedUpdates.email = null;
+    }
+    // Convert empty arrays to null for optional array fields
+    if (Array.isArray(cleanedUpdates.target_job_titles) && (cleanedUpdates.target_job_titles as string[]).length === 0) {
+      cleanedUpdates.target_job_titles = null;
+    }
+    if (Array.isArray(cleanedUpdates.required_skills) && (cleanedUpdates.required_skills as string[]).length === 0) {
+      cleanedUpdates.required_skills = null;
+    }
+    if (Array.isArray(cleanedUpdates.nice_to_have_skills) && (cleanedUpdates.nice_to_have_skills as string[]).length === 0) {
+      cleanedUpdates.nice_to_have_skills = null;
+    }
+    if (Array.isArray(cleanedUpdates.exclude_keywords) && (cleanedUpdates.exclude_keywords as string[]).length === 0) {
+      cleanedUpdates.exclude_keywords = null;
+    }
+    
     const { data, error } = await supabase
       .from('clients')
-      .update(updates)
+      .update(cleanedUpdates)
       .eq('id', id)
       .select()
       .single();
     
     if (error) {
       if (error.code === 'PGRST116') return null;
+      console.error('Error updating client:', error);
       throw error;
     }
     return data;
