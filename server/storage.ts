@@ -1,4 +1,4 @@
-import type { Client, Application, Interview, Job, Applier, InsertClient, UpdateClient, InsertApplication, InsertInterview, ClientDocument, InsertClientDocument, JobCriteriaSample, InsertJobCriteriaSample, UpdateJobCriteriaSample, ClientJobResponse, InsertClientJobResponse } from "@shared/schema";
+import type { Client, Application, Interview, Job, Applier, InsertClient, UpdateClient, InsertApplication, InsertInterview, ClientDocument, InsertClientDocument, JobCriteriaSample, InsertJobCriteriaSample, UpdateJobCriteriaSample, ClientJobResponse, InsertClientJobResponse, ApplierJobSession, InsertApplierJobSession, UpdateApplierJobSession, FlaggedApplication, InsertFlaggedApplication, UpdateFlaggedApplication } from "@shared/schema";
 import { supabase } from "./supabase";
 
 export interface IStorage {
@@ -42,6 +42,20 @@ export interface IStorage {
   // Client job response operations
   getJobResponses(clientId: string): Promise<ClientJobResponse[]>;
   createJobResponse(response: InsertClientJobResponse): Promise<ClientJobResponse>;
+  
+  // Applier job session operations
+  getApplierSessions(applierId: string): Promise<ApplierJobSession[]>;
+  getApplierSessionsByClient(clientId: string): Promise<ApplierJobSession[]>;
+  getApplierSession(id: string): Promise<ApplierJobSession | null>;
+  getApplierSessionByJob(jobId: string, applierId: string): Promise<ApplierJobSession | null>;
+  createApplierSession(session: InsertApplierJobSession): Promise<ApplierJobSession>;
+  updateApplierSession(id: string, updates: UpdateApplierJobSession): Promise<ApplierJobSession | null>;
+  
+  // Flagged application operations
+  getFlaggedApplications(): Promise<FlaggedApplication[]>;
+  getFlaggedApplicationsByStatus(status: "open" | "resolved"): Promise<FlaggedApplication[]>;
+  createFlaggedApplication(flagged: InsertFlaggedApplication): Promise<FlaggedApplication>;
+  updateFlaggedApplication(id: string, updates: UpdateFlaggedApplication): Promise<FlaggedApplication | null>;
 }
 
 export class SupabaseStorage implements IStorage {
@@ -359,6 +373,132 @@ export class SupabaseStorage implements IStorage {
       .single();
     
     if (error) throw error;
+    return data;
+  }
+  
+  // Applier job session operations
+  async getApplierSessions(applierId: string): Promise<ApplierJobSession[]> {
+    const { data, error } = await supabase
+      .from('applier_job_sessions')
+      .select('*')
+      .eq('applier_id', applierId)
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    return data || [];
+  }
+
+  async getApplierSessionsByClient(clientId: string): Promise<ApplierJobSession[]> {
+    const { data, error } = await supabase
+      .from('applier_job_sessions')
+      .select('*')
+      .eq('client_id', clientId)
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    return data || [];
+  }
+
+  async getApplierSession(id: string): Promise<ApplierJobSession | null> {
+    const { data, error } = await supabase
+      .from('applier_job_sessions')
+      .select('*')
+      .eq('id', id)
+      .single();
+    
+    if (error) {
+      if (error.code === 'PGRST116') return null;
+      throw error;
+    }
+    return data;
+  }
+
+  async getApplierSessionByJob(jobId: string, applierId: string): Promise<ApplierJobSession | null> {
+    const { data, error } = await supabase
+      .from('applier_job_sessions')
+      .select('*')
+      .eq('job_id', jobId)
+      .eq('applier_id', applierId)
+      .single();
+    
+    if (error) {
+      if (error.code === 'PGRST116') return null;
+      throw error;
+    }
+    return data;
+  }
+
+  async createApplierSession(session: InsertApplierJobSession): Promise<ApplierJobSession> {
+    const { data, error } = await supabase
+      .from('applier_job_sessions')
+      .insert(session)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  }
+
+  async updateApplierSession(id: string, updates: UpdateApplierJobSession): Promise<ApplierJobSession | null> {
+    const { data, error } = await supabase
+      .from('applier_job_sessions')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) {
+      if (error.code === 'PGRST116') return null;
+      throw error;
+    }
+    return data;
+  }
+
+  // Flagged application operations
+  async getFlaggedApplications(): Promise<FlaggedApplication[]> {
+    const { data, error } = await supabase
+      .from('flagged_applications')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    return data || [];
+  }
+
+  async getFlaggedApplicationsByStatus(status: "open" | "resolved"): Promise<FlaggedApplication[]> {
+    const { data, error } = await supabase
+      .from('flagged_applications')
+      .select('*')
+      .eq('status', status)
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    return data || [];
+  }
+
+  async createFlaggedApplication(flagged: InsertFlaggedApplication): Promise<FlaggedApplication> {
+    const { data, error } = await supabase
+      .from('flagged_applications')
+      .insert(flagged)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  }
+
+  async updateFlaggedApplication(id: string, updates: UpdateFlaggedApplication): Promise<FlaggedApplication | null> {
+    const { data, error } = await supabase
+      .from('flagged_applications')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) {
+      if (error.code === 'PGRST116') return null;
+      throw error;
+    }
     return data;
   }
 }
