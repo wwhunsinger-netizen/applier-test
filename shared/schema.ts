@@ -282,6 +282,88 @@ export type InsertApplication = z.infer<typeof insertApplicationSchema>;
 export type InsertInterview = z.infer<typeof insertInterviewSchema>;
 export type InsertClientDocument = z.infer<typeof insertClientDocumentSchema>;
 
+// Applier Job Session - tracks applier workflow for each job (start, apply, flag)
+export type SessionStatus = "pending" | "in_progress" | "applied" | "flagged";
+
+export interface ApplierJobSession {
+  id: string;
+  job_id: string;
+  client_id: string;
+  applier_id: string;
+  job_url: string;
+  job_title?: string;
+  company_name?: string;
+  started_at?: string;
+  completed_at?: string;
+  duration_seconds?: number;
+  status: SessionStatus;
+  flag_comment?: string;
+  created_at?: string;
+}
+
+export const insertApplierJobSessionSchema = z.object({
+  job_id: z.string(),
+  client_id: z.string(),
+  applier_id: z.string(),
+  job_url: z.string(),
+  job_title: z.string().optional(),
+  company_name: z.string().optional(),
+  status: z.enum(["pending", "in_progress", "applied", "flagged"]).default("pending"),
+});
+
+export const updateApplierJobSessionSchema = z.object({
+  started_at: z.string().optional(),
+  completed_at: z.string().optional(),
+  duration_seconds: z.number().optional(),
+  status: z.enum(["pending", "in_progress", "applied", "flagged"]).optional(),
+  flag_comment: z.string().optional(),
+});
+
+export type InsertApplierJobSession = z.infer<typeof insertApplierJobSessionSchema>;
+export type UpdateApplierJobSession = z.infer<typeof updateApplierJobSessionSchema>;
+
+// Flagged Application - for admin review queue
+export type FlagStatus = "open" | "resolved";
+
+export interface FlaggedApplication {
+  id: string;
+  session_id: string;
+  job_id: string;
+  applier_id: string;
+  client_id: string;
+  job_title?: string;
+  company_name?: string;
+  job_url: string;
+  comment: string;
+  status: FlagStatus;
+  created_at?: string;
+  resolved_at?: string;
+  resolved_by?: string;
+  resolution_note?: string;
+}
+
+export const insertFlaggedApplicationSchema = z.object({
+  session_id: z.string(),
+  job_id: z.string(),
+  applier_id: z.string(),
+  client_id: z.string(),
+  job_title: z.string().optional(),
+  company_name: z.string().optional(),
+  job_url: z.string(),
+  comment: z.string().min(1),
+  status: z.enum(["open", "resolved"]).default("open"),
+});
+
+export const updateFlaggedApplicationSchema = z.object({
+  status: z.enum(["open", "resolved"]).optional(),
+  resolved_at: z.string().optional(),
+  resolved_by: z.string().optional(),
+  resolution_note: z.string().optional(),
+});
+
+export type InsertFlaggedApplication = z.infer<typeof insertFlaggedApplicationSchema>;
+export type UpdateFlaggedApplication = z.infer<typeof updateFlaggedApplicationSchema>;
+
 export function getClientFullName(client: Client): string {
   return `${client.first_name} ${client.last_name}`.trim();
 }
