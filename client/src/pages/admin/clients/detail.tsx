@@ -37,7 +37,7 @@ export default function AdminClientDetailPage() {
   const [niceToHaveSkills, setNiceToHaveSkills] = useState<string[]>([]);
   const [excludeKeywords, setExcludeKeywords] = useState<string[]>([]);
   const [yearsOfExperience, setYearsOfExperience] = useState<number>(0);
-  const [seniorityLevel, setSeniorityLevel] = useState<string>("");
+  const [seniorityLevels, setSeniorityLevels] = useState<string[]>([]);
   const [dailyApplicationTarget, setDailyApplicationTarget] = useState<number>(10);
   const [onboardingTranscript, setOnboardingTranscript] = useState<string>("");
   const [clientGmail, setClientGmail] = useState<string>("");
@@ -85,7 +85,7 @@ export default function AdminClientDetailPage() {
       setNiceToHaveSkills(client.nice_to_have_skills || []);
       setExcludeKeywords(client.exclude_keywords || []);
       setYearsOfExperience(client.years_of_experience || 0);
-      setSeniorityLevel(client.seniority_level || "");
+      setSeniorityLevels(client.seniority_levels || []);
       setDailyApplicationTarget(client.daily_application_target || 10);
       setOnboardingTranscript(client.onboarding_transcript || "");
       setClientGmail(client.client_gmail || "");
@@ -194,7 +194,7 @@ export default function AdminClientDetailPage() {
       nice_to_have_skills: niceToHaveSkills,
       exclude_keywords: excludeKeywords,
       years_of_experience: yearsOfExperience,
-      seniority_level: seniorityLevel,
+      seniority_levels: seniorityLevels,
       daily_application_target: dailyApplicationTarget,
       onboarding_transcript: onboardingTranscript,
       client_gmail: clientGmail,
@@ -544,21 +544,38 @@ export default function AdminClientDetailPage() {
                     className="bg-white/5 border-white/10"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium text-white">Seniority Level</Label>
-                  <Select value={seniorityLevel} onValueChange={setSeniorityLevel}>
-                    <SelectTrigger className="bg-white/5 border-white/10">
-                      <SelectValue placeholder="Select level" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="entry">Entry Level</SelectItem>
-                      <SelectItem value="mid">Mid Level</SelectItem>
-                      <SelectItem value="senior">Senior</SelectItem>
-                      <SelectItem value="lead">Lead / Principal</SelectItem>
-                      <SelectItem value="director">Director</SelectItem>
-                      <SelectItem value="executive">Executive</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div className="space-y-2 md:col-span-2">
+                  <Label className="text-sm font-medium text-white">Seniority Levels (select multiple)</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      { value: "entry", label: "Entry Level" },
+                      { value: "mid", label: "Mid Level" },
+                      { value: "senior", label: "Senior" },
+                      { value: "lead", label: "Lead / Principal" },
+                      { value: "director", label: "Director" },
+                      { value: "executive", label: "Executive" }
+                    ].map((level) => (
+                      <Badge
+                        key={level.value}
+                        variant={seniorityLevels.includes(level.value) ? "default" : "outline"}
+                        className={`cursor-pointer transition-all ${
+                          seniorityLevels.includes(level.value)
+                            ? "bg-primary text-primary-foreground hover:bg-primary/80"
+                            : "bg-white/5 border-white/20 hover:bg-white/10"
+                        }`}
+                        onClick={() => {
+                          if (seniorityLevels.includes(level.value)) {
+                            setSeniorityLevels(seniorityLevels.filter(l => l !== level.value));
+                          } else {
+                            setSeniorityLevels([...seniorityLevels, level.value]);
+                          }
+                        }}
+                      >
+                        {seniorityLevels.includes(level.value) && <CheckCircle2 className="w-3 h-3 mr-1" />}
+                        {level.label}
+                      </Badge>
+                    ))}
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-medium text-white">Daily Application Target</Label>

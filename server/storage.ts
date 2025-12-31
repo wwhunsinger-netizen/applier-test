@@ -103,6 +103,9 @@ export class SupabaseStorage implements IStorage {
     if (Array.isArray(cleanedUpdates.exclude_keywords) && (cleanedUpdates.exclude_keywords as string[]).length === 0) {
       cleanedUpdates.exclude_keywords = null;
     }
+    if (Array.isArray(cleanedUpdates.seniority_levels) && (cleanedUpdates.seniority_levels as string[]).length === 0) {
+      cleanedUpdates.seniority_levels = null;
+    }
     
     const { data, error } = await supabase
       .from('clients')

@@ -42,7 +42,7 @@ export interface Client {
   nice_to_have_skills?: string[];
   exclude_keywords?: string[];
   years_of_experience?: number;
-  seniority_level?: string;
+  seniority_levels?: string[];
   onboarding_transcript?: string;
   daily_application_target?: number;
   first_application_date?: string;
@@ -148,7 +148,7 @@ export const updateClientSchema = z.object({
   nice_to_have_skills: z.array(z.string()).optional(),
   exclude_keywords: z.array(z.string()).optional(),
   years_of_experience: z.number().optional(),
-  seniority_level: z.string().optional(),
+  seniority_levels: z.array(z.string()).optional(),
   onboarding_transcript: z.string().optional(),
   daily_application_target: z.number().optional(),
   placement_date: z.string().optional(),
