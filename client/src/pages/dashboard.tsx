@@ -180,7 +180,7 @@ export default function DashboardPage() {
           </Card>
         </HoverCardWrapper>
 
-        {/* Streaks */}
+        {/* Streaks - Coming Soon */}
         <HoverCardWrapper>
           <Card className="h-full bg-[#111] border-white/10">
             <CardHeader>
@@ -189,34 +189,17 @@ export default function DashboardPage() {
                 Active Streaks
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Daily Goal (100+)</span>
-                  <span className="font-bold text-orange-600">{MOCK_STATS.streakDays} days 🔥</span>
-                </div>
-                <Progress value={70} className="h-2 bg-white/5" indicatorClassName="bg-orange-500" />
+            <CardContent className="flex flex-col items-center justify-center py-8 text-center">
+              <div className="w-12 h-12 rounded-full bg-orange-500/10 flex items-center justify-center mb-4">
+                <Flame className="w-6 h-6 text-orange-500" />
               </div>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Sub-2min Average</span>
-                  <span className="font-bold text-blue-500">12 days ⚡</span>
-                </div>
-                <Progress value={90} className="h-2 bg-white/5" indicatorClassName="bg-blue-500" />
-              </div>
-              <div className="pt-2 flex gap-2">
-                <Badge variant="secondary" className="px-2 py-1 h-auto flex flex-col items-center gap-1 text-xs border-white/10 bg-white/5 text-white">
-                  <span className="text-lg">🚀</span> Speed Demon
-                </Badge>
-                <Badge variant="secondary" className="px-2 py-1 h-auto flex flex-col items-center gap-1 text-xs border-white/10 bg-white/5 text-white">
-                  <span className="text-lg">🏆</span> Quality Champ
-                </Badge>
-              </div>
+              <p className="text-sm font-medium text-white mb-1">Coming Soon</p>
+              <p className="text-xs text-muted-foreground">Track your daily streaks and achievements</p>
             </CardContent>
           </Card>
         </HoverCardWrapper>
 
-        {/* Mini Leaderboard */}
+        {/* Mini Leaderboard - Coming Soon */}
         <div className="lg:col-span-1">
           <HoverCardWrapper>
             <Card className="h-full bg-[#111] border-white/10">
@@ -226,32 +209,12 @@ export default function DashboardPage() {
                   <Button variant="ghost" size="sm" className="h-8 text-xs text-muted-foreground hover:text-white">View All</Button>
                 </Link>
               </CardHeader>
-              <CardContent className="p-0">
-                <div className="divide-y divide-white/5">
-                  {MOCK_LEADERBOARD.slice(0, 4).map((entry) => (
-                    <div key={entry.rank} className={cn(
-                      "flex items-center justify-between p-3 px-6",
-                      entry.isCurrentUser && "bg-white/5"
-                    )}>
-                      <div className="flex items-center gap-3">
-                        <div className={cn(
-                          "w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold",
-                          entry.rank === 1 ? "bg-yellow-500/20 text-yellow-500" : 
-                          entry.rank === 2 ? "bg-gray-500/20 text-gray-400" :
-                          entry.rank === 3 ? "bg-orange-500/20 text-orange-500" : "text-muted-foreground"
-                        )}>
-                          {entry.rank}
-                        </div>
-                        <span className={cn("text-sm text-white", entry.isCurrentUser && "font-bold")}>
-                          {entry.name}
-                        </span>
-                      </div>
-                      <div className="text-sm font-mono text-muted-foreground">
-                        {entry.earnings}
-                      </div>
-                    </div>
-                  ))}
+              <CardContent className="flex flex-col items-center justify-center py-8 text-center">
+                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                  <Trophy className="w-6 h-6 text-primary" />
                 </div>
+                <p className="text-sm font-medium text-white mb-1">Coming Soon</p>
+                <p className="text-xs text-muted-foreground">See how you rank against others</p>
               </CardContent>
             </Card>
           </HoverCardWrapper>
