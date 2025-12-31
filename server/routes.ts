@@ -349,6 +349,81 @@ export async function registerRoutes(
     }
   });
 
+  // ========================================
+  // EXTERNAL API - For cofounder's search app
+  // ========================================
+  
+  // Middleware to check external API key
+  const validateExternalApiKey = (req: any, res: any, next: any) => {
+    const apiKey = req.headers['x-api-key'] || req.headers['authorization']?.replace('Bearer ', '');
+    const validApiKey = process.env.EXTERNAL_API_KEY;
+    
+    if (!validApiKey) {
+      console.error("EXTERNAL_API_KEY not configured");
+      return res.status(500).json({ error: "API not configured" });
+    }
+    
+    if (!apiKey || apiKey !== validApiKey) {
+      return res.status(401).json({ error: "Invalid or missing API key" });
+    }
+    
+    next();
+  };
+
+  // Get all clients with their job criteria (for search app)
+  app.get("/api/external/clients", validateExternalApiKey, async (req, res) => {
+    try {
+      const clients = await storage.getClients();
+      // Return only job criteria fields (no sensitive data)
+      const clientCriteria = clients.map(c => ({
+        id: c.id,
+        first_name: c.first_name,
+        last_name: c.last_name,
+        email: c.email,
+        status: c.status,
+        target_job_titles: c.target_job_titles || [],
+        required_skills: c.required_skills || [],
+        nice_to_have_skills: c.nice_to_have_skills || [],
+        exclude_keywords: c.exclude_keywords || [],
+        years_of_experience: c.years_of_experience,
+        seniority_levels: c.seniority_levels || [],
+        job_criteria_signoff: c.job_criteria_signoff
+      }));
+      res.json(clientCriteria);
+    } catch (error) {
+      console.error("Error fetching clients for external API:", error);
+      res.status(500).json({ error: "Failed to fetch clients" });
+    }
+  });
+
+  // Get single client job criteria (for search app)
+  app.get("/api/external/clients/:id/job-criteria", validateExternalApiKey, async (req, res) => {
+    try {
+      const client = await storage.getClient(req.params.id);
+      if (!client) {
+        return res.status(404).json({ error: "Client not found" });
+      }
+      // Return only job criteria fields (no sensitive data like Gmail credentials)
+      res.json({
+        id: client.id,
+        first_name: client.first_name,
+        last_name: client.last_name,
+        email: client.email,
+        status: client.status,
+        target_job_titles: client.target_job_titles || [],
+        required_skills: client.required_skills || [],
+        nice_to_have_skills: client.nice_to_have_skills || [],
+        exclude_keywords: client.exclude_keywords || [],
+        years_of_experience: client.years_of_experience,
+        seniority_levels: client.seniority_levels || [],
+        job_criteria_signoff: client.job_criteria_signoff
+      });
+    } catch (error) {
+      console.error("Error fetching client for external API:", error);
+      res.status(500).json({ error: "Failed to fetch client" });
+    }
+  });
+
   // Register object storage routes for file uploads
   registerObjectStorageRoutes(app);
 
