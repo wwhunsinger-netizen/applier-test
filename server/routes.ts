@@ -803,6 +803,120 @@ export async function registerRoutes(
     }
   });
 
+  // ========================================
+  // APPLIER EARNINGS ROUTES
+  // ========================================
+  
+  // Get earnings for an applier
+  app.get("/api/appliers/:applierId/earnings", async (req, res) => {
+    try {
+      const { start_date, end_date } = req.query;
+      
+      let earnings;
+      if (start_date && end_date) {
+        earnings = await storage.getApplierEarningsByDateRange(
+          req.params.applierId,
+          start_date as string,
+          end_date as string
+        );
+      } else {
+        earnings = await storage.getApplierEarnings(req.params.applierId);
+      }
+      
+      res.json(earnings);
+    } catch (error) {
+      console.error("Error fetching applier earnings:", error);
+      res.status(500).json({ error: "Failed to fetch applier earnings" });
+    }
+  });
+
+  // Get all earnings (admin view)
+  app.get("/api/earnings", async (req, res) => {
+    try {
+      const { client_id } = req.query;
+      
+      let earnings;
+      if (client_id) {
+        earnings = await storage.getEarningsByClient(client_id as string);
+      } else {
+        earnings = await storage.getAllEarnings();
+      }
+      
+      res.json(earnings);
+    } catch (error) {
+      console.error("Error fetching earnings:", error);
+      res.status(500).json({ error: "Failed to fetch earnings" });
+    }
+  });
+
+  // Create a new earning record
+  app.post("/api/earnings", async (req, res) => {
+    try {
+      const { insertApplierEarningSchema } = await import("@shared/schema");
+      const validatedData = insertApplierEarningSchema.parse(req.body);
+      const earning = await storage.createApplierEarning(validatedData);
+      res.status(201).json(earning);
+    } catch (error) {
+      console.error("Error creating earning:", error);
+      res.status(400).json({ error: "Failed to create earning" });
+    }
+  });
+
+  // Update earning (mark as approved/paid)
+  app.patch("/api/earnings/:id", async (req, res) => {
+    try {
+      const { updateApplierEarningSchema } = await import("@shared/schema");
+      const validatedData = updateApplierEarningSchema.parse(req.body);
+      
+      // Auto-set paid_date when status changes to paid
+      if (validatedData.payment_status === "paid" && !validatedData.paid_date) {
+        validatedData.paid_date = new Date().toISOString().split('T')[0];
+      }
+      
+      const updated = await storage.updateApplierEarning(req.params.id, validatedData);
+      if (!updated) {
+        return res.status(404).json({ error: "Earning not found" });
+      }
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating earning:", error);
+      res.status(400).json({ error: "Failed to update earning" });
+    }
+  });
+
+  // Get earnings summary per client (for admin cost tracking)
+  app.get("/api/admin/client-costs", async (req, res) => {
+    try {
+      const clients = await storage.getClients();
+      const allEarnings = await storage.getAllEarnings();
+      
+      const clientCosts = clients.map(client => {
+        const clientEarnings = allEarnings.filter(e => e.client_id === client.id);
+        const totalCost = clientEarnings.reduce((sum, e) => sum + Number(e.amount), 0);
+        const paidAmount = clientEarnings.filter(e => e.payment_status === 'paid').reduce((sum, e) => sum + Number(e.amount), 0);
+        const pendingAmount = clientEarnings.filter(e => e.payment_status === 'pending').reduce((sum, e) => sum + Number(e.amount), 0);
+        
+        return {
+          client_id: client.id,
+          client_name: `${client.first_name} ${client.last_name}`,
+          total_cost: totalCost,
+          paid_amount: paidAmount,
+          pending_amount: pendingAmount,
+          earnings_breakdown: {
+            application_milestone: clientEarnings.filter(e => e.earnings_type === 'application_milestone').reduce((sum, e) => sum + Number(e.amount), 0),
+            interview_bonus: clientEarnings.filter(e => e.earnings_type === 'interview_bonus').reduce((sum, e) => sum + Number(e.amount), 0),
+            placement_bonus: clientEarnings.filter(e => e.earnings_type === 'placement_bonus').reduce((sum, e) => sum + Number(e.amount), 0),
+          }
+        };
+      });
+      
+      res.json(clientCosts);
+    } catch (error) {
+      console.error("Error fetching client costs:", error);
+      res.status(500).json({ error: "Failed to fetch client costs" });
+    }
+  });
+
   // Register object storage routes for file uploads
   registerObjectStorageRoutes(app);
 
