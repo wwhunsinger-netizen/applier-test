@@ -64,7 +64,8 @@ export interface Applier {
   last_name: string;
   email: string;
   status: ApplierStatus;
-  assigned_client_id?: string | null; // Each applier assigned to one client
+  is_active: boolean; // Account enabled/disabled by admin
+  assigned_client_ids?: string[]; // Array of client IDs this applier works with
   last_activity_at?: string; // Tracks last activity for idle detection
   created_at?: string;
   updated_at?: string;
@@ -177,12 +178,14 @@ export const updateClientSchema = z.object({
 
 // Applier schemas for Supabase table
 // Status is auto-managed: new appliers start as 'offline', presence system updates to active/idle
+// is_active is admin-controlled: enables/disables the account
 export const insertApplierSchema = z.object({
   first_name: z.string().min(1),
   last_name: z.string().min(1),
   email: z.string().email(),
   status: z.enum(["active", "idle", "offline", "inactive"]).default("offline"),
-  assigned_client_id: z.string().uuid().nullable().optional(),
+  is_active: z.boolean().default(true),
+  assigned_client_ids: z.array(z.string().uuid()).optional(),
 });
 
 export const updateApplierSchema = z.object({
@@ -190,7 +193,8 @@ export const updateApplierSchema = z.object({
   last_name: z.string().min(1).optional(),
   email: z.string().email().optional(),
   status: z.enum(["active", "idle", "offline", "inactive"]).optional(),
-  assigned_client_id: z.string().uuid().nullable().optional(),
+  is_active: z.boolean().optional(),
+  assigned_client_ids: z.array(z.string().uuid()).optional(),
   last_activity_at: z.string().optional(),
 });
 

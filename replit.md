@@ -97,10 +97,18 @@ The `appliers` table stores team members who review and apply to jobs:
 - `first_name` (text, required)
 - `last_name` (text, required)
 - `email` (text, required)
-- `status` (text: active | inactive | training, default: active)
-- `assigned_client_id` (uuid, nullable, FK to clients) - Each applier is assigned to one client
+- `is_active` (boolean, default true) - Account enabled/disabled by admin
+- `status` (text: active | idle | offline | inactive, default: offline) - Real-time activity state, auto-managed by WebSocket presence
+- `last_activity_at` (timestamptz, nullable) - Tracks when applier was last active
+- `assigned_client_ids` (uuid[], nullable) - Array of client IDs this applier works with
 - `created_at` (timestamptz, default now())
 - `updated_at` (timestamptz, auto-updated)
+
+**Status Tracking (Automatic via WebSocket):**
+- `active` → Logged in and active in last 2 minutes
+- `idle` → Logged in but no activity for 2+ minutes
+- `offline` → Logged out or closed browser
+- `inactive` → Account disabled by admin (overrides other states)
 
 ### Supabase client_job_responses Table Schema
 The `client_job_responses` table stores client yes/no verdicts on sample jobs:

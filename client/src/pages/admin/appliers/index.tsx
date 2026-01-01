@@ -9,7 +9,6 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, Plus, User, AlertCircle, Eye, EyeOff, Copy, Check, Loader2, TrendingUp, Clock, Target } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -33,7 +32,7 @@ export default function AdminAppliersPage() {
   const [newApplierFirstName, setNewApplierFirstName] = useState("");
   const [newApplierLastName, setNewApplierLastName] = useState("");
   const [newApplierEmail, setNewApplierEmail] = useState("");
-  const [assignedClientId, setAssignedClientId] = useState<string | null>(null);
+  const [assignedClientIds, setAssignedClientIds] = useState<string[]>([]);
   const [generatedPassword, setGeneratedPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isCreated, setIsCreated] = useState(false);
@@ -77,8 +76,9 @@ export default function AdminAppliersPage() {
       first_name: newApplierFirstName,
       last_name: newApplierLastName,
       email: newApplierEmail,
-      status: "active",
-      assigned_client_id: assignedClientId || null,
+      status: "offline", // New appliers start offline, presence system updates when they log in
+      is_active: true, // Account is enabled by default
+      assigned_client_ids: assignedClientIds.length > 0 ? assignedClientIds : undefined,
     };
 
     createApplierMutation.mutate(newApplier);
@@ -99,7 +99,7 @@ export default function AdminAppliersPage() {
     setNewApplierFirstName("");
     setNewApplierLastName("");
     setNewApplierEmail("");
-    setAssignedClientId(null);
+    setAssignedClientIds([]);
     setGeneratedPassword("");
     setShowPassword(false);
   };
@@ -114,10 +114,14 @@ export default function AdminAppliersPage() {
     }
   };
 
-  const getAssignedClientName = (clientId?: string | null) => {
-    if (!clientId) return null;
-    const client = clients.find(c => c.id === clientId);
-    return client ? `${client.first_name} ${client.last_name}` : 'Unknown';
+  const getAssignedClientNames = (clientIds?: string[]) => {
+    if (!clientIds || clientIds.length === 0) return null;
+    return clientIds
+      .map(id => {
+        const client = clients.find(c => c.id === id);
+        return client ? `${client.first_name} ${client.last_name}` : 'Unknown';
+      })
+      .join(', ');
   };
 
   return (
@@ -150,7 +154,7 @@ export default function AdminAppliersPage() {
               <Target className="w-6 h-6 text-primary" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-white">{appliers.filter(a => a.assigned_client_id).length}</p>
+              <p className="text-2xl font-bold text-white">{appliers.filter(a => a.assigned_client_ids && a.assigned_client_ids.length > 0).length}</p>
               <p className="text-sm text-muted-foreground">Assigned to Clients</p>
             </div>
           </CardContent>
@@ -211,13 +215,13 @@ export default function AdminAppliersPage() {
                     </div>
                     <div className="text-sm text-muted-foreground flex flex-col md:flex-row md:items-center gap-1 md:gap-3 mt-1">
                       <span data-testid={`text-email-${applier.id}`}>{applier.email}</span>
-                      {applier.assigned_client_id && (
+                      {applier.assigned_client_ids && applier.assigned_client_ids.length > 0 && (
                         <>
                           <span className="hidden md:inline text-white/20">•</span>
-                          <span className="text-primary">Assigned: {getAssignedClientName(applier.assigned_client_id)}</span>
+                          <span className="text-primary">Assigned: {getAssignedClientNames(applier.assigned_client_ids)}</span>
                         </>
                       )}
-                      {!applier.assigned_client_id && (
+                      {(!applier.assigned_client_ids || applier.assigned_client_ids.length === 0) && (
                         <>
                           <span className="hidden md:inline text-white/20">•</span>
                           <span className="text-yellow-500">Unassigned</span>
@@ -298,24 +302,30 @@ export default function AdminAppliersPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="assignedClient">Assign to Client (Optional)</Label>
-                <Select 
-                  value={assignedClientId || "none"} 
-                  onValueChange={(value) => setAssignedClientId(value === "none" ? null : value)}
-                >
-                  <SelectTrigger className="bg-white/5 border-white/10" data-testid="select-assigned-client">
-                    <SelectValue placeholder="Leave unassigned" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-[#111] border-white/10">
-                    <SelectItem value="none" className="text-muted-foreground">No client assigned</SelectItem>
-                    {clients.map(client => (
-                      <SelectItem key={client.id} value={client.id}>
-                        {client.first_name} {client.last_name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">You can assign a client later if needed.</p>
+                <Label>Assign to Clients (Optional)</Label>
+                <div className="max-h-32 overflow-y-auto bg-white/5 border border-white/10 rounded-lg p-2 space-y-1" data-testid="checkbox-clients">
+                  {clients.length === 0 && (
+                    <p className="text-sm text-muted-foreground py-2 text-center">No clients available</p>
+                  )}
+                  {clients.map(client => (
+                    <label key={client.id} className="flex items-center gap-2 p-2 rounded hover:bg-white/5 cursor-pointer">
+                      <input 
+                        type="checkbox"
+                        className="rounded border-white/20 bg-white/5"
+                        checked={assignedClientIds.includes(client.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setAssignedClientIds([...assignedClientIds, client.id]);
+                          } else {
+                            setAssignedClientIds(assignedClientIds.filter(id => id !== client.id));
+                          }
+                        }}
+                      />
+                      <span className="text-sm text-white">{client.first_name} {client.last_name}</span>
+                    </label>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground">You can assign clients later if needed.</p>
               </div>
             </div>
           ) : (
