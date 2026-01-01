@@ -5,10 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Building, Clock, ArrowRight, Flag, CheckCircle, Timer, Download, FileText, Bot } from "lucide-react";
-import { startReviewSession, markSessionApplied, flagSession, fetchClients, fetchApplier } from "@/lib/api";
+import { startReviewSession, markSessionApplied, flagSession, fetchClients, fetchApplier, fetchClientDocuments } from "@/lib/api";
 import { toast } from "sonner";
 import { useUser } from "@/lib/userContext";
-import type { ApplierJobSession, Client } from "@shared/schema";
+import type { ApplierJobSession, Client, ClientDocument } from "@shared/schema";
 
 interface JobCardState {
   session?: ApplierJobSession;
@@ -33,6 +33,7 @@ export default function QueuePage() {
   const [isFlagging, setIsFlagging] = useState(false);
   const [assignedClients, setAssignedClients] = useState<Client[]>([]);
   const [selectedClientIndex, setSelectedClientIndex] = useState(0);
+  const [clientDocuments, setClientDocuments] = useState<ClientDocument[]>([]);
 
   // Fetch assigned clients based on logged-in applier
   useEffect(() => {
@@ -57,6 +58,25 @@ export default function QueuePage() {
   }, [currentUser]);
 
   const assignedClient = assignedClients[selectedClientIndex] || null;
+
+  // Fetch documents for the selected client
+  useEffect(() => {
+    if (!assignedClient) return;
+    
+    fetchClientDocuments(assignedClient.id)
+      .then(setClientDocuments)
+      .catch(console.error);
+  }, [assignedClient]);
+
+  // Get download URLs for resume and cover letter
+  const getDocumentUrl = (type: "resume_improved" | "cover_letter_A") => {
+    const doc = clientDocuments.find(d => d.document_type === type);
+    if (doc) {
+      // Use the API endpoint to download from object storage
+      return `/api/clients/${assignedClient?.id}/documents/${doc.document_type}/download`;
+    }
+    return null;
+  };
 
   // Timer effect - runs every second for jobs with active timers
   useEffect(() => {
@@ -262,8 +282,9 @@ export default function QueuePage() {
               variant="outline"
               size="sm"
               onClick={() => {
-                if (assignedClient.resume_url) {
-                  window.open(assignedClient.resume_url, '_blank');
+                const resumeUrl = getDocumentUrl("resume_improved");
+                if (resumeUrl) {
+                  window.open(resumeUrl, '_blank');
                 } else {
                   toast.error("No resume uploaded for this client");
                 }
@@ -277,8 +298,9 @@ export default function QueuePage() {
               variant="outline"
               size="sm"
               onClick={() => {
-                if (assignedClient.cover_letter_url) {
-                  window.open(assignedClient.cover_letter_url, '_blank');
+                const coverLetterUrl = getDocumentUrl("cover_letter_A");
+                if (coverLetterUrl) {
+                  window.open(coverLetterUrl, '_blank');
                 } else {
                   toast.error("No cover letter uploaded for this client");
                 }

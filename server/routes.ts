@@ -235,6 +235,26 @@ export async function registerRoutes(
     }
   });
 
+  // Download client document from object storage
+  app.get("/api/clients/:clientId/documents/:documentType/download", async (req, res) => {
+    try {
+      const documents = await storage.getClientDocuments(req.params.clientId);
+      const doc = documents.find(d => d.document_type === req.params.documentType);
+      
+      if (!doc) {
+        return res.status(404).json({ error: "Document not found" });
+      }
+      
+      // Redirect to the object storage URL
+      // The object_path should be the full path in object storage
+      const objectStorageUrl = `https://storage.googleapis.com/${process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID}/${doc.object_path}`;
+      res.redirect(objectStorageUrl);
+    } catch (error) {
+      console.error("Error downloading client document:", error);
+      res.status(500).json({ error: "Failed to download document" });
+    }
+  });
+
   // Job sample routes
   app.get("/api/clients/:clientId/job-samples", async (req, res) => {
     try {
