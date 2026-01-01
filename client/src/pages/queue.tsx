@@ -2,11 +2,9 @@ import { useState, useEffect, useCallback } from "react";
 import { MOCK_JOBS } from "@/lib/mockData";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Building, Clock, Search, ArrowRight, Flag, CheckCircle, Timer } from "lucide-react";
+import { Building, Clock, ArrowRight, Flag, CheckCircle, Timer } from "lucide-react";
 import { startReviewSession, markSessionApplied, flagSession } from "@/lib/api";
 import { toast } from "sonner";
 import type { ApplierJobSession } from "@shared/schema";
@@ -213,27 +211,9 @@ export default function QueuePage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Review Queue</h1>
-          <p className="text-muted-foreground">53 jobs waiting for review</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="relative w-full md:w-64">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input type="search" placeholder="Search jobs..." className="pl-9 bg-background" data-testid="input-search" />
-          </div>
-          <Select defaultValue="match">
-            <SelectTrigger className="w-[140px]" data-testid="select-sort">
-              <SelectValue placeholder="Sort by" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="match">Best Match</SelectItem>
-              <SelectItem value="newest">Newest</SelectItem>
-              <SelectItem value="oldest">Oldest</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">Review Queue</h1>
+        <p className="text-muted-foreground">53 jobs waiting for review</p>
       </div>
 
       {/* Client Context */}
