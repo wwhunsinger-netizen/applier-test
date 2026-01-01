@@ -207,6 +207,16 @@ export async function fetchJobs(params?: { client_id?: string }): Promise<Job[]>
   return res.json();
 }
 
+export async function fetchQueueJobs(clientId: string, applierId: string): Promise<Job[]> {
+  const queryParams = new URLSearchParams();
+  queryParams.set("client_id", clientId);
+  queryParams.set("applier_id", applierId);
+  
+  const res = await fetch(`${API_BASE}/queue-jobs?${queryParams}`);
+  if (!res.ok) throw new Error("Failed to fetch queue jobs");
+  return res.json();
+}
+
 // Job Sample API
 export async function fetchJobSamples(clientId: string): Promise<JobCriteriaSample[]> {
   const res = await fetch(`${API_BASE}/clients/${clientId}/job-samples`);

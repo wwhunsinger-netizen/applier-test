@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Building, Clock, ArrowRight, Flag, CheckCircle, Timer, Download, FileText, Bot, Briefcase } from "lucide-react";
-import { startReviewSession, markSessionApplied, flagSession, fetchClients, fetchApplier, fetchClientDocuments, fetchJobs } from "@/lib/api";
+import { startReviewSession, markSessionApplied, flagSession, fetchClients, fetchApplier, fetchClientDocuments, fetchQueueJobs } from "@/lib/api";
 import { toast } from "sonner";
 import { useUser } from "@/lib/userContext";
 import type { ApplierJobSession, Client, ClientDocument, Job } from "@shared/schema";
@@ -69,14 +69,14 @@ export default function QueuePage() {
       .catch(console.error);
   }, [assignedClient]);
 
-  // Fetch jobs for assigned clients
+  // Fetch queue jobs for assigned clients (excludes already-applied jobs)
   useEffect(() => {
-    if (!assignedClient) return;
+    if (!assignedClient || !currentUser) return;
     
-    fetchJobs({ client_id: assignedClient.id })
+    fetchQueueJobs(assignedClient.id, currentUser.id)
       .then(setJobs)
       .catch(console.error);
-  }, [assignedClient]);
+  }, [assignedClient, currentUser]);
 
   // Get download URLs for resume and cover letter
   const getDocumentUrl = (type: "resume_improved" | "cover_letter_A") => {
@@ -183,30 +183,25 @@ export default function QueuePage() {
     try {
       const result = await markSessionApplied(state.session.id);
       
-      setJobStates(prev => ({
-        ...prev,
-        [job.id]: {
-          ...prev[job.id],
-          session: result.session,
-          isTimerRunning: false,
-          isLoading: false
-        }
-      }));
+      // Remove job from queue after successful application
+      setJobs(prev => prev.filter(j => j.id !== job.id));
+      
+      setJobStates(prev => {
+        const { [job.id]: removed, ...rest } = prev;
+        return rest;
+      });
       
       toast.success(`Application recorded! Time: ${formatTime(state.timerSeconds)}`);
     } catch (error) {
       console.error("Error marking as applied:", error);
       
-      // Fallback: stop timer locally
-      setJobStates(prev => ({
-        ...prev,
-        [job.id]: {
-          ...prev[job.id],
-          session: { ...prev[job.id].session!, status: 'applied' },
-          isTimerRunning: false,
-          isLoading: false
-        }
-      }));
+      // Fallback: still remove from queue since we attempted to apply
+      setJobs(prev => prev.filter(j => j.id !== job.id));
+      
+      setJobStates(prev => {
+        const { [job.id]: removed, ...rest } = prev;
+        return rest;
+      });
       
       toast.success(`Application recorded locally! Time: ${formatTime(state.timerSeconds)}`);
     }

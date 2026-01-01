@@ -22,6 +22,7 @@ export interface IStorage {
   // Job operations
   getJobs(): Promise<Job[]>;
   getJobsByClient(clientId: string): Promise<Job[]>;
+  getQueueJobs(clientId: string, applierId: string): Promise<Job[]>;
   
   // Applier operations
   getAppliers(): Promise<Applier[]>;
@@ -235,6 +236,31 @@ export class SupabaseStorage implements IStorage {
     
     if (error) throw error;
     return data || [];
+  }
+
+  async getQueueJobs(clientId: string, applierId: string): Promise<Job[]> {
+    // Get all jobs for the client
+    const { data: jobs, error: jobsError } = await supabase
+      .from('jobs')
+      .select('*')
+      .eq('client_id', clientId);
+    
+    if (jobsError) throw jobsError;
+    if (!jobs || jobs.length === 0) return [];
+    
+    // Get all applications by this applier
+    const { data: applications, error: appsError } = await supabase
+      .from('applications')
+      .select('job_id')
+      .eq('applier_id', applierId);
+    
+    if (appsError) throw appsError;
+    
+    // Get job IDs that have been applied to
+    const appliedJobIds = new Set((applications || []).map(a => a.job_id));
+    
+    // Filter out jobs that have already been applied to
+    return jobs.filter(job => !appliedJobIds.has(job.id));
   }
 
   // Applier operations

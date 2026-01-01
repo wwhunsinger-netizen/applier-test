@@ -69,11 +69,14 @@ export async function registerRoutes(
           
           // Get the appliers who worked on this client's applications
           const applications = await storage.getApplicationsByClient(req.params.id);
-          let uniqueAppliers = [...new Set(applications.map(a => a.applier_id).filter(Boolean))];
+          const applierIds = applications.map(a => a.applier_id).filter(Boolean) as string[];
+          const uniqueApplierSet = new Set(applierIds);
+          let uniqueAppliers = Array.from(uniqueApplierSet);
           
           // Fallback: if no applications exist, check if client has an assigned applier
-          if (uniqueAppliers.length === 0 && client.applier_id) {
-            uniqueAppliers = [client.applier_id];
+          const clientWithApplier = client as any;
+          if (uniqueAppliers.length === 0 && clientWithApplier.applier_id) {
+            uniqueAppliers = [clientWithApplier.applier_id];
           }
           
           // Check for existing placement bonuses to prevent duplicates
@@ -206,6 +209,23 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error fetching jobs:", error);
       res.status(500).json({ error: "Failed to fetch jobs" });
+    }
+  });
+
+  // Get queue jobs (excludes already-applied jobs for the applier)
+  app.get("/api/queue-jobs", async (req, res) => {
+    try {
+      const { client_id, applier_id } = req.query;
+      
+      if (!client_id || !applier_id) {
+        return res.status(400).json({ error: "client_id and applier_id are required" });
+      }
+      
+      const jobs = await storage.getQueueJobs(client_id as string, applier_id as string);
+      res.json(jobs);
+    } catch (error) {
+      console.error("Error fetching queue jobs:", error);
+      res.status(500).json({ error: "Failed to fetch queue jobs" });
     }
   });
 
