@@ -1,4 +1,4 @@
-import type { Client, Application, Interview, Job, Applier, InsertClient, UpdateClient, InsertApplier, UpdateApplier, InsertApplication, InsertInterview, ClientDocument, InsertClientDocument, JobCriteriaSample, InsertJobCriteriaSample, UpdateJobCriteriaSample, ClientJobResponse, InsertClientJobResponse, ApplierJobSession, InsertApplierJobSession, UpdateApplierJobSession, FlaggedApplication, InsertFlaggedApplication, UpdateFlaggedApplication } from "@shared/schema";
+import type { Client, Application, Interview, Job, Applier, InsertClient, UpdateClient, InsertApplier, UpdateApplier, InsertApplication, InsertInterview, ClientDocument, InsertClientDocument, JobCriteriaSample, InsertJobCriteriaSample, UpdateJobCriteriaSample, ClientJobResponse, InsertClientJobResponse, ApplierJobSession, InsertApplierJobSession, UpdateApplierJobSession, FlaggedApplication, InsertFlaggedApplication, UpdateFlaggedApplication, ApplierEarning, InsertApplierEarning, UpdateApplierEarning } from "@shared/schema";
 import { supabase } from "./supabase";
 
 export interface IStorage {
@@ -57,6 +57,14 @@ export interface IStorage {
   getFlaggedApplicationsByStatus(status: "open" | "resolved"): Promise<FlaggedApplication[]>;
   createFlaggedApplication(flagged: InsertFlaggedApplication): Promise<FlaggedApplication>;
   updateFlaggedApplication(id: string, updates: UpdateFlaggedApplication): Promise<FlaggedApplication | null>;
+  
+  // Applier earnings operations
+  getApplierEarnings(applierId: string): Promise<ApplierEarning[]>;
+  getApplierEarningsByDateRange(applierId: string, startDate: string, endDate: string): Promise<ApplierEarning[]>;
+  createApplierEarning(earning: InsertApplierEarning): Promise<ApplierEarning>;
+  updateApplierEarning(id: string, updates: UpdateApplierEarning): Promise<ApplierEarning | null>;
+  getEarningsByClient(clientId: string): Promise<ApplierEarning[]>;
+  getAllEarnings(): Promise<ApplierEarning[]>;
 }
 
 export class SupabaseStorage implements IStorage {
@@ -526,6 +534,83 @@ export class SupabaseStorage implements IStorage {
       throw error;
     }
     return data;
+  }
+
+  // Applier earnings operations
+  async getApplierEarnings(applierId: string): Promise<ApplierEarning[]> {
+    const { data, error } = await supabase
+      .from('applier_earnings')
+      .select('*')
+      .eq('applier_id', applierId)
+      .order('earned_date', { ascending: false });
+    
+    if (error) throw error;
+    return data || [];
+  }
+
+  async getApplierEarningsByDateRange(applierId: string, startDate: string, endDate: string): Promise<ApplierEarning[]> {
+    const { data, error } = await supabase
+      .from('applier_earnings')
+      .select('*')
+      .eq('applier_id', applierId)
+      .gte('earned_date', startDate)
+      .lte('earned_date', endDate)
+      .order('earned_date', { ascending: false });
+    
+    if (error) throw error;
+    return data || [];
+  }
+
+  async createApplierEarning(earning: InsertApplierEarning): Promise<ApplierEarning> {
+    const earningData = {
+      ...earning,
+      earned_date: earning.earned_date || new Date().toISOString().split('T')[0],
+    };
+    
+    const { data, error } = await supabase
+      .from('applier_earnings')
+      .insert(earningData)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  }
+
+  async updateApplierEarning(id: string, updates: UpdateApplierEarning): Promise<ApplierEarning | null> {
+    const { data, error } = await supabase
+      .from('applier_earnings')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) {
+      if (error.code === 'PGRST116') return null;
+      throw error;
+    }
+    return data;
+  }
+
+  async getEarningsByClient(clientId: string): Promise<ApplierEarning[]> {
+    const { data, error } = await supabase
+      .from('applier_earnings')
+      .select('*')
+      .eq('client_id', clientId)
+      .order('earned_date', { ascending: false });
+    
+    if (error) throw error;
+    return data || [];
+  }
+
+  async getAllEarnings(): Promise<ApplierEarning[]> {
+    const { data, error } = await supabase
+      .from('applier_earnings')
+      .select('*')
+      .order('earned_date', { ascending: false });
+    
+    if (error) throw error;
+    return data || [];
   }
 }
 
