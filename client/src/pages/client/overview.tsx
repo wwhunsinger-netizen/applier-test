@@ -108,32 +108,6 @@ export default function ClientOverviewPage() {
     return upcoming[0] || null;
   }, [interviews]);
 
-  const recentActivity = useMemo(() => {
-    const activities: { id: string; title: string; time: string; type: string }[] = [];
-    
-    const sortedApps = [...applications].sort((a, b) => 
-      new Date(b.created_at || '').getTime() - new Date(a.created_at || '').getTime()
-    ).slice(0, 5);
-
-    sortedApps.forEach(app => {
-      const timeStr = app.applied_date || app.created_at 
-        ? format(new Date(app.applied_date || app.created_at!), "MMM d, h:mm a")
-        : 'Recently';
-      
-      if (app.status?.toLowerCase() === 'rejected') {
-        activities.push({ id: app.id, title: `Rejected from ${app.company_name}`, time: timeStr, type: 'rejection' });
-      } else if (app.status?.toLowerCase() === 'interview') {
-        activities.push({ id: app.id, title: `Interview scheduled at ${app.company_name}`, time: timeStr, type: 'interview' });
-      } else if (app.status?.toLowerCase() === 'offer') {
-        activities.push({ id: app.id, title: `Offer received from ${app.company_name}!`, time: timeStr, type: 'offer' });
-      } else {
-        activities.push({ id: app.id, title: `Applied to ${app.job_title} at ${app.company_name}`, time: timeStr, type: 'applied' });
-      }
-    });
-
-    return activities;
-  }, [applications]);
-
   const isLoading = isClientLoading || isAppsLoading || isInterviewsLoading;
 
   if (isRealClientId && isLoading) {
@@ -337,44 +311,7 @@ export default function ClientOverviewPage() {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card className="bg-[#111] border-white/10">
-          <CardHeader>
-            <CardTitle className="text-lg">Recent Activity</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {recentActivity.length > 0 ? (
-              <div className="space-y-6">
-                {recentActivity.map((activity) => (
-                  <div key={activity.id} className="relative pl-6 border-l border-white/10 last:border-0">
-                    <div className={cn(
-                      "absolute left-[-5px] top-1.5 w-2.5 h-2.5 rounded-full ring-4 ring-[#111]",
-                      activity.type === 'applied' ? "bg-primary" :
-                      activity.type === 'interview' ? "bg-purple-500" :
-                      activity.type === 'rejection' ? "bg-red-500" : 
-                      activity.type === 'offer' ? "bg-green-500" : "bg-blue-400"
-                    )} />
-                    <p className="text-sm font-medium text-white">{activity.title}</p>
-                    <p className="text-xs text-muted-foreground mt-1">{activity.time}</p>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-6 text-muted-foreground">
-                <p>No activity yet</p>
-                <p className="text-sm mt-1">Activity will appear here as applications are sent</p>
-              </div>
-            )}
-            {recentActivity.length > 0 && (
-              <Link href="/client/applications">
-                <Button variant="link" className="w-full text-muted-foreground hover:text-white mt-4 h-auto p-0 text-sm">
-                  View All Activity →
-                </Button>
-              </Link>
-            )}
-          </CardContent>
-        </Card>
-
+      <div className="grid grid-cols-1 gap-6">
         <Card className="bg-[#111] border-white/10">
           <CardHeader>
             <CardTitle className="text-lg">Your Pipeline</CardTitle>
