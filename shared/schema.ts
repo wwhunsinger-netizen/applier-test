@@ -97,6 +97,14 @@ export interface Application {
   qa_status: "None" | "Approved" | "Rejected";
   applied_date?: string;
   flagged_issue?: string;
+  // Job snapshot fields
+  job_title?: string;
+  company_name?: string;
+  job_url?: string;
+  board_source?: string;
+  job_description?: string;
+  posted_date?: string;
+  created_at?: string;
 }
 
 export interface Interview {
@@ -210,6 +218,13 @@ export const insertApplicationSchema = z.object({
   qa_status: z.enum(["None", "Approved", "Rejected"]).default("None"),
   applied_date: z.string().optional(),
   flagged_issue: z.string().optional(),
+  // Job snapshot fields
+  job_title: z.string(),
+  company_name: z.string(),
+  job_url: z.string().optional(),
+  board_source: z.string().optional(),
+  job_description: z.string().optional(),
+  posted_date: z.string().optional(),
 });
 
 export const insertInterviewSchema = z.object({

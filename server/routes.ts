@@ -509,6 +509,9 @@ export async function registerRoutes(
         return res.status(400).json({ error: "Job has no associated client" });
       }
       
+      // Get job details from session for the application snapshot
+      const job = session.job as any;
+      
       const application = await storage.createApplication({
         job_id: session.job_id,
         applier_id: session.applier_id,
@@ -516,6 +519,13 @@ export async function registerRoutes(
         status: "Applied",
         qa_status: "None",
         applied_date: completedAt.toISOString(),
+        // Job snapshot fields
+        job_title: job?.job_title || job?.title || "Unknown Position",
+        company_name: job?.company_name || job?.company || "Unknown Company",
+        job_url: job?.job_url || job?.url,
+        board_source: job?.board_source || "Indeed",
+        job_description: job?.job_description || job?.description,
+        posted_date: job?.posted_date,
       });
       
       res.json({ session: updatedSession, application });

@@ -2,16 +2,15 @@ import { useState, useEffect } from "react";
 import { formatDistanceToNow } from "date-fns";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Building, Clock, CheckCircle, ExternalLink, Timer, Briefcase } from "lucide-react";
+import { Building, Clock, CheckCircle, ExternalLink, Briefcase } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { fetchApplications, fetchJobs } from "@/lib/api";
+import { fetchApplications } from "@/lib/api";
 import { useUser } from "@/lib/userContext";
-import type { Application, Job } from "@shared/schema";
+import type { Application } from "@shared/schema";
 
 export default function AppliedPage() {
   const { currentUser } = useUser();
   const [applications, setApplications] = useState<Application[]>([]);
-  const [jobs, setJobs] = useState<Record<string, Job>>({});
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -20,16 +19,8 @@ export default function AppliedPage() {
     setIsLoading(true);
     
     fetchApplications({ applier_id: currentUser.id })
-      .then(async (apps) => {
+      .then((apps) => {
         setApplications(apps);
-        
-        // Fetch job details for all applications
-        const allJobs = await fetchJobs();
-        const jobMap: Record<string, Job> = {};
-        allJobs.forEach(job => {
-          jobMap[job.id] = job;
-        });
-        setJobs(jobMap);
       })
       .catch(console.error)
       .finally(() => setIsLoading(false));
@@ -75,10 +66,9 @@ export default function AppliedPage() {
 
       <div className="space-y-4">
         {applications.map((app) => {
-          const job = jobs[app.job_id];
-          const jobTitle = (job as any)?.job_title || job?.role || 'Unknown Position';
-          const companyName = (job as any)?.company_name || job?.company || 'Unknown Company';
-          const jobUrl = (job as any)?.job_url;
+          const jobTitle = app.job_title || 'Unknown Position';
+          const companyName = app.company_name || 'Unknown Company';
+          const jobUrl = app.job_url;
 
           return (
             <Card 
