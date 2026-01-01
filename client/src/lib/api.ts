@@ -353,3 +353,36 @@ export async function fetchClientCosts(): Promise<ClientCost[]> {
   if (!res.ok) throw new Error("Failed to fetch client costs");
   return res.json();
 }
+
+// Admin Overview API
+export interface ApplierPerformance {
+  id: string;
+  name: string;
+  email: string;
+  status: "Active" | "Idle" | "Inactive" | "Offline";
+  lastActive: string;
+  dailyApps: number;
+  dailyGoal: number;
+  weeklyApps: number;
+  weeklyGoal: number;
+  qaScore: number;
+  interviewRate: number;
+  totalApps: number;
+}
+
+export interface AdminOverview {
+  summary: {
+    totalDailyApps: number;
+    totalWeeklyApps: number;
+    activeReviewers: number;
+    totalAppliers: number;
+    avgQaScore: number;
+  };
+  appliers: ApplierPerformance[];
+}
+
+export async function fetchAdminOverview(): Promise<AdminOverview> {
+  const res = await fetch(`${API_BASE}/admin/overview`);
+  if (!res.ok) throw new Error("Failed to fetch admin overview");
+  return res.json();
+}

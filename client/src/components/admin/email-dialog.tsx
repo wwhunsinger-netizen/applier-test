@@ -5,14 +5,21 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { UserPerformance } from "@/lib/adminData";
 import { Send, FileText } from "lucide-react";
 import { useUser } from "@/lib/userContext";
+
+interface EmailRecipient {
+  name: string;
+  email: string;
+  dailyApps: number;
+  dailyGoal: number;
+  qaScore: number;
+}
 
 interface EmailDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  recipient: UserPerformance | null;
+  recipient: EmailRecipient | null;
 }
 
 export function EmailDialog({ isOpen, onClose, recipient }: EmailDialogProps) {

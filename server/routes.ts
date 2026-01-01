@@ -1025,6 +1025,110 @@ export async function registerRoutes(
     }
   });
 
+  // Admin overview stats - real applier performance data
+  app.get("/api/admin/overview", async (req, res) => {
+    try {
+      const appliers = await storage.getAppliers();
+      const allApplications = await storage.getApplications();
+      
+      // Get date boundaries
+      const now = new Date();
+      const today = now.toISOString().split('T')[0];
+      const dayOfWeek = now.getDay();
+      const startOfWeek = new Date(now);
+      startOfWeek.setDate(now.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1)); // Monday
+      startOfWeek.setHours(0, 0, 0, 0);
+      const weekStartDate = startOfWeek.toISOString().split('T')[0];
+      
+      const DAILY_GOAL = 100;
+      const WEEKLY_GOAL = 500;
+      
+      // Calculate per-applier stats
+      const applierStats = await Promise.all(appliers.map(async (applier) => {
+        const applierApps = allApplications.filter(a => a.applier_id === applier.id);
+        
+        // Today's apps
+        const todayApps = applierApps.filter(a => {
+          const appDate = new Date(a.applied_date || a.created_at || '').toISOString().split('T')[0];
+          return appDate === today;
+        });
+        
+        // This week's apps
+        const weekApps = applierApps.filter(a => {
+          const appDate = new Date(a.applied_date || a.created_at || '');
+          return appDate >= startOfWeek;
+        });
+        
+        // Calculate QA Score (100% - rejection rate)
+        const qaRejected = applierApps.filter(a => a.qa_status === 'Rejected').length;
+        const qaScore = applierApps.length > 0 
+          ? Math.round(((applierApps.length - qaRejected) / applierApps.length) * 100) 
+          : 100;
+        
+        // Calculate interview rate
+        const interviewApps = applierApps.filter(a => 
+          a.status?.toLowerCase() === 'interview'
+        ).length;
+        const interviewRate = applierApps.length > 0 
+          ? Math.round((interviewApps / applierApps.length) * 1000) / 10 
+          : 0;
+        
+        // Calculate last activity time
+        let lastActive = "Never";
+        if (applier.last_activity_at) {
+          const lastActivity = new Date(applier.last_activity_at);
+          const diffMs = now.getTime() - lastActivity.getTime();
+          const diffMins = Math.floor(diffMs / 60000);
+          
+          if (diffMins < 1) lastActive = "Now";
+          else if (diffMins < 60) lastActive = `${diffMins}m ago`;
+          else if (diffMins < 1440) lastActive = `${Math.floor(diffMins / 60)}h ago`;
+          else lastActive = `${Math.floor(diffMins / 1440)}d ago`;
+        }
+        
+        return {
+          id: applier.id,
+          name: `${applier.first_name} ${applier.last_name}`,
+          email: applier.email,
+          status: applier.status === 'active' ? 'Active' 
+            : applier.status === 'idle' ? 'Idle' 
+            : applier.status === 'inactive' ? 'Inactive' 
+            : 'Offline',
+          lastActive,
+          dailyApps: todayApps.length,
+          dailyGoal: DAILY_GOAL,
+          weeklyApps: weekApps.length,
+          weeklyGoal: WEEKLY_GOAL,
+          qaScore,
+          interviewRate,
+          totalApps: applierApps.length,
+        };
+      }));
+      
+      // Calculate aggregate stats
+      const totalDailyApps = applierStats.reduce((sum, a) => sum + a.dailyApps, 0);
+      const totalWeeklyApps = applierStats.reduce((sum, a) => sum + a.weeklyApps, 0);
+      const activeReviewers = applierStats.filter(a => a.status === 'Active').length;
+      const avgQaScore = applierStats.length > 0 
+        ? Math.round(applierStats.reduce((sum, a) => sum + a.qaScore, 0) / applierStats.length)
+        : 0;
+      
+      res.json({
+        summary: {
+          totalDailyApps,
+          totalWeeklyApps,
+          activeReviewers,
+          totalAppliers: appliers.length,
+          avgQaScore,
+        },
+        appliers: applierStats,
+      });
+    } catch (error) {
+      console.error("Error fetching admin overview:", error);
+      res.status(500).json({ error: "Failed to fetch admin overview" });
+    }
+  });
+
   // Get earnings summary per client (for admin cost tracking)
   app.get("/api/admin/client-costs", async (req, res) => {
     try {
