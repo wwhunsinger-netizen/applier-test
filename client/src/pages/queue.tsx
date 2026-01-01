@@ -4,10 +4,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Building, Clock, ArrowRight, Flag, CheckCircle, Timer } from "lucide-react";
-import { startReviewSession, markSessionApplied, flagSession } from "@/lib/api";
+import { Building, Clock, ArrowRight, Flag, CheckCircle, Timer, Download, FileText, Bot } from "lucide-react";
+import { startReviewSession, markSessionApplied, flagSession, fetchClients } from "@/lib/api";
 import { toast } from "sonner";
-import type { ApplierJobSession } from "@shared/schema";
+import type { ApplierJobSession, Client } from "@shared/schema";
 
 interface JobCardState {
   session?: ApplierJobSession;
@@ -29,6 +29,20 @@ export default function QueuePage() {
   const [flaggingJobId, setFlaggingJobId] = useState<string | null>(null);
   const [flagComment, setFlagComment] = useState("");
   const [isFlagging, setIsFlagging] = useState(false);
+  const [assignedClient, setAssignedClient] = useState<Client | null>(null);
+
+  // Fetch assigned client data
+  useEffect(() => {
+    fetchClients()
+      .then((clients) => {
+        // For now, use the first client as the assigned client
+        // TODO: Get actual assigned client based on applier's assigned_client_ids
+        if (clients.length > 0) {
+          setAssignedClient(clients[0]);
+        }
+      })
+      .catch(console.error);
+  }, []);
 
   // Timer effect - runs every second for jobs with active timers
   useEffect(() => {
@@ -217,29 +231,61 @@ export default function QueuePage() {
       </div>
 
       {/* Client Context */}
-      <div className="bg-muted/40 border border-border rounded-lg p-4 flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">JS</div>
-          <div>
-            <div className="text-sm font-medium">John Smith</div>
-            <div className="text-xs text-muted-foreground">Target: Remote Software Engineer • Day 47/90</div>
+      {assignedClient && (
+        <div className="bg-muted/40 border border-border rounded-lg p-4 flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">
+              {assignedClient.first_name?.[0]}{assignedClient.last_name?.[0]}
+            </div>
+            <div>
+              <div className="text-sm font-medium" data-testid="text-client-name">
+                {assignedClient.first_name} {assignedClient.last_name}
+              </div>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                if (assignedClient.resume_url) {
+                  window.open(assignedClient.resume_url, '_blank');
+                } else {
+                  toast.error("No resume uploaded for this client");
+                }
+              }}
+              data-testid="button-download-resume"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Resume
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                if (assignedClient.cover_letter_url) {
+                  window.open(assignedClient.cover_letter_url, '_blank');
+                } else {
+                  toast.error("No cover letter uploaded for this client");
+                }
+              }}
+              data-testid="button-download-cover-letter"
+            >
+              <FileText className="w-4 h-4 mr-2" />
+              Cover Letter
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled
+              data-testid="button-client-gpt"
+            >
+              <Bot className="w-4 h-4 mr-2" />
+              ClientGPT
+            </Button>
           </div>
         </div>
-        <div className="flex gap-6 text-sm">
-          <div>
-            <span className="text-muted-foreground block text-xs">Progress</span>
-            <span className="font-mono font-medium">2,847/5k</span>
-          </div>
-          <div>
-            <span className="text-muted-foreground block text-xs">Interviews</span>
-            <span className="font-mono font-medium text-success">18</span>
-          </div>
-          <div>
-            <span className="text-muted-foreground block text-xs">Pending</span>
-            <span className="font-mono font-medium text-warning">2</span>
-          </div>
-        </div>
-      </div>
+      )}
 
       {/* Job List */}
       <div className="space-y-4">
