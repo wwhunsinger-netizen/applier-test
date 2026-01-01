@@ -160,11 +160,15 @@ export async function registerRoutes(
 
   app.post("/api/appliers", async (req, res) => {
     try {
+      console.log("Creating applier with data:", JSON.stringify(req.body, null, 2));
       const validatedData = insertApplierSchema.parse(req.body);
+      console.log("Validated data:", JSON.stringify(validatedData, null, 2));
       const applier = await storage.createApplier(validatedData);
+      console.log("Created applier:", JSON.stringify(applier, null, 2));
       res.status(201).json(applier);
-    } catch (error) {
-      console.error("Error creating applier:", error);
+    } catch (error: any) {
+      console.error("Error creating applier:", error.message || error);
+      console.error("Full error:", JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
       res.status(400).json({ error: "Failed to create applier" });
     }
   });
