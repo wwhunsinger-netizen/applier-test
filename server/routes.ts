@@ -246,8 +246,9 @@ export async function registerRoutes(
       }
       
       // Redirect to the object storage URL
-      // The object_path should be the full path in object storage
-      const objectStorageUrl = `https://storage.googleapis.com/${process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID}/${doc.object_path}`;
+      // Remove leading slash from object_path if present
+      const objectPath = doc.object_path.startsWith('/') ? doc.object_path.slice(1) : doc.object_path;
+      const objectStorageUrl = `https://storage.googleapis.com/${process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID}/${objectPath}`;
       res.redirect(objectStorageUrl);
     } catch (error) {
       console.error("Error downloading client document:", error);
