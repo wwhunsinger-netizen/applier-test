@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import noCoverLetterImg from "@assets/No_cover_letter_1766359371139.png";
 import { useUser } from "@/lib/userContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { fetchClient, updateClient, fetchClientDocuments } from "@/lib/api";
+import { fetchClient, updateClient, fetchClientDocuments, fetchApplications } from "@/lib/api";
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   'pdfjs-dist/build/pdf.worker.min.mjs',
@@ -114,6 +114,16 @@ export default function ClientDocumentsPage() {
     queryFn: () => fetchClientDocuments(currentUser.id),
     enabled: isRealClientId,
   });
+  
+  // Fetch applications to determine if client is in active applying phase
+  const { data: applications = [] } = useQuery({
+    queryKey: ['applications', 'client', currentUser.id],
+    queryFn: () => fetchApplications({ client_id: currentUser.id }),
+    enabled: isRealClientId,
+  });
+  
+  // If applications exist, show only enhanced versions (skip before/after comparison)
+  const hasApplications = applications.length > 0;
 
   // Sync clientDocuments to uploadedFiles for UI display
   useEffect(() => {
@@ -670,7 +680,31 @@ export default function ClientDocumentsPage() {
                {/* Document Viewer Area */}
                <div className="flex-1 relative h-full min-h-0">
                   <AnimatePresence mode="wait">
-                    {!isFlipped ? (
+                    {/* When applications exist, always show enhanced version directly */}
+                    {hasApplications ? (
+                      <motion.div 
+                        key="enhanced-only"
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className={cn("absolute inset-0 bg-[#111] text-white shadow-2xl rounded-lg overflow-hidden flex flex-col")}
+                      >
+                         <div className="bg-[#111] border-b border-white/10 p-4 flex justify-between items-center shrink-0">
+                           <div className="flex items-center gap-4">
+                             <div className={cn("text-white px-4 py-1 rounded font-bold uppercase tracking-wider text-sm flex items-center gap-2", config.bg)}>
+                               <Sparkles className="w-4 h-4" />
+                               Your {config.label}
+                             </div>
+                           </div>
+                           <div className="flex items-center gap-2">
+                              {isApproved && <Badge className="bg-green-500 gap-1"><CheckCircle2 className="w-3 h-3" /> Approved</Badge>}
+                           </div>
+                         </div>
+                         
+                         <div className="flex-1 overflow-y-auto p-8 bg-[#111] relative scroll-smooth">
+                           {renderImprovedDocument()}
+                         </div>
+                      </motion.div>
+                    ) : !isFlipped ? (
                       <motion.div 
                         key="old-doc"
                         initial={{ opacity: 0, scale: 0.95 }}
@@ -761,7 +795,20 @@ export default function ClientDocumentsPage() {
                <div className="w-80 flex flex-col gap-4 h-full min-h-0 relative">
                  <Card className="bg-[#111] border-white/10 flex-1 h-full relative overflow-hidden">
                    <CardContent className="p-6 h-full flex flex-col justify-center items-center text-center space-y-6">
-                      {!isFlipped ? (
+                      {/* Simplified sidebar when applications exist */}
+                      {hasApplications ? (
+                        <>
+                          <div className="p-4 bg-green-500/10 rounded-full text-green-500 mb-2">
+                            <CheckCircle2 className="w-8 h-8" />
+                          </div>
+                          <div>
+                            <h3 className="text-xl font-bold text-white">Active Documents</h3>
+                            <p className="text-sm text-muted-foreground mt-2">
+                              These are the documents being used for your job applications.
+                            </p>
+                          </div>
+                        </>
+                      ) : !isFlipped ? (
                         !hasImprovedDocument ? (
                           // Coming Soon state when no improved document uploaded
                           <>
