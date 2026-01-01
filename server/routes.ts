@@ -488,7 +488,7 @@ export async function registerRoutes(
       }
       
       // Calculate projected finish time (remaining apps * avg time)
-      const dailyGoal = 50; // Could come from settings
+      const dailyGoal = 100; // Standard daily goal per applier
       const remaining = Math.max(0, dailyGoal - todayApps.length);
       let projectedFinish = '-';
       if (remaining > 0 && avgSeconds > 0) {

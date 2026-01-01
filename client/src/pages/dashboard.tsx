@@ -15,7 +15,7 @@ import { fetchApplierStats, type ApplierStats } from "@/lib/api";
 
 const EMPTY_STATS: ApplierStats = {
   dailyApps: 0,
-  dailyGoal: 50,
+  dailyGoal: 100,
   timeWorked: "0:00",
   avgTimePerApp: "-",
   projectedFinish: "-",
