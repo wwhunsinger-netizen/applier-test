@@ -528,7 +528,14 @@ export class SupabaseStorage implements IStorage {
   async getFlaggedApplications(): Promise<FlaggedApplication[]> {
     const { data, error } = await supabase
       .from('flagged_applications')
-      .select('*')
+      .select(`
+        *,
+        session:applier_job_sessions(
+          *,
+          job:jobs(*),
+          applier:appliers(*)
+        )
+      `)
       .order('created_at', { ascending: false });
     
     if (error) throw error;
@@ -538,7 +545,14 @@ export class SupabaseStorage implements IStorage {
   async getFlaggedApplicationsByStatus(status: "open" | "resolved"): Promise<FlaggedApplication[]> {
     const { data, error } = await supabase
       .from('flagged_applications')
-      .select('*')
+      .select(`
+        *,
+        session:applier_job_sessions(
+          *,
+          job:jobs(*),
+          applier:appliers(*)
+        )
+      `)
       .eq('status', status)
       .order('created_at', { ascending: false });
     
