@@ -271,7 +271,7 @@ export class SupabaseStorage implements IStorage {
     
     // Get all flagged sessions by this applier
     const { data: flaggedSessions, error: flaggedError } = await supabase
-      .from('applier_sessions')
+      .from('applier_job_sessions')
       .select('job_id')
       .eq('applier_id', applierId)
       .eq('status', 'flagged');
