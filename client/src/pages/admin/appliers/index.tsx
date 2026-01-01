@@ -107,8 +107,9 @@ export default function AdminAppliersPage() {
   const getStatusStyles = (status: string) => {
     switch (status) {
       case 'active': return 'bg-green-500/10 text-green-400 border-green-500/20';
-      case 'inactive': return 'bg-gray-500/10 text-gray-400 border-gray-500/20';
-      case 'training': return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
+      case 'idle': return 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20';
+      case 'offline': return 'bg-gray-500/10 text-gray-400 border-gray-500/20';
+      case 'inactive': return 'bg-red-500/10 text-red-400 border-red-500/20';
       default: return 'bg-gray-500/10 text-gray-400 border-gray-500/20';
     }
   };
@@ -156,12 +157,12 @@ export default function AdminAppliersPage() {
         </Card>
         <Card className="bg-[#111] border-white/10">
           <CardContent className="p-4 flex items-center gap-4">
-            <div className="h-12 w-12 rounded-full bg-blue-500/10 flex items-center justify-center">
-              <Clock className="w-6 h-6 text-blue-400" />
+            <div className="h-12 w-12 rounded-full bg-yellow-500/10 flex items-center justify-center">
+              <Clock className="w-6 h-6 text-yellow-400" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-white">{appliers.filter(a => a.status === 'training').length}</p>
-              <p className="text-sm text-muted-foreground">In Training</p>
+              <p className="text-2xl font-bold text-white">{appliers.filter(a => a.status === 'idle').length}</p>
+              <p className="text-sm text-muted-foreground">Idle</p>
             </div>
           </CardContent>
         </Card>

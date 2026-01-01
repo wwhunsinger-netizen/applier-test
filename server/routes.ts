@@ -4,11 +4,15 @@ import { storage } from "./storage";
 import { insertClientSchema, updateClientSchema, insertApplierSchema, updateApplierSchema, insertApplicationSchema, insertInterviewSchema, insertClientDocumentSchema, insertJobCriteriaSampleSchema, insertClientJobResponseSchema, updateJobCriteriaSampleSchema, insertApplierJobSessionSchema, insertFlaggedApplicationSchema, updateFlaggedApplicationSchema } from "@shared/schema";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
 import { scrapeJobUrl } from "./apify";
+import { presenceService } from "./presence";
 
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+  
+  // Initialize WebSocket presence tracking for appliers
+  presenceService.init(httpServer);
   
   // Client routes
   app.get("/api/clients", async (req, res) => {

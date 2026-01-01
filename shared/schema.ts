@@ -51,7 +51,12 @@ export interface Client {
   document_feedback?: DocumentFeedback;
 }
 
-export type ApplierStatus = "active" | "inactive" | "training";
+// Applier status is automatically tracked via WebSocket presence:
+// - active: Currently online and interacting with the app
+// - idle: Logged in but no activity for 2+ minutes
+// - offline: Not connected (logged out or closed browser)
+// - inactive: Account disabled by admin (cannot log in)
+export type ApplierStatus = "active" | "idle" | "offline" | "inactive";
 
 export interface Applier {
   id: string;
@@ -60,6 +65,7 @@ export interface Applier {
   email: string;
   status: ApplierStatus;
   assigned_client_id?: string | null; // Each applier assigned to one client
+  last_activity_at?: string; // Tracks last activity for idle detection
   created_at?: string;
   updated_at?: string;
 }
@@ -170,11 +176,12 @@ export const updateClientSchema = z.object({
 });
 
 // Applier schemas for Supabase table
+// Status is auto-managed: new appliers start as 'offline', presence system updates to active/idle
 export const insertApplierSchema = z.object({
   first_name: z.string().min(1),
   last_name: z.string().min(1),
   email: z.string().email(),
-  status: z.enum(["active", "inactive", "training"]).default("active"),
+  status: z.enum(["active", "idle", "offline", "inactive"]).default("offline"),
   assigned_client_id: z.string().uuid().nullable().optional(),
 });
 
@@ -182,8 +189,9 @@ export const updateApplierSchema = z.object({
   first_name: z.string().min(1).optional(),
   last_name: z.string().min(1).optional(),
   email: z.string().email().optional(),
-  status: z.enum(["active", "inactive", "training"]).optional(),
+  status: z.enum(["active", "idle", "offline", "inactive"]).optional(),
   assigned_client_id: z.string().uuid().nullable().optional(),
+  last_activity_at: z.string().optional(),
 });
 
 export type InsertApplier = z.infer<typeof insertApplierSchema>;
