@@ -39,6 +39,20 @@ class PresenceService {
   }
 
   private async handleConnection(ws: WebSocket, applierId: string) {
+    // Check if applier exists and is enabled
+    const applier = await storage.getApplier(applierId);
+    if (!applier) {
+      ws.close(4003, "Applier not found");
+      return;
+    }
+    
+    // Don't allow connections from disabled accounts
+    if (!applier.is_active) {
+      console.log(`[presence] Rejected connection from inactive applier ${applierId}`);
+      ws.close(4004, "Account is disabled");
+      return;
+    }
+
     const existingConnection = this.connections.get(applierId);
     if (existingConnection) {
       existingConnection.ws.close(4002, "New connection opened");
@@ -66,8 +80,16 @@ class PresenceService {
           connection.lastActivity = Date.now();
           
           const applier = await storage.getApplier(applierId);
-          if (applier && applier.status === "idle") {
-            await this.updateStatus(applierId, "active");
+          if (applier) {
+            // Always update last_activity_at on any activity
+            await storage.updateApplier(applierId, {
+              last_activity_at: new Date().toISOString()
+            });
+            
+            // Only transition to active if currently idle (not inactive)
+            if (applier.status === "idle") {
+              await this.updateStatus(applierId, "active");
+            }
           }
           
           this.resetIdleTimer(applierId);
