@@ -256,11 +256,21 @@ export class SupabaseStorage implements IStorage {
     
     if (appsError) throw appsError;
     
-    // Get job IDs that have been applied to
-    const appliedJobIds = new Set((applications || []).map(a => a.job_id));
+    // Get all flagged sessions by this applier
+    const { data: flaggedSessions, error: flaggedError } = await supabase
+      .from('applier_sessions')
+      .select('job_id')
+      .eq('applier_id', applierId)
+      .eq('status', 'flagged');
     
-    // Filter out jobs that have already been applied to
-    return jobs.filter(job => !appliedJobIds.has(job.id));
+    if (flaggedError) throw flaggedError;
+    
+    // Get job IDs that have been applied to or flagged
+    const appliedJobIds = new Set((applications || []).map(a => a.job_id));
+    const flaggedJobIds = new Set((flaggedSessions || []).map(s => s.job_id));
+    
+    // Filter out jobs that have already been applied to or flagged
+    return jobs.filter(job => !appliedJobIds.has(job.id) && !flaggedJobIds.has(job.id));
   }
 
   // Applier operations

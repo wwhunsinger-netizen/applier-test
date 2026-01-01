@@ -227,29 +227,26 @@ export default function QueuePage() {
     try {
       const result = await flagSession(state.session.id, flagComment.trim());
       
-      setJobStates(prev => ({
-        ...prev,
-        [flaggingJobId]: {
-          ...prev[flaggingJobId],
-          session: result.session,
-          isTimerRunning: false
-        }
-      }));
+      // Remove job from queue after flagging
+      setJobs(prev => prev.filter(j => j.id !== flaggingJobId));
+      
+      setJobStates(prev => {
+        const { [flaggingJobId]: removed, ...rest } = prev;
+        return rest;
+      });
       
       toast.success("Job flagged for admin review");
       setFlagDialogOpen(false);
     } catch (error) {
       console.error("Error flagging job:", error);
       
-      // Fallback: mark as flagged locally
-      setJobStates(prev => ({
-        ...prev,
-        [flaggingJobId]: {
-          ...prev[flaggingJobId],
-          session: { ...prev[flaggingJobId].session!, status: 'flagged' },
-          isTimerRunning: false
-        }
-      }));
+      // Fallback: still remove from queue since we attempted to flag
+      setJobs(prev => prev.filter(j => j.id !== flaggingJobId));
+      
+      setJobStates(prev => {
+        const { [flaggingJobId]: removed, ...rest } = prev;
+        return rest;
+      });
       
       toast.success("Job flagged locally for review");
       setFlagDialogOpen(false);
