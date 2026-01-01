@@ -2,6 +2,28 @@ import type { Client, Application, Interview, Job, Applier, InsertClient, Update
 
 const API_BASE = "/api";
 
+// Applier Stats type
+export interface ApplierStats {
+  dailyApps: number;
+  dailyGoal: number;
+  timeWorked: string;
+  avgTimePerApp: string;
+  projectedFinish: string;
+  weeklyApps: number;
+  weeklyEarnings: number;
+  interviewRate: number;
+  qaErrorRate: number;
+  jobsWaiting: number;
+  totalApps: number;
+}
+
+// Fetch applier dashboard stats
+export async function fetchApplierStats(applierId: string): Promise<ApplierStats> {
+  const res = await fetch(`${API_BASE}/applier-stats/${applierId}`);
+  if (!res.ok) throw new Error("Failed to fetch applier stats");
+  return res.json();
+}
+
 // Document upload - get presigned URL
 export async function requestUploadUrl(file: { name: string; size: number; type: string }) {
   const res = await fetch(`${API_BASE}/uploads/request-url`, {

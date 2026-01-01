@@ -419,6 +419,118 @@ export async function registerRoutes(
   });
 
   // ========================================
+  // APPLIER STATS ROUTES
+  // ========================================
+  
+  // Get applier dashboard stats
+  app.get("/api/applier-stats/:applierId", async (req, res) => {
+    try {
+      const applierId = req.params.applierId;
+      
+      // Get today's date range (UTC)
+      const now = new Date();
+      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+      const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).toISOString();
+      
+      // Get start of week (Sunday)
+      const dayOfWeek = now.getDay();
+      const startOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayOfWeek).toISOString();
+      
+      // Get all applications for this applier
+      const allApps = await storage.getApplications({ applier_id: applierId });
+      
+      // Filter today's applications
+      const todayApps = allApps.filter(app => {
+        const appDate = new Date(app.applied_at || app.applied_date || app.created_at || '');
+        return appDate >= new Date(startOfDay) && appDate < new Date(endOfDay);
+      });
+      
+      // Filter this week's applications
+      const weekApps = allApps.filter(app => {
+        const appDate = new Date(app.applied_at || app.applied_date || app.created_at || '');
+        return appDate >= new Date(startOfWeek);
+      });
+      
+      // Get today's sessions for time tracking
+      const allSessions = await storage.getApplierSessions(applierId);
+      const todaySessions = allSessions.filter(s => {
+        const sessionDate = new Date(s.started_at || s.created_at || '');
+        return sessionDate >= new Date(startOfDay) && sessionDate < new Date(endOfDay);
+      });
+      
+      // Calculate time worked today (from completed sessions)
+      const completedSessions = todaySessions.filter(s => s.status === 'applied');
+      const totalSeconds = completedSessions.reduce((sum, s) => sum + (s.duration_seconds || 0), 0);
+      const hours = Math.floor(totalSeconds / 3600);
+      const mins = Math.floor((totalSeconds % 3600) / 60);
+      const timeWorked = `${hours}:${mins.toString().padStart(2, '0')}`;
+      
+      // Calculate average time per app
+      const avgSeconds = todayApps.length > 0 ? Math.round(totalSeconds / todayApps.length) : 0;
+      const avgMins = Math.floor(avgSeconds / 60);
+      const avgSecs = avgSeconds % 60;
+      const avgTimePerApp = todayApps.length > 0 ? `${avgMins}:${avgSecs.toString().padStart(2, '0')}` : '-';
+      
+      // Get jobs waiting in queue for this applier's assigned clients
+      const applier = await storage.getApplier(applierId);
+      let jobsWaiting = 0;
+      if (applier?.assigned_client_ids?.length) {
+        const jobs = await storage.getJobs();
+        // Filter jobs for assigned clients that haven't been applied to yet
+        const appliedJobIds = new Set(allApps.map(a => a.job_id));
+        const flaggedSessionIds = new Set(allSessions.filter(s => s.status === 'flagged').map(s => s.job_id));
+        
+        jobsWaiting = jobs.filter(j => 
+          applier.assigned_client_ids?.includes(j.client_id) && 
+          !appliedJobIds.has(j.id) &&
+          !flaggedSessionIds.has(j.id)
+        ).length;
+      }
+      
+      // Calculate projected finish time (remaining apps * avg time)
+      const dailyGoal = 50; // Could come from settings
+      const remaining = Math.max(0, dailyGoal - todayApps.length);
+      let projectedFinish = '-';
+      if (remaining > 0 && avgSeconds > 0) {
+        const remainingSeconds = remaining * avgSeconds;
+        const finishHours = Math.floor(remainingSeconds / 3600);
+        const finishMins = Math.floor((remainingSeconds % 3600) / 60);
+        projectedFinish = finishHours > 0 ? `${finishHours}h ${finishMins}m` : `${finishMins}m`;
+      } else if (remaining === 0) {
+        projectedFinish = 'Done!';
+      }
+      
+      // Calculate interview rate (apps with interviews / total apps)
+      const interviewApps = allApps.filter(a => a.status === 'interview' || a.status === 'Interview');
+      const interviewRate = allApps.length > 0 ? Math.round((interviewApps.length / allApps.length) * 100) : 0;
+      
+      // Calculate QA error rate (apps with qa_status = Rejected / total apps)
+      const qaRejected = allApps.filter(a => a.qa_status === 'Rejected');
+      const qaErrorRate = allApps.length > 0 ? Math.round((qaRejected.length / allApps.length) * 100) : 0;
+      
+      // Weekly earnings: $0.50 per app (can adjust)
+      const weeklyEarnings = weekApps.length * 0.50;
+      
+      res.json({
+        dailyApps: todayApps.length,
+        dailyGoal,
+        timeWorked,
+        avgTimePerApp,
+        projectedFinish,
+        weeklyApps: weekApps.length,
+        weeklyEarnings,
+        interviewRate,
+        qaErrorRate,
+        jobsWaiting,
+        totalApps: allApps.length,
+      });
+    } catch (error) {
+      console.error("Error fetching applier stats:", error);
+      res.status(500).json({ error: "Failed to fetch applier stats" });
+    }
+  });
+
+  // ========================================
   // APPLIER JOB SESSION ROUTES
   // ========================================
   
