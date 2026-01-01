@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Building, Clock, ArrowRight, Flag, CheckCircle, Timer, Download, FileText, Bot } from "lucide-react";
-import { startReviewSession, markSessionApplied, flagSession, fetchClients } from "@/lib/api";
+import { startReviewSession, markSessionApplied, flagSession, fetchClients, fetchApplier } from "@/lib/api";
 import { toast } from "sonner";
+import { useUser } from "@/lib/userContext";
 import type { ApplierJobSession, Client } from "@shared/schema";
 
 interface JobCardState {
@@ -23,26 +24,39 @@ function formatTime(seconds: number): string {
 }
 
 export default function QueuePage() {
+  const { currentUser } = useUser();
   const [filter, setFilter] = useState("all");
   const [jobStates, setJobStates] = useState<Record<string, JobCardState>>({});
   const [flagDialogOpen, setFlagDialogOpen] = useState(false);
   const [flaggingJobId, setFlaggingJobId] = useState<string | null>(null);
   const [flagComment, setFlagComment] = useState("");
   const [isFlagging, setIsFlagging] = useState(false);
-  const [assignedClient, setAssignedClient] = useState<Client | null>(null);
+  const [assignedClients, setAssignedClients] = useState<Client[]>([]);
+  const [selectedClientIndex, setSelectedClientIndex] = useState(0);
 
-  // Fetch assigned client data
+  // Fetch assigned clients based on logged-in applier
   useEffect(() => {
-    fetchClients()
-      .then((clients) => {
-        // For now, use the first client as the assigned client
-        // TODO: Get actual assigned client based on applier's assigned_client_ids
-        if (clients.length > 0) {
-          setAssignedClient(clients[0]);
+    if (!currentUser || currentUser.role !== "Applier") return;
+
+    // Fetch the applier's data to get their assigned_client_ids
+    fetchApplier(currentUser.id)
+      .then((applier) => {
+        const assignedIds = applier.assigned_client_ids || [];
+        if (assignedIds.length === 0) {
+          console.log("No clients assigned to this applier");
+          return;
         }
+
+        // Fetch all clients and filter to only assigned ones
+        return fetchClients().then((allClients) => {
+          const assigned = allClients.filter(c => assignedIds.includes(c.id));
+          setAssignedClients(assigned);
+        });
       })
       .catch(console.error);
-  }, []);
+  }, [currentUser]);
+
+  const assignedClient = assignedClients[selectedClientIndex] || null;
 
   // Timer effect - runs every second for jobs with active timers
   useEffect(() => {
