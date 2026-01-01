@@ -143,6 +143,20 @@ export async function registerRoutes(
     }
   });
 
+  app.patch("/api/applications/:id", async (req, res) => {
+    try {
+      const updates = req.body;
+      const updated = await storage.updateApplication(req.params.id, updates);
+      if (!updated) {
+        return res.status(404).json({ error: "Application not found" });
+      }
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating application:", error);
+      res.status(400).json({ error: "Failed to update application" });
+    }
+  });
+
   // Interview routes
   app.get("/api/interviews", async (req, res) => {
     try {

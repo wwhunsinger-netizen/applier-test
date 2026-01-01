@@ -13,6 +13,7 @@ export interface IStorage {
   getApplicationsByClient(clientId: string): Promise<Application[]>;
   getApplicationsByApplier(applierId: string): Promise<Application[]>;
   createApplication(application: InsertApplication): Promise<Application>;
+  updateApplication(id: string, updates: Partial<Application>): Promise<Application | null>;
   
   // Interview operations
   getInterviews(): Promise<Interview[]>;
@@ -180,6 +181,18 @@ export class SupabaseStorage implements IStorage {
     const { data, error } = await supabase
       .from('applications')
       .insert(application)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  }
+
+  async updateApplication(id: string, updates: Partial<Application>): Promise<Application | null> {
+    const { data, error } = await supabase
+      .from('applications')
+      .update({ ...updates, updated_at: new Date().toISOString() })
+      .eq('id', id)
       .select()
       .single();
     

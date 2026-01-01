@@ -169,6 +169,16 @@ export async function createApplication(application: InsertApplication): Promise
   return res.json();
 }
 
+export async function updateApplication(id: string, updates: Partial<Application>): Promise<Application> {
+  const res = await fetch(`${API_BASE}/applications/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(updates),
+  });
+  if (!res.ok) throw new Error("Failed to update application");
+  return res.json();
+}
+
 // Interview API
 export async function fetchInterviews(params?: { client_id?: string }): Promise<Interview[]> {
   const queryParams = new URLSearchParams();
