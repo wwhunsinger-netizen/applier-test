@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { MOCK_USERS } from "./mockData";
-import { fetchClients } from "./api";
+import { fetchClients, fetchAppliers } from "./api";
 
 type User = {
   id: string;
@@ -20,8 +20,9 @@ interface UserContextType {
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
-// Cache for Supabase clients
+// Cache for Supabase users
 let cachedClients: Array<{id: string; name: string; email: string}> = [];
+let cachedAppliers: Array<{id: string; name: string; email: string; is_active: boolean}> = [];
 
 export function UserProvider({ children }: { children: ReactNode }) {
   // Default to first user (Admin) if no one is logged in
@@ -40,7 +41,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
     return MOCK_USERS.find(u => u.email === savedEmail) || MOCK_USERS[0];
   });
 
-  // Fetch clients from Supabase on mount
+  // Fetch clients and appliers from Supabase on mount
   useEffect(() => {
     fetchClients()
       .then((clients) => {
@@ -48,6 +49,17 @@ export function UserProvider({ children }: { children: ReactNode }) {
           id: c.id,
           name: `${c.first_name} ${c.last_name}`.trim(),
           email: c.email
+        }));
+      })
+      .catch(console.error);
+    
+    fetchAppliers()
+      .then((appliers) => {
+        cachedAppliers = appliers.map(a => ({
+          id: a.id,
+          name: `${a.first_name} ${a.last_name}`.trim(),
+          email: a.email,
+          is_active: a.is_active
         }));
       })
       .catch(console.error);
@@ -60,6 +72,22 @@ export function UserProvider({ children }: { children: ReactNode }) {
       setCurrentUser(mockUser);
       localStorage.setItem("jumpseat_user_email", email);
       localStorage.setItem("jumpseat_user_data", JSON.stringify(mockUser));
+      return;
+    }
+    
+    // Check cached Supabase appliers
+    const foundApplier = cachedAppliers.find(a => a.email === email && a.is_active);
+    if (foundApplier) {
+      const user: User = {
+        id: foundApplier.id,
+        name: foundApplier.name,
+        email: foundApplier.email,
+        role: "Applier",
+        avatar: null
+      };
+      setCurrentUser(user);
+      localStorage.setItem("jumpseat_user_email", email);
+      localStorage.setItem("jumpseat_user_data", JSON.stringify(user));
       return;
     }
     
@@ -80,8 +108,25 @@ export function UserProvider({ children }: { children: ReactNode }) {
     }
     
     // If still not found, try fetching fresh from API
-    fetchClients()
-      .then((clients) => {
+    Promise.all([fetchAppliers(), fetchClients()])
+      .then(([appliers, clients]) => {
+        // Check appliers first
+        const applier = appliers.find(a => a.email === email && a.is_active);
+        if (applier) {
+          const user: User = {
+            id: applier.id,
+            name: `${applier.first_name} ${applier.last_name}`.trim(),
+            email: applier.email,
+            role: "Applier",
+            avatar: null
+          };
+          setCurrentUser(user);
+          localStorage.setItem("jumpseat_user_email", email);
+          localStorage.setItem("jumpseat_user_data", JSON.stringify(user));
+          return;
+        }
+        
+        // Then check clients
         const client = clients.find(c => c.email === email);
         if (client) {
           const user: User = {

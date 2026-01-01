@@ -10,7 +10,7 @@ import LoadingScreen from "@/components/loading";
 import { MOCK_USERS } from "@/lib/mockData";
 import { useUser } from "@/lib/userContext";
 import { cn } from "@/lib/utils";
-import { fetchClients } from "@/lib/api";
+import { fetchClients, fetchAppliers } from "@/lib/api";
 
 export default function LoginPage() {
   const [, setLocation] = useLocation();
@@ -23,9 +23,9 @@ export default function LoginPage() {
   const [demoUsers, setDemoUsers] = useState<Array<{id: string; name: string; email: string; role: string; avatar: string | null}>>(MOCK_USERS);
 
   useEffect(() => {
-    // Fetch clients from Supabase API
-    fetchClients()
-      .then((clients) => {
+    // Fetch clients and appliers from Supabase API
+    Promise.all([fetchClients(), fetchAppliers()])
+      .then(([clients, appliers]) => {
         const clientUsers = clients.map((client) => ({
           id: client.id,
           name: `${client.first_name} ${client.last_name}`.trim(),
@@ -34,10 +34,22 @@ export default function LoginPage() {
           avatar: null as string | null
         }));
         
-        setDemoUsers([...MOCK_USERS, ...clientUsers]);
+        const applierUsers = appliers
+          .filter(a => a.is_active) // Only show active appliers
+          .map((applier) => ({
+            id: applier.id,
+            name: `${applier.first_name} ${applier.last_name}`.trim(),
+            email: applier.email,
+            role: "Applier",
+            avatar: null as string | null
+          }));
+        
+        // Filter out mock appliers that might duplicate real ones
+        const mockNonAppliers = MOCK_USERS.filter(u => u.role !== "Applier");
+        setDemoUsers([...mockNonAppliers, ...applierUsers, ...clientUsers]);
       })
       .catch((e) => {
-        console.error("Failed to load clients for demo login", e);
+        console.error("Failed to load users for demo login", e);
       });
   }, []);
 
