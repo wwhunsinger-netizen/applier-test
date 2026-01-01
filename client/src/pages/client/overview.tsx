@@ -65,7 +65,9 @@ export default function ClientOverviewPage() {
   const coverLetterApproved = clientData?.cover_letter_approved ?? getLocalStorageApproval('cover-letter');
   const jobCriteriaSignoff = clientData?.job_criteria_signoff ?? getLocalStorageApproval('job-criteria');
   
-  const isOnboardingComplete = resumeApproved && coverLetterApproved && jobCriteriaSignoff;
+  // Onboarding is complete if all steps are done OR if applications have already been sent
+  const hasApplications = applications.length > 0;
+  const isOnboardingComplete = hasApplications || (resumeApproved && coverLetterApproved && jobCriteriaSignoff);
   const documentsApproved = resumeApproved && coverLetterApproved;
 
   const stats = useMemo(() => {
@@ -101,8 +103,8 @@ export default function ClientOverviewPage() {
   const nextInterview = useMemo(() => {
     const now = new Date();
     const upcoming = interviews
-      .filter(i => i.interview_date && new Date(i.interview_date) > now)
-      .sort((a, b) => new Date(a.interview_date!).getTime() - new Date(b.interview_date!).getTime());
+      .filter(i => i.date && new Date(i.date) > now)
+      .sort((a, b) => new Date(a.date!).getTime() - new Date(b.date!).getTime());
     return upcoming[0] || null;
   }, [interviews]);
 
@@ -312,12 +314,12 @@ export default function ClientOverviewPage() {
             {nextInterview ? (
               <>
                 <div>
-                  <h3 className="text-lg font-bold text-white">{nextInterview.company_name}</h3>
+                  <h3 className="text-lg font-bold text-white">{nextInterview.company}</h3>
                   <p className="text-base text-primary">{nextInterview.role}</p>
                 </div>
                 <div className="flex items-center gap-2 text-muted-foreground text-sm">
                   <Calendar className="w-3.5 h-3.5" />
-                  <span>{format(new Date(nextInterview.interview_date!), "MMM d 'at' h:mm a")}</span>
+                  <span>{format(new Date(nextInterview.date!), "MMM d 'at' h:mm a")}</span>
                 </div>
                 <Link href="/client/interviews">
                   <Button size="sm" className="w-full mt-1 bg-white/5 hover:bg-white/10 text-white border border-white/10 h-8 text-xs">
