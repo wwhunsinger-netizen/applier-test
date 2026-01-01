@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
-import { MOCK_JOBS } from "@/lib/mockData";
+import type { Job } from "@/lib/mockData";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Building, Clock, ArrowRight, Flag, CheckCircle, Timer, Download, FileText, Bot } from "lucide-react";
+import { Building, Clock, ArrowRight, Flag, CheckCircle, Timer, Download, FileText, Bot, Briefcase } from "lucide-react";
 import { startReviewSession, markSessionApplied, flagSession, fetchClients, fetchApplier, fetchClientDocuments } from "@/lib/api";
 import { toast } from "sonner";
 import { useUser } from "@/lib/userContext";
@@ -34,6 +34,7 @@ export default function QueuePage() {
   const [assignedClients, setAssignedClients] = useState<Client[]>([]);
   const [selectedClientIndex, setSelectedClientIndex] = useState(0);
   const [clientDocuments, setClientDocuments] = useState<ClientDocument[]>([]);
+  const [jobs, setJobs] = useState<Job[]>([]);
 
   // Fetch assigned clients based on logged-in applier
   useEffect(() => {
@@ -105,7 +106,7 @@ export default function QueuePage() {
     return () => clearInterval(interval);
   }, []);
 
-  const handleStartReview = useCallback(async (job: typeof MOCK_JOBS[0]) => {
+  const handleStartReview = useCallback(async (job: Job) => {
     const state = jobStates[job.id];
     const jobUrl = `https://example.com/job/${job.id}`; // Placeholder until real URLs from DB
     
@@ -161,7 +162,7 @@ export default function QueuePage() {
     }
   }, [jobStates]);
 
-  const handleApplied = useCallback(async (job: typeof MOCK_JOBS[0]) => {
+  const handleApplied = useCallback(async (job: Job) => {
     const state = jobStates[job.id];
     if (!state?.session?.id) return;
 
@@ -325,7 +326,17 @@ export default function QueuePage() {
 
       {/* Job List */}
       <div className="space-y-4">
-        {MOCK_JOBS.map((job) => {
+        {jobs.length === 0 ? (
+          <Card className="border-dashed">
+            <CardContent className="p-12 text-center">
+              <div className="text-muted-foreground space-y-2">
+                <Briefcase className="w-12 h-12 mx-auto opacity-30" />
+                <h3 className="text-lg font-medium">No jobs in queue</h3>
+                <p className="text-sm">Jobs will appear here once they are added to the system.</p>
+              </div>
+            </CardContent>
+          </Card>
+        ) : jobs.map((job) => {
           const state = getJobState(job.id);
           const hasStarted = state.session?.status === 'in_progress';
           const isApplied = state.session?.status === 'applied';
@@ -439,9 +450,11 @@ export default function QueuePage() {
           );
         })}
         
-        <Button variant="ghost" className="w-full py-8 text-muted-foreground border border-dashed border-border hover:bg-muted/50" data-testid="button-load-more">
-          Load more jobs...
-        </Button>
+        {jobs.length > 0 && (
+          <Button variant="ghost" className="w-full py-8 text-muted-foreground border border-dashed border-border hover:bg-muted/50" data-testid="button-load-more">
+            Load more jobs...
+          </Button>
+        )}
       </div>
       
       {/* Flag Dialog */}

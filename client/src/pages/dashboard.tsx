@@ -1,5 +1,4 @@
 import { Link } from "wouter";
-import { MOCK_STATS, MOCK_LEADERBOARD } from "@/lib/mockData";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -12,6 +11,18 @@ import { useUser } from "@/lib/userContext";
 import AdminDashboardPage from "./admin/dashboard";
 import ClientOverviewPage from "./client/overview";
 import { useState, useEffect } from "react";
+
+const EMPTY_STATS = {
+  dailyApps: 0,
+  dailyGoal: 50,
+  timeWorked: "0:00",
+  avgTimePerApp: "-",
+  projectedFinish: "-",
+  weeklyEarnings: 0,
+  interviewRate: 0,
+  qaErrorRate: 0,
+  streakDays: 0,
+};
 
 export default function DashboardPage() {
   const { currentUser } = useUser();
@@ -55,7 +66,9 @@ export default function DashboardPage() {
     return <ClientOverviewPage />;
   }
 
-  const percentComplete = (MOCK_STATS.dailyApps / MOCK_STATS.dailyGoal) * 100;
+  const stats = EMPTY_STATS;
+  const percentComplete = stats.dailyGoal > 0 ? (stats.dailyApps / stats.dailyGoal) * 100 : 0;
+  const jobsWaiting = 0;
 
   return (
     <div className="space-y-8">
@@ -87,8 +100,8 @@ export default function DashboardPage() {
                 <div className="space-y-2">
                   <div className="flex justify-between items-end">
                     <div>
-                      <span className="text-4xl font-bold font-heading text-white">{MOCK_STATS.dailyApps}</span>
-                      <span className="text-muted-foreground ml-2">/ {MOCK_STATS.dailyGoal} apps</span>
+                      <span className="text-4xl font-bold font-heading text-white">{stats.dailyApps}</span>
+                      <span className="text-muted-foreground ml-2">/ {stats.dailyGoal} apps</span>
                     </div>
                     <div className="text-sm font-medium text-primary">
                       {Math.round(percentComplete)}% Complete
@@ -96,7 +109,7 @@ export default function DashboardPage() {
                   </div>
                   <Progress value={percentComplete} className="h-4 rounded-full bg-white/5" indicatorClassName="bg-gradient-to-r from-primary to-primary/80" />
                   <p className="text-sm text-muted-foreground pt-1">
-                    🎯 <span className="font-medium text-white">53 more</span> needed for your <span className="text-success font-bold">$25 daily bonus</span>
+                    🎯 <span className="font-medium text-white">{stats.dailyGoal - stats.dailyApps} more</span> needed for your <span className="text-success font-bold">$25 daily bonus</span>
                   </p>
                 </div>
 
@@ -105,19 +118,19 @@ export default function DashboardPage() {
                     <div className="text-xs text-muted-foreground flex items-center gap-1 mb-1">
                       <Clock className="w-3 h-3" /> Time Worked
                     </div>
-                    <div className="font-mono font-bold text-lg text-white">{MOCK_STATS.timeWorked}</div>
+                    <div className="font-mono font-bold text-lg text-white">{stats.timeWorked}</div>
                   </div>
                   <div className="bg-white/5 rounded-lg p-3 border border-white/5">
                     <div className="text-xs text-muted-foreground flex items-center gap-1 mb-1">
                       <TrendingUp className="w-3 h-3" /> Avg/App
                     </div>
-                    <div className="font-mono font-bold text-lg text-white">{MOCK_STATS.avgTimePerApp}</div>
+                    <div className="font-mono font-bold text-lg text-white">{stats.avgTimePerApp}</div>
                   </div>
                   <div className="bg-white/5 rounded-lg p-3 border border-white/5">
                     <div className="text-xs text-muted-foreground flex items-center gap-1 mb-1">
                       <ArrowRight className="w-3 h-3" /> Finish In
                     </div>
-                    <div className="font-mono font-bold text-lg text-white">{MOCK_STATS.projectedFinish}</div>
+                    <div className="font-mono font-bold text-lg text-white">{stats.projectedFinish}</div>
                   </div>
                 </div>
               </CardContent>
@@ -135,9 +148,9 @@ export default function DashboardPage() {
                 </div>
                 
                 <div className="space-y-2">
-                  <h3 className="text-3xl font-bold">53 Jobs Waiting</h3>
+                  <h3 className="text-3xl font-bold">{jobsWaiting} Jobs Waiting</h3>
                   <p className="text-white/90 text-sm max-w-[200px] mx-auto leading-relaxed">
-                    Your queue is ready. Keep the streak alive!
+                    {jobsWaiting > 0 ? "Your queue is ready. Keep the streak alive!" : "No jobs in queue yet."}
                   </p>
                 </div>
                 
@@ -162,19 +175,19 @@ export default function DashboardPage() {
             <CardContent className="space-y-4">
               <div className="flex justify-between items-center py-2 border-b border-white/5">
                 <span className="text-sm text-muted-foreground">Total Apps</span>
-                <span className="font-mono font-bold text-white">487</span>
+                <span className="font-mono font-bold text-white">0</span>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-white/5">
                 <span className="text-sm text-muted-foreground">Interview Rate</span>
-                <Badge variant="outline" className="bg-success/10 text-success border-success/20">{MOCK_STATS.interviewRate}%</Badge>
+                <Badge variant="outline" className="bg-success/10 text-success border-success/20">{stats.interviewRate}%</Badge>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-white/5">
                 <span className="text-sm text-muted-foreground">QA Error Rate</span>
-                <Badge variant="outline" className="bg-success/10 text-success border-success/20">{MOCK_STATS.qaErrorRate}%</Badge>
+                <Badge variant="outline" className="bg-success/10 text-success border-success/20">{stats.qaErrorRate}%</Badge>
               </div>
               <div className="flex justify-between items-center py-2">
                 <span className="text-sm text-muted-foreground">Earnings</span>
-                <span className="font-mono font-bold text-xl text-primary">${MOCK_STATS.weeklyEarnings}</span>
+                <span className="font-mono font-bold text-xl text-primary">${stats.weeklyEarnings}</span>
               </div>
             </CardContent>
           </Card>
