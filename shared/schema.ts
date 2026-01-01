@@ -183,6 +183,7 @@ export const insertApplierSchema = z.object({
   first_name: z.string().min(1),
   last_name: z.string().min(1),
   email: z.string().email(),
+  role: z.string().default("applier"), // Required by Supabase table
   status: z.enum(["active", "idle", "offline", "inactive"]).default("offline"),
   is_active: z.boolean().default(true),
   assigned_client_ids: z.array(z.string().uuid()).optional(),
