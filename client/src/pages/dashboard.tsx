@@ -21,6 +21,8 @@ const EMPTY_STATS: ApplierStats = {
   projectedFinish: "-",
   weeklyApps: 0,
   weeklyEarnings: 0,
+  dailyEarnings: 0,
+  estimatedBasePay: 0,
   interviewRate: 0,
   qaErrorRate: 0,
   jobsWaiting: 0,
@@ -200,28 +202,35 @@ export default function DashboardPage() {
                 <Badge variant="outline" className="bg-success/10 text-success border-success/20">{stats.qaErrorRate}%</Badge>
               </div>
               <div className="flex justify-between items-center py-2">
-                <span className="text-sm text-muted-foreground">Earnings</span>
-                <span className="font-mono font-bold text-xl text-primary">${stats.weeklyEarnings}</span>
+                <span className="text-sm text-muted-foreground">Week Earnings</span>
+                <span className="font-mono font-bold text-xl text-primary">${stats.weeklyEarnings.toFixed(2)}</span>
               </div>
             </CardContent>
           </Card>
         </HoverCardWrapper>
 
-        {/* Streaks - Coming Soon */}
+        {/* Today's Earnings Breakdown */}
         <HoverCardWrapper>
           <Card className="h-full bg-[#111] border-white/10">
             <CardHeader>
-              <CardTitle className="text-base font-semibold flex items-center gap-2 text-white">
-                <Flame className="w-4 h-4 text-orange-500 fill-orange-500" /> 
-                Active Streaks
-              </CardTitle>
+              <CardTitle className="text-base font-semibold text-white">Today's Earnings</CardTitle>
             </CardHeader>
-            <CardContent className="flex flex-col items-center justify-center py-8 text-center">
-              <div className="w-12 h-12 rounded-full bg-orange-500/10 flex items-center justify-center mb-4">
-                <Flame className="w-6 h-6 text-orange-500" />
+            <CardContent className="space-y-4">
+              <div className="flex justify-between items-center py-2 border-b border-white/5">
+                <span className="text-sm text-muted-foreground">Base Pay (Est.)</span>
+                <span className="font-mono font-bold text-white">${stats.estimatedBasePay.toFixed(2)}</span>
               </div>
-              <p className="text-sm font-medium text-white mb-1">Coming Soon</p>
-              <p className="text-xs text-muted-foreground">Track your daily streaks and achievements</p>
+              <div className="flex justify-between items-center py-2 border-b border-white/5">
+                <span className="text-sm text-muted-foreground">Bonuses Earned</span>
+                <span className="font-mono font-bold text-success">${stats.dailyEarnings.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between items-center py-2 bg-white/5 rounded-lg px-3 -mx-3">
+                <span className="text-sm font-medium text-white">Total Today</span>
+                <span className="font-mono font-bold text-xl text-primary">${(stats.estimatedBasePay + stats.dailyEarnings).toFixed(2)}</span>
+              </div>
+              <div className="pt-2 text-xs text-muted-foreground">
+                Base pay: $7/hr | Bonuses: $25 at 100 apps, $50/interview, $400/placement
+              </div>
             </CardContent>
           </Card>
         </HoverCardWrapper>

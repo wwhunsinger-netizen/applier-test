@@ -11,6 +11,8 @@ export interface ApplierStats {
   projectedFinish: string;
   weeklyApps: number;
   weeklyEarnings: number;
+  dailyEarnings: number;
+  estimatedBasePay: number;
   interviewRate: number;
   qaErrorRate: number;
   jobsWaiting: number;

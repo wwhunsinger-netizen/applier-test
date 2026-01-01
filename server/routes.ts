@@ -569,8 +569,19 @@ export async function registerRoutes(
       const qaRejected = allApps.filter(a => a.qa_status === 'Rejected');
       const qaErrorRate = allApps.length > 0 ? Math.round((qaRejected.length / allApps.length) * 100) : 0;
       
-      // Weekly earnings: $0.50 per app (can adjust)
-      const weeklyEarnings = weekApps.length * 0.50;
+      // Get actual earnings from database for this week
+      const weekStartDate = new Date(startOfWeek).toISOString().split('T')[0];
+      const todayDate = now.toISOString().split('T')[0];
+      const weekEarnings = await storage.getApplierEarningsByDateRange(applierId, weekStartDate, todayDate);
+      const weeklyEarningsTotal = weekEarnings.reduce((sum, e) => sum + Number(e.amount), 0);
+      
+      // Get today's earnings
+      const todaysEarnings = weekEarnings.filter(e => e.earned_date === todayDate);
+      const dailyEarnings = todaysEarnings.reduce((sum, e) => sum + Number(e.amount), 0);
+      
+      // Calculate base pay estimate: $7/hr * hours worked today
+      const hoursWorkedDecimal = totalSeconds / 3600;
+      const estimatedBasePay = Math.round(hoursWorkedDecimal * 7 * 100) / 100;
       
       res.json({
         dailyApps: todayApps.length,
@@ -579,7 +590,9 @@ export async function registerRoutes(
         avgTimePerApp,
         projectedFinish,
         weeklyApps: weekApps.length,
-        weeklyEarnings,
+        weeklyEarnings: weeklyEarningsTotal,
+        dailyEarnings,
+        estimatedBasePay,
         interviewRate,
         qaErrorRate,
         jobsWaiting,
