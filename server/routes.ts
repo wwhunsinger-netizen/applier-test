@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertClientSchema, updateClientSchema, insertApplicationSchema, insertInterviewSchema, insertClientDocumentSchema, insertJobCriteriaSampleSchema, insertClientJobResponseSchema, updateJobCriteriaSampleSchema, insertApplierJobSessionSchema, insertFlaggedApplicationSchema, updateFlaggedApplicationSchema } from "@shared/schema";
+import { insertClientSchema, updateClientSchema, insertApplierSchema, updateApplierSchema, insertApplicationSchema, insertInterviewSchema, insertClientDocumentSchema, insertJobCriteriaSampleSchema, insertClientJobResponseSchema, updateJobCriteriaSampleSchema, insertApplierJobSessionSchema, insertFlaggedApplicationSchema, updateFlaggedApplicationSchema } from "@shared/schema";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
 import { scrapeJobUrl } from "./apify";
 
@@ -155,6 +155,40 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error fetching applier:", error);
       res.status(500).json({ error: "Failed to fetch applier" });
+    }
+  });
+
+  app.post("/api/appliers", async (req, res) => {
+    try {
+      const validatedData = insertApplierSchema.parse(req.body);
+      const applier = await storage.createApplier(validatedData);
+      res.status(201).json(applier);
+    } catch (error) {
+      console.error("Error creating applier:", error);
+      res.status(400).json({ error: "Failed to create applier" });
+    }
+  });
+
+  app.patch("/api/appliers/:id", async (req, res) => {
+    try {
+      const validatedData = updateApplierSchema.parse(req.body);
+      
+      // Sanitize empty strings to null to avoid unique constraint violations
+      const sanitizedData = Object.fromEntries(
+        Object.entries(validatedData).map(([key, value]) => [
+          key,
+          value === "" ? null : value
+        ])
+      );
+      
+      const applier = await storage.updateApplier(req.params.id, sanitizedData);
+      if (!applier) {
+        return res.status(404).json({ error: "Applier not found" });
+      }
+      res.json(applier);
+    } catch (error) {
+      console.error("Error updating applier:", error);
+      res.status(400).json({ error: "Failed to update applier" });
     }
   });
 

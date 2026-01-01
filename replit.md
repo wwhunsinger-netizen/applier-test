@@ -91,6 +91,17 @@ The `job_criteria_samples` table stores jobs scraped from URLs for client calibr
 - **Implementation**: `server/apify.ts` contains the scraping logic
 - **Supported URLs**: Indeed job posting URLs (e.g., `https://www.indeed.com/viewjob?jk=...`)
 
+### Supabase appliers Table Schema
+The `appliers` table stores team members who review and apply to jobs:
+- `id` (uuid, primary key, auto-generated)
+- `first_name` (text, required)
+- `last_name` (text, required)
+- `email` (text, required)
+- `status` (text: active | inactive | training, default: active)
+- `assigned_client_id` (uuid, nullable, FK to clients) - Each applier is assigned to one client
+- `created_at` (timestamptz, default now())
+- `updated_at` (timestamptz, auto-updated)
+
 ### Supabase client_job_responses Table Schema
 The `client_job_responses` table stores client yes/no verdicts on sample jobs:
 - `id` (uuid, primary key, auto-generated)

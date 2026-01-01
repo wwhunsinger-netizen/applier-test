@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, Briefcase, Send, Trophy, User, LogOut, ShieldCheck, List, AlertTriangle, Users, FileText, Calendar, ClipboardCheck } from "lucide-react";
+import { LayoutDashboard, Briefcase, Send, Trophy, User, LogOut, ShieldCheck, List, AlertTriangle, Users, FileText, Calendar, ClipboardCheck, UserCheck } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useUser } from "@/lib/userContext";
@@ -25,6 +25,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const adminNavItems = [
     { icon: LayoutDashboard, label: "Dashboard", href: "/" },
     { icon: Users, label: "Clients", href: "/admin/clients" },
+    { icon: UserCheck, label: "Appliers", href: "/admin/appliers" },
     { icon: List, label: "All Applications", href: "/admin/applications" },
     { icon: AlertTriangle, label: "Review Issues", href: "/admin/review" },
     { icon: ShieldCheck, label: "QA Check", href: "/admin/qa" },

@@ -1,4 +1,4 @@
-import type { Client, Application, Interview, Job, Applier, InsertClient, UpdateClient, InsertApplication, InsertInterview, ClientDocument, InsertClientDocument, JobCriteriaSample, InsertJobCriteriaSample, UpdateJobCriteriaSample, ClientJobResponse, InsertClientJobResponse, ApplierJobSession, InsertApplierJobSession, UpdateApplierJobSession, FlaggedApplication, InsertFlaggedApplication, UpdateFlaggedApplication } from "@shared/schema";
+import type { Client, Application, Interview, Job, Applier, InsertClient, UpdateClient, InsertApplier, UpdateApplier, InsertApplication, InsertInterview, ClientDocument, InsertClientDocument, JobCriteriaSample, InsertJobCriteriaSample, UpdateJobCriteriaSample, ClientJobResponse, InsertClientJobResponse, ApplierJobSession, InsertApplierJobSession, UpdateApplierJobSession, FlaggedApplication, InsertFlaggedApplication, UpdateFlaggedApplication } from "@shared/schema";
 import { supabase } from "./supabase";
 
 export interface IStorage {
@@ -26,6 +26,8 @@ export interface IStorage {
   // Applier operations
   getAppliers(): Promise<Applier[]>;
   getApplier(id: string): Promise<Applier | null>;
+  createApplier(applier: InsertApplier): Promise<Applier>;
+  updateApplier(id: string, updates: UpdateApplier): Promise<Applier | null>;
   
   // Client document operations
   getClientDocuments(clientId: string): Promise<ClientDocument[]>;
@@ -242,6 +244,32 @@ export class SupabaseStorage implements IStorage {
       .from('appliers')
       .select('*')
       .eq('id', id)
+      .single();
+    
+    if (error) {
+      if (error.code === 'PGRST116') return null;
+      throw error;
+    }
+    return data;
+  }
+
+  async createApplier(applier: InsertApplier): Promise<Applier> {
+    const { data, error } = await supabase
+      .from('appliers')
+      .insert(applier)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  }
+
+  async updateApplier(id: string, updates: UpdateApplier): Promise<Applier | null> {
+    const { data, error } = await supabase
+      .from('appliers')
+      .update(updates)
+      .eq('id', id)
+      .select()
       .single();
     
     if (error) {

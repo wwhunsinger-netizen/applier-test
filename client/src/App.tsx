@@ -20,6 +20,7 @@ import AdminReviewPage from "@/pages/admin/review";
 import AdminQAPage from "@/pages/admin/qa";
 import AdminClientsPage from "@/pages/admin/clients";
 import AdminClientDetailPage from "@/pages/admin/clients/detail";
+import AdminAppliersPage from "@/pages/admin/appliers";
 import ClientInterviewsPage from "@/pages/client/interviews";
 import ClientDocumentsPage from "@/pages/client/documents";
 import ClientApplicationsPage from "@/pages/client/applications";
@@ -43,6 +44,7 @@ function Router() {
         <Route path="/admin/qa" component={AdminQAPage} />
         <Route path="/admin/clients" component={AdminClientsPage} />
         <Route path="/admin/clients/:id" component={AdminClientDetailPage} />
+        <Route path="/admin/appliers" component={AdminAppliersPage} />
 
         {/* Client Routes */}
         <Route path="/client/interviews" component={ClientInterviewsPage} />

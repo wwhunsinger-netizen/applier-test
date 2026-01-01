@@ -51,12 +51,22 @@ export interface Client {
   document_feedback?: DocumentFeedback;
 }
 
+export type ApplierStatus = "active" | "inactive" | "training";
+
 export interface Applier {
   id: string;
-  name: string;
+  first_name: string;
+  last_name: string;
   email: string;
-  username: string;
+  status: ApplierStatus;
+  assigned_client_id?: string | null; // Each applier assigned to one client
   created_at?: string;
+  updated_at?: string;
+}
+
+// Helper function to get applier full name
+export function getApplierFullName(applier: Applier): string {
+  return `${applier.first_name} ${applier.last_name}`.trim();
 }
 
 export interface Job {
@@ -158,6 +168,26 @@ export const updateClientSchema = z.object({
     linkedin: z.object({ text: z.string(), status: z.enum(["requested", "completed"]).nullable() }),
   }).optional(),
 });
+
+// Applier schemas for Supabase table
+export const insertApplierSchema = z.object({
+  first_name: z.string().min(1),
+  last_name: z.string().min(1),
+  email: z.string().email(),
+  status: z.enum(["active", "inactive", "training"]).default("active"),
+  assigned_client_id: z.string().uuid().nullable().optional(),
+});
+
+export const updateApplierSchema = z.object({
+  first_name: z.string().min(1).optional(),
+  last_name: z.string().min(1).optional(),
+  email: z.string().email().optional(),
+  status: z.enum(["active", "inactive", "training"]).optional(),
+  assigned_client_id: z.string().uuid().nullable().optional(),
+});
+
+export type InsertApplier = z.infer<typeof insertApplierSchema>;
+export type UpdateApplier = z.infer<typeof updateApplierSchema>;
 
 export const insertApplicationSchema = z.object({
   job_id: z.string(),
