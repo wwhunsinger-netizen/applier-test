@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion, AnimatePresence } from "framer-motion";
-import { FileText, Linkedin, Check, Lightbulb, RotateCw, CheckCircle2, Sparkles, MessageSquare, X, ArrowLeft, ArrowRight, Upload, Trash2, Clock } from "lucide-react";
+import { FileText, Linkedin, Check, Lightbulb, RotateCw, CheckCircle2, Sparkles, MessageSquare, X, ArrowLeft, ArrowRight, Upload, Trash2, Clock, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -654,8 +654,14 @@ export default function ClientDocumentsPage() {
       <div>
         <div className="flex justify-between items-start">
            <div>
-             <h1 className="text-3xl font-bold tracking-tight text-white">Document Review</h1>
-             <p className="text-muted-foreground mt-1">Approve your tailored application materials.</p>
+             <h1 className="text-3xl font-bold tracking-tight text-white">
+               {hasApplications ? "Application Documents" : "Document Review"}
+             </h1>
+             <p className="text-muted-foreground mt-1">
+               {hasApplications 
+                 ? "The documents being used for your job applications." 
+                 : "Approve your tailored application materials."}
+             </p>
            </div>
            
         </div>
@@ -696,7 +702,17 @@ export default function ClientDocumentsPage() {
                              </div>
                            </div>
                            <div className="flex items-center gap-2">
-                              {isApproved && <Badge className="bg-green-500 gap-1"><CheckCircle2 className="w-3 h-3" /> Approved</Badge>}
+                              {afterPdfUrl && (
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  className="border-white/20 hover:bg-white/10 gap-2"
+                                  onClick={() => window.open(afterPdfUrl, '_blank')}
+                                >
+                                  <Download className="w-4 h-4" />
+                                  Download
+                                </Button>
+                              )}
                            </div>
                          </div>
                          
