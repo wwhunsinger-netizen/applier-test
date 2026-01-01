@@ -366,10 +366,10 @@ export default function QueuePage() {
                 <div className="flex flex-col md:flex-row gap-6">
                   <div className="flex-1 space-y-2">
                     <div>
-                      <h3 className="text-xl font-bold font-heading" data-testid={`text-job-title-${job.id}`}>{job.role}</h3>
+                      <h3 className="text-xl font-bold font-heading" data-testid={`text-job-title-${job.id}`}>{(job as any).job_title || job.role}</h3>
                       <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
-                        <span className="flex items-center gap-1"><Building className="w-3 h-3" /> {job.company}</span>
-                        <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {job.posted_time || 'Recently'}</span>
+                        <span className="flex items-center gap-1"><Building className="w-3 h-3" /> {(job as any).company_name || job.company}</span>
+                        <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {(job as any).posted_date || job.posted_time || 'Recently'}</span>
                       </div>
                     </div>
                     
