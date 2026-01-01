@@ -75,15 +75,10 @@ export default function QueuePage() {
     }));
 
     try {
-      // For now, using mock data until database is set up
-      // In production this would call the API:
+      // Start review session - job details come from jobs table via JOIN
       const session = await startReviewSession({
         job_id: job.id,
         applier_id: "demo-applier-1", // Would come from user context
-        client_id: job.client || "demo-client-1",
-        job_url: jobUrl,
-        job_title: job.role,
-        company_name: job.company,
       });
       
       // Open job URL in new tab

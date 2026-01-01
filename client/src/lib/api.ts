@@ -232,10 +232,6 @@ export async function fetchApplierSessions(applierId: string): Promise<ApplierJo
 export async function startReviewSession(data: {
   job_id: string;
   applier_id: string;
-  client_id: string;
-  job_url: string;
-  job_title?: string;
-  company_name?: string;
 }): Promise<ApplierJobSession> {
   const res = await fetch(`${API_BASE}/applier-sessions/start-review`, {
     method: "POST",

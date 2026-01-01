@@ -356,17 +356,13 @@ export async function registerRoutes(
   // Get applier's sessions
   app.get("/api/applier-sessions", async (req, res) => {
     try {
-      const { applier_id, client_id } = req.query;
+      const { applier_id } = req.query;
       
-      let sessions;
-      if (applier_id) {
-        sessions = await storage.getApplierSessions(applier_id as string);
-      } else if (client_id) {
-        sessions = await storage.getApplierSessionsByClient(client_id as string);
-      } else {
-        return res.status(400).json({ error: "applier_id or client_id query parameter required" });
+      if (!applier_id) {
+        return res.status(400).json({ error: "applier_id query parameter required" });
       }
       
+      const sessions = await storage.getApplierSessions(applier_id as string);
       res.json(sessions);
     } catch (error) {
       console.error("Error fetching applier sessions:", error);
@@ -377,10 +373,10 @@ export async function registerRoutes(
   // Start review - creates session with in_progress status and records start time
   app.post("/api/applier-sessions/start-review", async (req, res) => {
     try {
-      const { job_id, applier_id, client_id, job_url, job_title, company_name } = req.body;
+      const { job_id, applier_id } = req.body;
       
-      if (!job_id || !applier_id || !client_id || !job_url) {
-        return res.status(400).json({ error: "job_id, applier_id, client_id, and job_url are required" });
+      if (!job_id || !applier_id) {
+        return res.status(400).json({ error: "job_id and applier_id are required" });
       }
       
       // Check if session already exists for this job/applier
@@ -395,14 +391,10 @@ export async function registerRoutes(
         return res.json(updated);
       }
       
-      // Create new session
+      // Create new session (job details come from jobs table via JOIN)
       const session = await storage.createApplierSession({
         job_id,
         applier_id,
-        client_id,
-        job_url,
-        job_title,
-        company_name,
         status: "in_progress",
       });
       
@@ -442,11 +434,16 @@ export async function registerRoutes(
         duration_seconds: durationSeconds,
       });
       
-      // Create application record
+      // Create application record (client_id comes from joined job data)
+      const clientId = session.job?.client_id;
+      if (!clientId) {
+        return res.status(400).json({ error: "Job has no associated client" });
+      }
+      
       const application = await storage.createApplication({
         job_id: session.job_id,
         applier_id: session.applier_id,
-        client_id: session.client_id,
+        client_id: clientId,
         status: "Applied",
         qa_status: "None",
         applied_date: completedAt.toISOString(),
@@ -488,15 +485,9 @@ export async function registerRoutes(
         flag_comment: comment.trim(),
       });
       
-      // Create flagged application for admin review
+      // Create flagged application for admin review (job details come from session → job JOIN)
       const flaggedApp = await storage.createFlaggedApplication({
         session_id: session.id,
-        job_id: session.job_id,
-        applier_id: session.applier_id,
-        client_id: session.client_id,
-        job_title: session.job_title,
-        company_name: session.company_name,
-        job_url: session.job_url,
         comment: comment.trim(),
         status: "open",
       });

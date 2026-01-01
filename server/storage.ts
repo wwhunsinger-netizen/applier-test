@@ -43,9 +43,8 @@ export interface IStorage {
   getJobResponses(clientId: string): Promise<ClientJobResponse[]>;
   createJobResponse(response: InsertClientJobResponse): Promise<ClientJobResponse>;
   
-  // Applier job session operations
+  // Applier job session operations (job details come from JOIN with jobs table)
   getApplierSessions(applierId: string): Promise<ApplierJobSession[]>;
-  getApplierSessionsByClient(clientId: string): Promise<ApplierJobSession[]>;
   getApplierSession(id: string): Promise<ApplierJobSession | null>;
   getApplierSessionByJob(jobId: string, applierId: string): Promise<ApplierJobSession | null>;
   createApplierSession(session: InsertApplierJobSession): Promise<ApplierJobSession>;
@@ -377,22 +376,15 @@ export class SupabaseStorage implements IStorage {
   }
   
   // Applier job session operations
+  // Note: Uses Supabase's relational query to join with jobs table
   async getApplierSessions(applierId: string): Promise<ApplierJobSession[]> {
     const { data, error } = await supabase
       .from('applier_job_sessions')
-      .select('*')
+      .select(`
+        *,
+        job:jobs(job_title, company_name, job_url, client_id)
+      `)
       .eq('applier_id', applierId)
-      .order('created_at', { ascending: false });
-    
-    if (error) throw error;
-    return data || [];
-  }
-
-  async getApplierSessionsByClient(clientId: string): Promise<ApplierJobSession[]> {
-    const { data, error } = await supabase
-      .from('applier_job_sessions')
-      .select('*')
-      .eq('client_id', clientId)
       .order('created_at', { ascending: false });
     
     if (error) throw error;
@@ -402,7 +394,10 @@ export class SupabaseStorage implements IStorage {
   async getApplierSession(id: string): Promise<ApplierJobSession | null> {
     const { data, error } = await supabase
       .from('applier_job_sessions')
-      .select('*')
+      .select(`
+        *,
+        job:jobs(job_title, company_name, job_url, client_id)
+      `)
       .eq('id', id)
       .single();
     
@@ -416,7 +411,10 @@ export class SupabaseStorage implements IStorage {
   async getApplierSessionByJob(jobId: string, applierId: string): Promise<ApplierJobSession | null> {
     const { data, error } = await supabase
       .from('applier_job_sessions')
-      .select('*')
+      .select(`
+        *,
+        job:jobs(job_title, company_name, job_url, client_id)
+      `)
       .eq('job_id', jobId)
       .eq('applier_id', applierId)
       .single();

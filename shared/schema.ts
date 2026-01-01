@@ -283,31 +283,31 @@ export type InsertInterview = z.infer<typeof insertInterviewSchema>;
 export type InsertClientDocument = z.infer<typeof insertClientDocumentSchema>;
 
 // Applier Job Session - tracks applier workflow for each job (start, apply, flag)
+// Job details (title, company, url) come from JOIN to jobs table
 export type SessionStatus = "pending" | "in_progress" | "applied" | "flagged";
 
 export interface ApplierJobSession {
   id: string;
   job_id: string;
-  client_id: string;
   applier_id: string;
-  job_url: string;
-  job_title?: string;
-  company_name?: string;
+  status: SessionStatus;
   started_at?: string;
   completed_at?: string;
   duration_seconds?: number;
-  status: SessionStatus;
   flag_comment?: string;
   created_at?: string;
+  // Joined from jobs table (not stored in this table)
+  job?: {
+    job_title: string;
+    company_name: string;
+    job_url: string;
+    client_id: string;
+  };
 }
 
 export const insertApplierJobSessionSchema = z.object({
-  job_id: z.string(),
-  client_id: z.string(),
-  applier_id: z.string(),
-  job_url: z.string(),
-  job_title: z.string().optional(),
-  company_name: z.string().optional(),
+  job_id: z.string().uuid(),
+  applier_id: z.string().uuid(),
   status: z.enum(["pending", "in_progress", "applied", "flagged"]).default("pending"),
 });
 
@@ -323,33 +323,23 @@ export type InsertApplierJobSession = z.infer<typeof insertApplierJobSessionSche
 export type UpdateApplierJobSession = z.infer<typeof updateApplierJobSessionSchema>;
 
 // Flagged Application - for admin review queue
+// Job/applier details come from session → job JOIN
 export type FlagStatus = "open" | "resolved";
 
 export interface FlaggedApplication {
   id: string;
   session_id: string;
-  job_id: string;
-  applier_id: string;
-  client_id: string;
-  job_title?: string;
-  company_name?: string;
-  job_url: string;
   comment: string;
   status: FlagStatus;
-  created_at?: string;
   resolved_at?: string;
-  resolved_by?: string;
   resolution_note?: string;
+  created_at?: string;
+  // Joined from session → job (not stored in this table)
+  session?: ApplierJobSession;
 }
 
 export const insertFlaggedApplicationSchema = z.object({
-  session_id: z.string(),
-  job_id: z.string(),
-  applier_id: z.string(),
-  client_id: z.string(),
-  job_title: z.string().optional(),
-  company_name: z.string().optional(),
-  job_url: z.string(),
+  session_id: z.string().uuid(),
   comment: z.string().min(1),
   status: z.enum(["open", "resolved"]).default("open"),
 });
@@ -357,7 +347,6 @@ export const insertFlaggedApplicationSchema = z.object({
 export const updateFlaggedApplicationSchema = z.object({
   status: z.enum(["open", "resolved"]).optional(),
   resolved_at: z.string().optional(),
-  resolved_by: z.string().optional(),
   resolution_note: z.string().optional(),
 });
 
