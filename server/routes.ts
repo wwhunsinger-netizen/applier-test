@@ -1025,6 +1025,70 @@ export async function registerRoutes(
     }
   });
 
+  // Admin client performance - real client stats
+  app.get("/api/admin/client-performance", async (req, res) => {
+    try {
+      const clients = await storage.getClients();
+      const allApplications = await storage.getApplications();
+      const allInterviews = await storage.getInterviews();
+      const allEarnings = await storage.getAllEarnings();
+      
+      const clientPerformance = clients.map((client) => {
+        // Count applications for this client
+        const clientApps = allApplications.filter(a => a.client_id === client.id);
+        const totalApps = clientApps.length;
+        
+        // Count interviews for this client
+        const clientInterviews = allInterviews.filter(i => i.client_id === client.id);
+        const interviews = clientInterviews.length;
+        
+        // Offers = client is placed (status === 'placed')
+        const offers = client.status === 'placed' ? 1 : 0;
+        
+        // Total spend = sum of earnings for this client
+        const clientEarnings = allEarnings.filter(e => e.client_id === client.id);
+        const spend = clientEarnings.reduce((sum, e) => sum + Number(e.amount), 0);
+        
+        // Calculate last activity
+        let lastActivity = "Never";
+        if (client.last_application_date) {
+          const lastDate = new Date(client.last_application_date);
+          const now = new Date();
+          const diffMs = now.getTime() - lastDate.getTime();
+          const diffMins = Math.floor(diffMs / 60000);
+          
+          if (diffMins < 60) lastActivity = `${diffMins}m ago`;
+          else if (diffMins < 1440) lastActivity = `${Math.floor(diffMins / 60)}h ago`;
+          else lastActivity = `${Math.floor(diffMins / 1440)}d ago`;
+        }
+        
+        // Start date
+        const startDate = client.first_application_date 
+          ? new Date(client.first_application_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+          : client.created_at 
+            ? new Date(client.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+            : 'Not started';
+        
+        return {
+          id: client.id,
+          name: `${client.first_name} ${client.last_name}`,
+          status: client.status,
+          startDate,
+          lastActivity,
+          totalApps,
+          interviews,
+          offers,
+          spend,
+        };
+      });
+      
+      res.json(clientPerformance);
+    } catch (error) {
+      console.error("Error fetching client performance:", error);
+      res.status(500).json({ error: "Failed to fetch client performance" });
+    }
+  });
+
   // Admin overview stats - real applier performance data
   app.get("/api/admin/overview", async (req, res) => {
     try {

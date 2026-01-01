@@ -386,3 +386,22 @@ export async function fetchAdminOverview(): Promise<AdminOverview> {
   if (!res.ok) throw new Error("Failed to fetch admin overview");
   return res.json();
 }
+
+// Admin Client Performance API
+export interface ClientPerformance {
+  id: string;
+  name: string;
+  status: string;
+  startDate: string;
+  lastActivity: string;
+  totalApps: number;
+  interviews: number;
+  offers: number;
+  spend: number;
+}
+
+export async function fetchClientPerformance(): Promise<ClientPerformance[]> {
+  const res = await fetch(`${API_BASE}/admin/client-performance`);
+  if (!res.ok) throw new Error("Failed to fetch client performance");
+  return res.json();
+}
