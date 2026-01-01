@@ -11,22 +11,38 @@ import { useUser } from "@/lib/userContext";
 import AdminDashboardPage from "./admin/dashboard";
 import ClientOverviewPage from "./client/overview";
 import { useState, useEffect } from "react";
+import { fetchApplierStats, type ApplierStats } from "@/lib/api";
 
-const EMPTY_STATS = {
+const EMPTY_STATS: ApplierStats = {
   dailyApps: 0,
   dailyGoal: 50,
   timeWorked: "0:00",
   avgTimePerApp: "-",
   projectedFinish: "-",
+  weeklyApps: 0,
   weeklyEarnings: 0,
   interviewRate: 0,
   qaErrorRate: 0,
-  streakDays: 0,
+  jobsWaiting: 0,
+  totalApps: 0,
 };
 
 export default function DashboardPage() {
   const { currentUser } = useUser();
   const [greeting, setGreeting] = useState<{text: string, style: string, icon: React.ReactNode | null} | null>(null);
+  const [stats, setStats] = useState<ApplierStats>(EMPTY_STATS);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch applier stats
+  useEffect(() => {
+    if (currentUser?.role === "Applier" && currentUser?.id) {
+      setIsLoading(true);
+      fetchApplierStats(currentUser.id)
+        .then(setStats)
+        .catch(console.error)
+        .finally(() => setIsLoading(false));
+    }
+  }, [currentUser]);
 
   useEffect(() => {
     const now = new Date();
@@ -66,9 +82,7 @@ export default function DashboardPage() {
     return <ClientOverviewPage />;
   }
 
-  const stats = EMPTY_STATS;
   const percentComplete = stats.dailyGoal > 0 ? (stats.dailyApps / stats.dailyGoal) * 100 : 0;
-  const jobsWaiting = 0;
 
   return (
     <div className="space-y-8">
@@ -148,9 +162,9 @@ export default function DashboardPage() {
                 </div>
                 
                 <div className="space-y-2">
-                  <h3 className="text-3xl font-bold">{jobsWaiting} Jobs Waiting</h3>
+                  <h3 className="text-3xl font-bold">{stats.jobsWaiting} Jobs Waiting</h3>
                   <p className="text-white/90 text-sm max-w-[200px] mx-auto leading-relaxed">
-                    {jobsWaiting > 0 ? "Your queue is ready. Keep the streak alive!" : "No jobs in queue yet."}
+                    {stats.jobsWaiting > 0 ? "Your queue is ready. Keep the streak alive!" : "No jobs in queue yet."}
                   </p>
                 </div>
                 
@@ -175,7 +189,7 @@ export default function DashboardPage() {
             <CardContent className="space-y-4">
               <div className="flex justify-between items-center py-2 border-b border-white/5">
                 <span className="text-sm text-muted-foreground">Total Apps</span>
-                <span className="font-mono font-bold text-white">0</span>
+                <span className="font-mono font-bold text-white">{stats.weeklyApps}</span>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-white/5">
                 <span className="text-sm text-muted-foreground">Interview Rate</span>

@@ -437,7 +437,7 @@ export async function registerRoutes(
       const startOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayOfWeek).toISOString();
       
       // Get all applications for this applier
-      const allApps = await storage.getApplications({ applier_id: applierId });
+      const allApps = await storage.getApplicationsByApplier(applierId);
       
       // Filter today's applications
       const todayApps = allApps.filter(app => {
