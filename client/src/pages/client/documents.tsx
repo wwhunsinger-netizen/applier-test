@@ -670,7 +670,16 @@ export default function ClientDocumentsPage() {
       <div className="flex-1 min-h-0 flex flex-col">
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as DocType)} className="flex-1 flex flex-col">
           <TabsList className="bg-white/5 border border-white/10 p-1 w-fit mb-4">
-            {(Object.keys(DOC_CONFIG) as DocType[]).map(tabKey => (
+            {(Object.keys(DOC_CONFIG) as DocType[])
+              .filter(tabKey => {
+                // Hide LinkedIn tab when applications exist AND no LinkedIn document uploaded
+                if (hasApplications && tabKey === 'linkedin') {
+                  const hasLinkedInDoc = uploadedFiles['linkedin_A'] || uploadedFiles['linkedin_improved'];
+                  return !!hasLinkedInDoc;
+                }
+                return true;
+              })
+              .map(tabKey => (
               <TabsTrigger 
                 key={tabKey} 
                 value={tabKey}
