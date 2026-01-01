@@ -1,14 +1,13 @@
 import { useState, useEffect, useCallback } from "react";
-import type { Job } from "@/lib/mockData";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Building, Clock, ArrowRight, Flag, CheckCircle, Timer, Download, FileText, Bot, Briefcase } from "lucide-react";
-import { startReviewSession, markSessionApplied, flagSession, fetchClients, fetchApplier, fetchClientDocuments } from "@/lib/api";
+import { startReviewSession, markSessionApplied, flagSession, fetchClients, fetchApplier, fetchClientDocuments, fetchJobs } from "@/lib/api";
 import { toast } from "sonner";
 import { useUser } from "@/lib/userContext";
-import type { ApplierJobSession, Client, ClientDocument } from "@shared/schema";
+import type { ApplierJobSession, Client, ClientDocument, Job } from "@shared/schema";
 
 interface JobCardState {
   session?: ApplierJobSession;
@@ -66,6 +65,15 @@ export default function QueuePage() {
     
     fetchClientDocuments(assignedClient.id)
       .then(setClientDocuments)
+      .catch(console.error);
+  }, [assignedClient]);
+
+  // Fetch jobs for assigned clients
+  useEffect(() => {
+    if (!assignedClient) return;
+    
+    fetchJobs({ client_id: assignedClient.id })
+      .then(setJobs)
       .catch(console.error);
   }, [assignedClient]);
 
@@ -361,7 +369,7 @@ export default function QueuePage() {
                       <h3 className="text-xl font-bold font-heading" data-testid={`text-job-title-${job.id}`}>{job.role}</h3>
                       <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
                         <span className="flex items-center gap-1"><Building className="w-3 h-3" /> {job.company}</span>
-                        <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {job.postedTime}</span>
+                        <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {job.posted_time || 'Recently'}</span>
                       </div>
                     </div>
                     
