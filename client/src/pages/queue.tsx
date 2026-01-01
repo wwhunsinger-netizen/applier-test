@@ -134,7 +134,7 @@ export default function QueuePage() {
       // Start review session - job details come from jobs table via JOIN
       const session = await startReviewSession({
         job_id: job.id,
-        applier_id: "demo-applier-1", // Would come from user context
+        applier_id: currentUser?.id || "",
       });
       
       // Open job URL in new tab
