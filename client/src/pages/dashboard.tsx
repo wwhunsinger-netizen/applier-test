@@ -129,13 +129,7 @@ export default function DashboardPage() {
                   </p>
                 </div>
 
-                <div className="grid grid-cols-3 gap-4 pt-2">
-                  <div className="bg-white/5 rounded-lg p-3 border border-white/5">
-                    <div className="text-xs text-muted-foreground flex items-center gap-1 mb-1">
-                      <Clock className="w-3 h-3" /> Time Worked
-                    </div>
-                    <div className="font-mono font-bold text-lg text-white">{stats.timeWorked}</div>
-                  </div>
+                <div className="grid grid-cols-2 gap-4 pt-2">
                   <div className="bg-white/5 rounded-lg p-3 border border-white/5">
                     <div className="text-xs text-muted-foreground flex items-center gap-1 mb-1">
                       <TrendingUp className="w-3 h-3" /> Avg/App
