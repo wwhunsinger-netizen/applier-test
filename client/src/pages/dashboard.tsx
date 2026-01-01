@@ -51,12 +51,12 @@ export default function DashboardPage() {
     // Default
     else {
       setGreeting({
-        text: "Welcome back, Alex. Your command center is ready.",
+        text: `Welcome back, ${currentUser?.name?.split(' ')[0] || 'there'}. Your command center is ready.`,
         style: "text-muted-foreground mt-1",
         icon: null
       });
     }
-  }, []);
+  }, [currentUser]);
 
   if (currentUser.role === "Admin") {
     return <AdminDashboardPage />;
