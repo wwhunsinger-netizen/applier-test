@@ -26,6 +26,7 @@ import ClientDocumentsPage from "@/pages/client/documents";
 import ClientApplicationsPage from "@/pages/client/applications";
 
 import ClientJobCriteriaPage from "@/pages/client/job-criteria";
+import AppliedPage from "@/pages/applier/applied";
 
 function Router() {
   return (
@@ -36,7 +37,7 @@ function Router() {
         <Route path="/queue" component={QueuePage} />
         <Route path="/review/:id" component={ReviewPage} />
         <Route path="/leaderboard" component={LeaderboardPage} />
-        <Route path="/applied" component={() => <div className="p-8 text-center text-muted-foreground">Applied Jobs History (Coming Soon)</div>} />
+        <Route path="/applied" component={AppliedPage} />
         
         {/* Admin Routes */}
         <Route path="/admin/applications" component={AdminApplicationsPage} />
