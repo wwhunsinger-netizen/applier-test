@@ -208,6 +208,7 @@ export const insertApplicationSchema = z.object({
   client_id: z.string(),
   status: z.enum(["Pending", "Applied", "Interview", "Offer", "Rejected"]),
   qa_status: z.enum(["None", "Approved", "Rejected"]).default("None"),
+  applied_date: z.string().optional(),
   flagged_issue: z.string().optional(),
 });
 

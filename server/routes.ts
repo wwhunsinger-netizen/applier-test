@@ -515,6 +515,7 @@ export async function registerRoutes(
         client_id: clientId,
         status: "Applied",
         qa_status: "None",
+        applied_date: completedAt.toISOString(),
       });
       
       res.json({ session: updatedSession, application });
