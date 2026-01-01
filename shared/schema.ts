@@ -93,18 +93,23 @@ export interface Application {
   job_id: string;
   applier_id: string;
   client_id: string;
-  status: "Pending" | "Applied" | "Interview" | "Offer" | "Rejected";
-  qa_status: "None" | "Approved" | "Rejected";
+  status: string;
+  qa_status?: string;
+  applied_at?: string;
   applied_date?: string;
   flagged_issue?: string;
-  // Job snapshot fields
-  job_title?: string;
-  company_name?: string;
-  job_url?: string;
-  board_source?: string;
-  job_description?: string;
-  posted_date?: string;
+  // Job snapshot fields (NOT NULL in Supabase)
+  job_title: string;
+  company_name: string;
+  job_url: string;
+  // Other optional fields
+  status_updated_at?: string;
+  email_verification_needed?: boolean;
+  email_verified?: boolean;
+  email_verified_at?: string;
+  application_proof_url?: string;
   created_at?: string;
+  updated_at?: string;
 }
 
 export interface Interview {
@@ -214,17 +219,14 @@ export const insertApplicationSchema = z.object({
   job_id: z.string(),
   applier_id: z.string(),
   client_id: z.string(),
-  status: z.enum(["Pending", "Applied", "Interview", "Offer", "Rejected"]),
-  qa_status: z.enum(["None", "Approved", "Rejected"]).default("None"),
+  status: z.string().default("applied"),
+  qa_status: z.string().optional(),
   applied_date: z.string().optional(),
   flagged_issue: z.string().optional(),
-  // Job snapshot fields
+  // Job snapshot fields (NOT NULL in Supabase)
   job_title: z.string(),
   company_name: z.string(),
-  job_url: z.string().optional(),
-  board_source: z.string().optional(),
-  job_description: z.string().optional(),
-  posted_date: z.string().optional(),
+  job_url: z.string(),
 });
 
 export const insertInterviewSchema = z.object({

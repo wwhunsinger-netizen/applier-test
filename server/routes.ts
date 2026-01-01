@@ -516,16 +516,12 @@ export async function registerRoutes(
         job_id: session.job_id,
         applier_id: session.applier_id,
         client_id: clientId,
-        status: "Applied",
-        qa_status: "None",
+        status: "applied",
         applied_date: completedAt.toISOString(),
-        // Job snapshot fields
+        // Job snapshot fields (NOT NULL in Supabase)
         job_title: job?.job_title || job?.title || "Unknown Position",
         company_name: job?.company_name || job?.company || "Unknown Company",
-        job_url: job?.job_url || job?.url,
-        board_source: job?.board_source || "Indeed",
-        job_description: job?.job_description || job?.description,
-        posted_date: job?.posted_date,
+        job_url: job?.job_url || job?.url || "",
       });
       
       res.json({ session: updatedSession, application });
