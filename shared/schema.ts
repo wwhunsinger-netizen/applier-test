@@ -417,6 +417,52 @@ export function getClientFullName(client: Client): string {
   return `${client.first_name} ${client.last_name}`.trim();
 }
 
+// Applier Earnings - tracks base pay and bonuses
+export type EarningsType = "base_pay" | "application_milestone" | "interview_bonus" | "placement_bonus";
+export type PaymentStatus = "pending" | "approved" | "paid";
+
+export interface ApplierEarning {
+  id: string;
+  applier_id: string;
+  client_id?: string;
+  earnings_type: EarningsType;
+  amount: number;
+  application_count?: number;
+  interview_id?: string;
+  earned_date: string;
+  pay_period_start?: string;
+  pay_period_end?: string;
+  payment_status: PaymentStatus;
+  paid_date?: string;
+  notes?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export const insertApplierEarningSchema = z.object({
+  applier_id: z.string().uuid(),
+  client_id: z.string().uuid().optional(),
+  earnings_type: z.enum(["base_pay", "application_milestone", "interview_bonus", "placement_bonus"]),
+  amount: z.number(),
+  application_count: z.number().optional(),
+  interview_id: z.string().uuid().optional(),
+  earned_date: z.string().optional(),
+  pay_period_start: z.string().optional(),
+  pay_period_end: z.string().optional(),
+  payment_status: z.enum(["pending", "approved", "paid"]).default("pending"),
+  notes: z.string().optional(),
+});
+
+export type InsertApplierEarning = z.infer<typeof insertApplierEarningSchema>;
+
+export const updateApplierEarningSchema = z.object({
+  payment_status: z.enum(["pending", "approved", "paid"]).optional(),
+  paid_date: z.string().optional(),
+  notes: z.string().optional(),
+});
+
+export type UpdateApplierEarning = z.infer<typeof updateApplierEarningSchema>;
+
 export function calculateClientStatus(client: Client): ClientStatus {
   if (client.placement_date) {
     return "placed";
