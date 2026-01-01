@@ -69,11 +69,21 @@ export async function registerRoutes(
           
           // Get the appliers who worked on this client's applications
           const applications = await storage.getApplicationsByClient(req.params.id);
-          const uniqueAppliers = [...new Set(applications.map(a => a.applier_id).filter(Boolean))];
+          let uniqueAppliers = [...new Set(applications.map(a => a.applier_id).filter(Boolean))];
           
-          // Create placement bonus for each applier who worked on this client
+          // Fallback: if no applications exist, check if client has an assigned applier
+          if (uniqueAppliers.length === 0 && client.applier_id) {
+            uniqueAppliers = [client.applier_id];
+          }
+          
+          // Check for existing placement bonuses to prevent duplicates
+          const existingEarnings = await storage.getEarningsByClient(req.params.id);
+          const existingPlacementBonuses = existingEarnings.filter(e => e.earnings_type === 'placement_bonus');
+          const appliersWithBonus = new Set(existingPlacementBonuses.map(e => e.applier_id));
+          
+          // Create placement bonus for each applier who worked on this client (if not already awarded)
           for (const applierId of uniqueAppliers) {
-            if (applierId) {
+            if (applierId && !appliersWithBonus.has(applierId)) {
               await storage.createApplierEarning({
                 applier_id: applierId,
                 client_id: req.params.id,
@@ -713,25 +723,34 @@ export async function registerRoutes(
       // Check for 100 application milestone bonus
       try {
         const today = new Date().toISOString().split('T')[0];
-        const todayStart = new Date(today);
         const applications = await storage.getApplicationsByApplier(session.applier_id);
         const todaysApps = applications.filter(a => {
-          const appDate = new Date(a.applied_date || '').toISOString().split('T')[0];
+          const appDate = new Date(a.applied_date || a.created_at || '').toISOString().split('T')[0];
           return appDate === today;
         });
         
-        // If this is exactly the 100th application today, create bonus earning
-        if (todaysApps.length === 100) {
-          await storage.createApplierEarning({
-            applier_id: session.applier_id,
-            client_id: clientId,
-            earnings_type: "application_milestone",
-            amount: 25,
-            application_count: 100,
-            earned_date: today,
-            payment_status: "pending",
-            notes: `100 application milestone reached for ${application.job_title}`,
-          });
+        // Check if applier has reached 100 apps today AND hasn't already received the bonus
+        if (todaysApps.length >= 100) {
+          const existingEarnings = await storage.getApplierEarnings(session.applier_id);
+          const existingMilestoneToday = existingEarnings.find(e => 
+            e.earnings_type === 'application_milestone' && 
+            e.earned_date === today &&
+            e.application_count === 100
+          );
+          
+          // Only create bonus if not already awarded today
+          if (!existingMilestoneToday && todaysApps.length === 100) {
+            await storage.createApplierEarning({
+              applier_id: session.applier_id,
+              client_id: clientId,
+              earnings_type: "application_milestone",
+              amount: 25,
+              application_count: 100,
+              earned_date: today,
+              payment_status: "pending",
+              notes: `100 application milestone reached for ${application.job_title}`,
+            });
+          }
         }
       } catch (bonusError) {
         console.error("Error checking milestone bonus:", bonusError);

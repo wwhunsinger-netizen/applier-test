@@ -323,3 +323,23 @@ export async function resolveFlaggedApplication(id: string, data: { resolved_by:
   if (!res.ok) throw new Error("Failed to resolve flagged application");
   return res.json();
 }
+
+// Admin Client Costs API
+export interface ClientCost {
+  client_id: string;
+  client_name: string;
+  total_cost: number;
+  paid_amount: number;
+  pending_amount: number;
+  earnings_breakdown: {
+    application_milestone: number;
+    interview_bonus: number;
+    placement_bonus: number;
+  };
+}
+
+export async function fetchClientCosts(): Promise<ClientCost[]> {
+  const res = await fetch(`${API_BASE}/admin/client-costs`);
+  if (!res.ok) throw new Error("Failed to fetch client costs");
+  return res.json();
+}

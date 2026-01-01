@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MOCK_USER_PERFORMANCE, UserPerformance } from "@/lib/adminData";
 import { MOCK_CLIENT_PERFORMANCE_SUMMARY } from "@/lib/mockData";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,18 +6,32 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { HoverCardWrapper } from "@/components/hover-card-wrapper";
-import { Users, Zap, Trophy, AlertTriangle, TrendingUp, Mail, Briefcase, Calendar, CheckCircle, DollarSign } from "lucide-react";
+import { Users, Zap, Trophy, AlertTriangle, TrendingUp, Mail, Briefcase, Calendar, CheckCircle, DollarSign, Award, Gift, Target } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { EmailDialog } from "@/components/admin/email-dialog";
+import { fetchClientCosts, type ClientCost } from "@/lib/api";
 
 export default function AdminDashboardPage() {
   const [selectedUser, setSelectedUser] = useState<UserPerformance | null>(null);
   const [isEmailOpen, setIsEmailOpen] = useState(false);
+  const [clientCosts, setClientCosts] = useState<ClientCost[]>([]);
+  const [isCostsLoading, setIsCostsLoading] = useState(true);
+
+  useEffect(() => {
+    fetchClientCosts()
+      .then(setClientCosts)
+      .catch(console.error)
+      .finally(() => setIsCostsLoading(false));
+  }, []);
 
   const handleEmailClick = (user: UserPerformance) => {
     setSelectedUser(user);
     setIsEmailOpen(true);
   };
+
+  // Calculate total costs across all clients
+  const totalCosts = clientCosts.reduce((acc, c) => acc + c.total_cost, 0);
+  const totalPending = clientCosts.reduce((acc, c) => acc + c.pending_amount, 0);
 
   // Calculate aggregate stats
   const totalDailyApps = MOCK_USER_PERFORMANCE.reduce((acc, user) => acc + user.dailyApps, 0);
@@ -250,6 +264,69 @@ export default function AdminDashboardPage() {
              </Card>
           ))}
         </div>
+      </div>
+
+      {/* Client Cost Tracking */}
+      <div>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold text-white">Client Cost Tracking</h2>
+          <div className="flex items-center gap-4 text-sm">
+            <span className="text-muted-foreground">Total: <span className="text-white font-bold">${totalCosts.toFixed(2)}</span></span>
+            <span className="text-muted-foreground">Pending: <span className="text-warning font-bold">${totalPending.toFixed(2)}</span></span>
+          </div>
+        </div>
+        
+        {isCostsLoading ? (
+          <div className="text-center py-8 text-muted-foreground">Loading cost data...</div>
+        ) : clientCosts.length === 0 ? (
+          <Card className="bg-[#111] border-white/10">
+            <CardContent className="py-8 text-center text-muted-foreground">
+              No cost data available yet. Earnings will appear here when bonuses are awarded.
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {clientCosts.filter(c => c.total_cost > 0).map((cost) => (
+              <Card key={cost.client_id} className="bg-[#111] border-white/10 hover:border-white/20 transition-colors">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-bold text-white">{cost.client_name}</h3>
+                    <div className="text-2xl font-bold text-primary">${cost.total_cost.toFixed(2)}</div>
+                  </div>
+                  
+                  <div className="grid grid-cols-3 gap-3 mb-4">
+                    <div className="bg-white/5 rounded-lg p-3 text-center border border-white/5">
+                      <div className="flex items-center justify-center gap-1.5 mb-1 text-muted-foreground">
+                        <Target className="w-3.5 h-3.5" />
+                        <span className="text-xs">100 App Bonus</span>
+                      </div>
+                      <div className="text-lg font-bold text-white">${cost.earnings_breakdown.application_milestone.toFixed(2)}</div>
+                    </div>
+                    <div className="bg-white/5 rounded-lg p-3 text-center border border-white/5">
+                      <div className="flex items-center justify-center gap-1.5 mb-1 text-muted-foreground">
+                        <Award className="w-3.5 h-3.5" />
+                        <span className="text-xs">Interviews</span>
+                      </div>
+                      <div className="text-lg font-bold text-white">${cost.earnings_breakdown.interview_bonus.toFixed(2)}</div>
+                    </div>
+                    <div className="bg-white/5 rounded-lg p-3 text-center border border-white/5">
+                      <div className="flex items-center justify-center gap-1.5 mb-1 text-muted-foreground">
+                        <Gift className="w-3.5 h-3.5" />
+                        <span className="text-xs">Placements</span>
+                      </div>
+                      <div className="text-lg font-bold text-success">${cost.earnings_breakdown.placement_bonus.toFixed(2)}</div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Paid: <span className="text-success">${cost.paid_amount.toFixed(2)}</span></span>
+                    <span className="text-muted-foreground">Pending: <span className="text-warning">${cost.pending_amount.toFixed(2)}</span></span>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
 
       <EmailDialog 
