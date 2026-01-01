@@ -52,10 +52,45 @@ export async function registerRoutes(
   app.patch("/api/clients/:id", async (req, res) => {
     try {
       const validatedData = updateClientSchema.parse(req.body);
+      
+      // Check if client is being placed (status changed to "placed")
+      const existingClient = await storage.getClient(req.params.id);
+      const isBeingPlaced = validatedData.status === "placed" && existingClient?.status !== "placed";
+      
       const client = await storage.updateClient(req.params.id, validatedData);
       if (!client) {
         return res.status(404).json({ error: "Client not found" });
       }
+      
+      // Create placement bonus ($400) when client is placed
+      if (isBeingPlaced) {
+        try {
+          const today = new Date().toISOString().split('T')[0];
+          
+          // Get the appliers who worked on this client's applications
+          const applications = await storage.getApplicationsByClient(req.params.id);
+          const uniqueAppliers = [...new Set(applications.map(a => a.applier_id).filter(Boolean))];
+          
+          // Create placement bonus for each applier who worked on this client
+          for (const applierId of uniqueAppliers) {
+            if (applierId) {
+              await storage.createApplierEarning({
+                applier_id: applierId,
+                client_id: req.params.id,
+                earnings_type: "placement_bonus",
+                amount: 400,
+                earned_date: today,
+                payment_status: "pending",
+                notes: `Placement bonus for ${client.first_name} ${client.last_name}`,
+              });
+            }
+          }
+        } catch (bonusError) {
+          console.error("Error creating placement bonus:", bonusError);
+          // Don't fail the client update if bonus fails
+        }
+      }
+      
       res.json(client);
     } catch (error) {
       console.error("Error updating client:", error);
@@ -115,6 +150,32 @@ export async function registerRoutes(
     try {
       const validatedData = insertInterviewSchema.parse(req.body);
       const interview = await storage.createInterview(validatedData);
+      
+      // Create interview bonus earning ($50 per interview)
+      try {
+        const today = new Date().toISOString().split('T')[0];
+        
+        // Find the application to get the applier_id
+        const applications = await storage.getApplicationsByClient(validatedData.client_id);
+        const application = applications.find(a => a.id === validatedData.application_id);
+        
+        if (application?.applier_id) {
+          await storage.createApplierEarning({
+            applier_id: application.applier_id,
+            client_id: validatedData.client_id,
+            earnings_type: "interview_bonus",
+            amount: 50,
+            interview_id: interview.id,
+            earned_date: today,
+            payment_status: "pending",
+            notes: `Interview scheduled for ${validatedData.company_name || 'unknown company'}`,
+          });
+        }
+      } catch (bonusError) {
+        console.error("Error creating interview bonus:", bonusError);
+        // Don't fail the interview creation if bonus fails
+      }
+      
       res.status(201).json(interview);
     } catch (error) {
       console.error("Error creating interview:", error);
@@ -635,6 +696,34 @@ export async function registerRoutes(
         company_name: job?.company_name || job?.company || "Unknown Company",
         job_url: job?.job_url || job?.url || "",
       });
+      
+      // Check for 100 application milestone bonus
+      try {
+        const today = new Date().toISOString().split('T')[0];
+        const todayStart = new Date(today);
+        const applications = await storage.getApplicationsByApplier(session.applier_id);
+        const todaysApps = applications.filter(a => {
+          const appDate = new Date(a.applied_date || '').toISOString().split('T')[0];
+          return appDate === today;
+        });
+        
+        // If this is exactly the 100th application today, create bonus earning
+        if (todaysApps.length === 100) {
+          await storage.createApplierEarning({
+            applier_id: session.applier_id,
+            client_id: clientId,
+            earnings_type: "application_milestone",
+            amount: 25,
+            application_count: 100,
+            earned_date: today,
+            payment_status: "pending",
+            notes: `100 application milestone reached for ${application.job_title}`,
+          });
+        }
+      } catch (bonusError) {
+        console.error("Error checking milestone bonus:", bonusError);
+        // Don't fail the application if bonus check fails
+      }
       
       res.json({ session: updatedSession, application });
     } catch (error) {
