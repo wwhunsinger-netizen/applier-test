@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertClientSchema, updateClientSchema, insertApplierSchema, updateApplierSchema, insertApplicationSchema, insertInterviewSchema, insertClientDocumentSchema, insertJobCriteriaSampleSchema, insertClientJobResponseSchema, updateJobCriteriaSampleSchema, insertApplierJobSessionSchema, insertFlaggedApplicationSchema, updateFlaggedApplicationSchema } from "@shared/schema";
-import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
+import { registerObjectStorageRoutes, objectStorageService } from "./replit_integrations/object_storage";
 import { scrapeJobUrl } from "./apify";
 import { presenceService } from "./presence";
 
@@ -245,14 +245,20 @@ export async function registerRoutes(
         return res.status(404).json({ error: "Document not found" });
       }
       
-      // Redirect to the object storage URL
-      // Remove leading slash from object_path if present
-      const objectPath = doc.object_path.startsWith('/') ? doc.object_path.slice(1) : doc.object_path;
-      const objectStorageUrl = `https://storage.googleapis.com/${process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID}/${objectPath}`;
-      res.redirect(objectStorageUrl);
+      // Use object storage service to stream the file with proper authentication
+      const objectFile = await objectStorageService.getObjectEntityFile(doc.object_path);
+      
+      // Set content disposition header for download with original filename
+      res.set({
+        "Content-Disposition": `attachment; filename="${doc.file_name}"`,
+      });
+      
+      await objectStorageService.downloadObject(objectFile, res);
     } catch (error) {
       console.error("Error downloading client document:", error);
-      res.status(500).json({ error: "Failed to download document" });
+      if (!res.headersSent) {
+        res.status(500).json({ error: "Failed to download document" });
+      }
     }
   });
 
