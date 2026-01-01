@@ -116,7 +116,7 @@ export default function QueuePage() {
 
   const handleStartReview = useCallback(async (job: Job) => {
     const state = jobStates[job.id];
-    const jobUrl = `https://example.com/job/${job.id}`; // Placeholder until real URLs from DB
+    const jobUrl = (job as any).job_url || `https://example.com/job/${job.id}`;
     
     if (state?.session?.status === 'in_progress' || state?.session?.status === 'applied') {
       // Already started or applied, just open URL
