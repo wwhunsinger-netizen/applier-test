@@ -99,7 +99,7 @@ export default function AppliedPage() {
                         </span>
                         <span className="flex items-center gap-1">
                           <Clock className="w-3 h-3" /> 
-                          Applied {app.applied_date ? formatDistanceToNow(new Date(app.applied_date), { addSuffix: true }) : 'recently'}
+                          Applied {(app as any).created_at ? formatDistanceToNow(new Date((app as any).created_at), { addSuffix: true }) : 'recently'}
                         </span>
                       </div>
                     </div>
