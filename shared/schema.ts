@@ -1,5 +1,8 @@
 import { z } from "zod";
 
+// Export auth models for Replit Auth
+export * from "./models/auth";
+
 export type UserRole = "Admin" | "Client" | "Applier";
 
 export type ClientStatus = "onboarding_not_started" | "onboarding_in_progress" | "active" | "paused" | "placed";

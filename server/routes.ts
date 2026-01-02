@@ -5,11 +5,16 @@ import { insertClientSchema, updateClientSchema, insertApplierSchema, updateAppl
 import { registerObjectStorageRoutes, objectStorageService } from "./replit_integrations/object_storage";
 import { scrapeJobUrl } from "./apify";
 import { presenceService } from "./presence";
+import { setupAuth, registerAuthRoutes } from "./replit_integrations/auth";
 
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+  
+  // Setup Replit Auth (MUST be before other routes)
+  await setupAuth(app);
+  registerAuthRoutes(app);
   
   // Initialize WebSocket presence tracking for appliers
   presenceService.init(httpServer);
