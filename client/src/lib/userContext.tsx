@@ -149,12 +149,12 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const logout = () => {
     localStorage.removeItem("jumpseat_user_email");
     localStorage.removeItem("jumpseat_user_data");
-    setCurrentUser(MOCK_USERS[0]); // Reset to default user
-    window.location.href = "/login"; // Redirect to login page
+    setCurrentUser(null);
+    window.location.href = "/login";
   };
 
   return (
-    <UserContext.Provider value={{ currentUser, login, logout }}>
+    <UserContext.Provider value={{ currentUser, login, logout, isAuthenticated: currentUser !== null }}>
       {children}
     </UserContext.Provider>
   );
