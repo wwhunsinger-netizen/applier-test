@@ -1,10 +1,40 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Loader2 } from "lucide-react";
 import logoUrl from "@assets/Jumpseat_(17)_1766203547189.png";
 
 export default function LoginPage() {
-  const handleLogin = () => {
-    window.location.href = "/api/login";
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setIsLoading(true);
+
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || "Invalid email or password");
+      }
+
+      window.location.href = "/";
+    } catch (err: any) {
+      setError(err.message || "Login failed. Please try again.");
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -19,17 +49,60 @@ export default function LoginPage() {
           </div>
           <CardTitle className="text-2xl font-bold tracking-tight text-white">Welcome back</CardTitle>
           <CardDescription>
-            Sign in to access the Jumpseat portal
+            Enter your credentials to access the portal
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Button 
-            onClick={handleLogin}
-            className="w-full font-bold shadow-lg shadow-primary/20 bg-primary hover:bg-primary/90 text-white h-11"
-            data-testid="button-login"
-          >
-            Sign In with Replit
-          </Button>
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-white/80">Email</Label>
+              <Input 
+                id="email" 
+                type="email" 
+                placeholder="you@example.com" 
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required 
+                className="bg-white/5 border-white/10 text-white placeholder:text-white/30 focus-visible:ring-primary/50"
+                data-testid="input-email"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password" className="text-white/80">Password</Label>
+              <Input 
+                id="password" 
+                type="password"
+                placeholder="Enter your password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required 
+                className="bg-white/5 border-white/10 text-white placeholder:text-white/30 focus-visible:ring-primary/50"
+                data-testid="input-password"
+              />
+            </div>
+            
+            {error && (
+              <div className="text-red-500 text-sm text-center" data-testid="text-error">
+                {error}
+              </div>
+            )}
+
+            <Button 
+              className="w-full mt-2 font-bold shadow-lg shadow-primary/20 bg-primary hover:bg-primary/90 text-white h-11" 
+              type="submit" 
+              disabled={isLoading}
+              data-testid="button-login"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Signing in...
+                </>
+              ) : (
+                "Sign In"
+              )}
+            </Button>
+          </form>
         </CardContent>
       </Card>
     </div>
