@@ -5,7 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import Layout from "@/components/layout";
-import LandingPage from "@/pages/landing";
+import LoginPage from "@/pages/login";
 import DashboardPage from "@/pages/dashboard";
 import QueuePage from "@/pages/queue";
 import ReviewPage from "@/pages/review";
@@ -35,9 +35,9 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
     return <LoadingScreen />;
   }
   
-  // If not authenticated, show landing page
+  // If not authenticated, show login page
   if (!isAuthenticated) {
-    return <LandingPage />;
+    return <LoginPage />;
   }
   
   return <>{children}</>;
