@@ -120,9 +120,20 @@ The `client_job_responses` table stores client yes/no verdicts on sample jobs:
 - `responded_at` (timestamptz, required)
 
 ### Authentication
-- **Current Implementation**: Mock authentication with localStorage-based session
-- **User Roles**: Admin, Client, Applier - each with distinct dashboard views and permissions
-- **Demo Users**: Predefined test accounts for development
+- **Implementation**: Replit Auth (OpenID Connect) with support for Google, GitHub, Apple, and email/password login
+- **Key Files**:
+  - `server/replit_integrations/auth/replitAuth.ts` - Express middleware and auth routes
+  - `client/src/hooks/use-auth.ts` - React hook for auth state
+  - `client/src/lib/userContext.tsx` - User role resolution and context provider
+- **Auth Flow**:
+  1. User clicks login → redirects to `/api/login` → Replit OIDC provider
+  2. After authentication → callback to `/api/callback` → session created
+  3. Frontend queries `/api/auth/user` to get authenticated user
+  4. `UserProvider` resolves role by matching email against clients/appliers in Supabase
+- **User Roles**: Admin (hardcoded emails), Client, Applier - each with distinct dashboard views and permissions
+- **Admin Emails**: admin@jumpseat.com, admin@jumpseathub.com
+- **Route Protection**: `isAuthenticated` middleware on all `/api/*` routes (except auth endpoints)
+- **API Credentials**: All client API calls use `credentials: "include"` via `apiFetch` wrapper
 
 ### Key Design Patterns
 - **Shared Types**: The `shared/` directory contains schemas used by both client and server

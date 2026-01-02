@@ -2,6 +2,13 @@ import type { Client, Application, Interview, Job, Applier, InsertClient, Update
 
 const API_BASE = "/api";
 
+async function apiFetch(url: string, options?: RequestInit): Promise<Response> {
+  return fetch(url, {
+    ...options,
+    credentials: "include",
+  });
+}
+
 // Applier Stats type
 export interface ApplierStats {
   dailyApps: number;
@@ -21,14 +28,14 @@ export interface ApplierStats {
 
 // Fetch applier dashboard stats
 export async function fetchApplierStats(applierId: string): Promise<ApplierStats> {
-  const res = await fetch(`${API_BASE}/applier-stats/${applierId}`);
+  const res = await apiFetch(`${API_BASE}/applier-stats/${applierId}`);
   if (!res.ok) throw new Error("Failed to fetch applier stats");
   return res.json();
 }
 
 // Document upload - get presigned URL
 export async function requestUploadUrl(file: { name: string; size: number; type: string }) {
-  const res = await fetch(`${API_BASE}/uploads/request-url`, {
+  const res = await apiFetch(`${API_BASE}/uploads/request-url`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -53,7 +60,7 @@ export async function uploadToPresignedUrl(file: File, uploadURL: string) {
 
 // Client documents API
 export async function fetchClientDocuments(clientId: string): Promise<ClientDocument[]> {
-  const res = await fetch(`${API_BASE}/clients/${clientId}/documents`);
+  const res = await apiFetch(`${API_BASE}/clients/${clientId}/documents`);
   if (!res.ok) throw new Error("Failed to fetch client documents");
   return res.json();
 }
@@ -62,7 +69,7 @@ export async function saveClientDocument(
   clientId: string, 
   document: Omit<InsertClientDocument, 'client_id'>
 ): Promise<ClientDocument> {
-  const res = await fetch(`${API_BASE}/clients/${clientId}/documents`, {
+  const res = await apiFetch(`${API_BASE}/clients/${clientId}/documents`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(document),
@@ -72,7 +79,7 @@ export async function saveClientDocument(
 }
 
 export async function deleteClientDocument(clientId: string, documentType: string): Promise<void> {
-  const res = await fetch(`${API_BASE}/clients/${clientId}/documents/${documentType}`, {
+  const res = await apiFetch(`${API_BASE}/clients/${clientId}/documents/${documentType}`, {
     method: "DELETE",
   });
   if (!res.ok) throw new Error("Failed to delete client document");
@@ -80,19 +87,19 @@ export async function deleteClientDocument(clientId: string, documentType: strin
 
 // Client API
 export async function fetchClients(): Promise<Client[]> {
-  const res = await fetch(`${API_BASE}/clients`);
+  const res = await apiFetch(`${API_BASE}/clients`);
   if (!res.ok) throw new Error("Failed to fetch clients");
   return res.json();
 }
 
 export async function fetchClient(id: string): Promise<Client> {
-  const res = await fetch(`${API_BASE}/clients/${id}`);
+  const res = await apiFetch(`${API_BASE}/clients/${id}`);
   if (!res.ok) throw new Error("Failed to fetch client");
   return res.json();
 }
 
 export async function createClient(client: InsertClient): Promise<Client> {
-  const res = await fetch(`${API_BASE}/clients`, {
+  const res = await apiFetch(`${API_BASE}/clients`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(client),
@@ -102,7 +109,7 @@ export async function createClient(client: InsertClient): Promise<Client> {
 }
 
 export async function updateClient(id: string, updates: UpdateClient): Promise<Client> {
-  const res = await fetch(`${API_BASE}/clients/${id}`, {
+  const res = await apiFetch(`${API_BASE}/clients/${id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(updates),
@@ -113,19 +120,19 @@ export async function updateClient(id: string, updates: UpdateClient): Promise<C
 
 // Applier API
 export async function fetchAppliers(): Promise<Applier[]> {
-  const res = await fetch(`${API_BASE}/appliers`);
+  const res = await apiFetch(`${API_BASE}/appliers`);
   if (!res.ok) throw new Error("Failed to fetch appliers");
   return res.json();
 }
 
 export async function fetchApplier(id: string): Promise<Applier> {
-  const res = await fetch(`${API_BASE}/appliers/${id}`);
+  const res = await apiFetch(`${API_BASE}/appliers/${id}`);
   if (!res.ok) throw new Error("Failed to fetch applier");
   return res.json();
 }
 
 export async function createApplier(applier: InsertApplier): Promise<Applier> {
-  const res = await fetch(`${API_BASE}/appliers`, {
+  const res = await apiFetch(`${API_BASE}/appliers`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(applier),
@@ -135,7 +142,7 @@ export async function createApplier(applier: InsertApplier): Promise<Applier> {
 }
 
 export async function updateApplier(id: string, updates: UpdateApplier): Promise<Applier> {
-  const res = await fetch(`${API_BASE}/appliers/${id}`, {
+  const res = await apiFetch(`${API_BASE}/appliers/${id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(updates),
@@ -154,13 +161,13 @@ export async function fetchApplications(params?: { client_id?: string; applier_i
     ? `${API_BASE}/applications?${queryParams}`
     : `${API_BASE}/applications`;
   
-  const res = await fetch(url);
+  const res = await apiFetch(url);
   if (!res.ok) throw new Error("Failed to fetch applications");
   return res.json();
 }
 
 export async function createApplication(application: InsertApplication): Promise<Application> {
-  const res = await fetch(`${API_BASE}/applications`, {
+  const res = await apiFetch(`${API_BASE}/applications`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(application),
@@ -170,7 +177,7 @@ export async function createApplication(application: InsertApplication): Promise
 }
 
 export async function updateApplication(id: string, updates: Partial<Application>): Promise<Application> {
-  const res = await fetch(`${API_BASE}/applications/${id}`, {
+  const res = await apiFetch(`${API_BASE}/applications/${id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(updates),
@@ -188,13 +195,13 @@ export async function fetchInterviews(params?: { client_id?: string }): Promise<
     ? `${API_BASE}/interviews?${queryParams}`
     : `${API_BASE}/interviews`;
   
-  const res = await fetch(url);
+  const res = await apiFetch(url);
   if (!res.ok) throw new Error("Failed to fetch interviews");
   return res.json();
 }
 
 export async function createInterview(interview: InsertInterview): Promise<Interview> {
-  const res = await fetch(`${API_BASE}/interviews`, {
+  const res = await apiFetch(`${API_BASE}/interviews`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(interview),
@@ -212,7 +219,7 @@ export async function fetchJobs(params?: { client_id?: string }): Promise<Job[]>
     ? `${API_BASE}/jobs?${queryParams}`
     : `${API_BASE}/jobs`;
   
-  const res = await fetch(url);
+  const res = await apiFetch(url);
   if (!res.ok) throw new Error("Failed to fetch jobs");
   return res.json();
 }
@@ -222,20 +229,20 @@ export async function fetchQueueJobs(clientId: string, applierId: string): Promi
   queryParams.set("client_id", clientId);
   queryParams.set("applier_id", applierId);
   
-  const res = await fetch(`${API_BASE}/queue-jobs?${queryParams}`);
+  const res = await apiFetch(`${API_BASE}/queue-jobs?${queryParams}`);
   if (!res.ok) throw new Error("Failed to fetch queue jobs");
   return res.json();
 }
 
 // Job Sample API
 export async function fetchJobSamples(clientId: string): Promise<JobCriteriaSample[]> {
-  const res = await fetch(`${API_BASE}/clients/${clientId}/job-samples`);
+  const res = await apiFetch(`${API_BASE}/clients/${clientId}/job-samples`);
   if (!res.ok) throw new Error("Failed to fetch job samples");
   return res.json();
 }
 
 export async function createJobSamplesBulk(clientId: string, urls: string[]): Promise<JobCriteriaSample[]> {
-  const res = await fetch(`${API_BASE}/clients/${clientId}/job-samples/bulk`, {
+  const res = await apiFetch(`${API_BASE}/clients/${clientId}/job-samples/bulk`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ urls }),
@@ -245,7 +252,7 @@ export async function createJobSamplesBulk(clientId: string, urls: string[]): Pr
 }
 
 export async function updateJobSample(id: string, updates: Partial<JobCriteriaSample>): Promise<JobCriteriaSample> {
-  const res = await fetch(`${API_BASE}/job-samples/${id}`, {
+  const res = await apiFetch(`${API_BASE}/job-samples/${id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(updates),
@@ -255,14 +262,14 @@ export async function updateJobSample(id: string, updates: Partial<JobCriteriaSa
 }
 
 export async function deleteJobSample(id: string): Promise<void> {
-  const res = await fetch(`${API_BASE}/job-samples/${id}`, {
+  const res = await apiFetch(`${API_BASE}/job-samples/${id}`, {
     method: "DELETE",
   });
   if (!res.ok) throw new Error("Failed to delete job sample");
 }
 
 export async function scrapeJobSample(id: string): Promise<JobCriteriaSample> {
-  const res = await fetch(`${API_BASE}/job-samples/${id}/scrape`, {
+  const res = await apiFetch(`${API_BASE}/job-samples/${id}/scrape`, {
     method: "POST",
   });
   if (!res.ok) throw new Error("Failed to scrape job sample");
@@ -271,13 +278,13 @@ export async function scrapeJobSample(id: string): Promise<JobCriteriaSample> {
 
 // Client Job Response API
 export async function fetchJobResponses(clientId: string): Promise<ClientJobResponse[]> {
-  const res = await fetch(`${API_BASE}/clients/${clientId}/job-responses`);
+  const res = await apiFetch(`${API_BASE}/clients/${clientId}/job-responses`);
   if (!res.ok) throw new Error("Failed to fetch job responses");
   return res.json();
 }
 
 export async function createJobResponse(clientId: string, response: Omit<InsertClientJobResponse, 'client_id'>): Promise<ClientJobResponse> {
-  const res = await fetch(`${API_BASE}/clients/${clientId}/job-responses`, {
+  const res = await apiFetch(`${API_BASE}/clients/${clientId}/job-responses`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(response),
@@ -288,7 +295,7 @@ export async function createJobResponse(clientId: string, response: Omit<InsertC
 
 // Applier Session API
 export async function fetchApplierSessions(applierId: string): Promise<ApplierJobSession[]> {
-  const res = await fetch(`${API_BASE}/applier-sessions?applier_id=${applierId}`);
+  const res = await apiFetch(`${API_BASE}/applier-sessions?applier_id=${applierId}`);
   if (!res.ok) throw new Error("Failed to fetch applier sessions");
   return res.json();
 }
@@ -297,7 +304,7 @@ export async function startReviewSession(data: {
   job_id: string;
   applier_id: string;
 }): Promise<ApplierJobSession> {
-  const res = await fetch(`${API_BASE}/applier-sessions/start-review`, {
+  const res = await apiFetch(`${API_BASE}/applier-sessions/start-review`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
@@ -307,7 +314,7 @@ export async function startReviewSession(data: {
 }
 
 export async function markSessionApplied(sessionId: string): Promise<{ session: ApplierJobSession; application: Application }> {
-  const res = await fetch(`${API_BASE}/applier-sessions/${sessionId}/applied`, {
+  const res = await apiFetch(`${API_BASE}/applier-sessions/${sessionId}/applied`, {
     method: "POST",
   });
   if (!res.ok) throw new Error("Failed to mark as applied");
@@ -315,7 +322,7 @@ export async function markSessionApplied(sessionId: string): Promise<{ session: 
 }
 
 export async function flagSession(sessionId: string, comment: string): Promise<{ session: ApplierJobSession; flaggedApplication: FlaggedApplication }> {
-  const res = await fetch(`${API_BASE}/applier-sessions/${sessionId}/flag`, {
+  const res = await apiFetch(`${API_BASE}/applier-sessions/${sessionId}/flag`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ comment }),
@@ -329,13 +336,13 @@ export async function fetchFlaggedApplications(status?: "open" | "resolved"): Pr
   const url = status 
     ? `${API_BASE}/flagged-applications?status=${status}`
     : `${API_BASE}/flagged-applications`;
-  const res = await fetch(url);
+  const res = await apiFetch(url);
   if (!res.ok) throw new Error("Failed to fetch flagged applications");
   return res.json();
 }
 
 export async function resolveFlaggedApplication(id: string, data: { resolved_by: string; resolution_note?: string }): Promise<FlaggedApplication> {
-  const res = await fetch(`${API_BASE}/flagged-applications/${id}`, {
+  const res = await apiFetch(`${API_BASE}/flagged-applications/${id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ status: "resolved", ...data }),
@@ -359,7 +366,7 @@ export interface ClientCost {
 }
 
 export async function fetchClientCosts(): Promise<ClientCost[]> {
-  const res = await fetch(`${API_BASE}/admin/client-costs`);
+  const res = await apiFetch(`${API_BASE}/admin/client-costs`);
   if (!res.ok) throw new Error("Failed to fetch client costs");
   return res.json();
 }
@@ -392,7 +399,7 @@ export interface AdminOverview {
 }
 
 export async function fetchAdminOverview(): Promise<AdminOverview> {
-  const res = await fetch(`${API_BASE}/admin/overview`);
+  const res = await apiFetch(`${API_BASE}/admin/overview`);
   if (!res.ok) throw new Error("Failed to fetch admin overview");
   return res.json();
 }
@@ -411,7 +418,7 @@ export interface ClientPerformance {
 }
 
 export async function fetchClientPerformance(): Promise<ClientPerformance[]> {
-  const res = await fetch(`${API_BASE}/admin/client-performance`);
+  const res = await apiFetch(`${API_BASE}/admin/client-performance`);
   if (!res.ok) throw new Error("Failed to fetch client performance");
   return res.json();
 }

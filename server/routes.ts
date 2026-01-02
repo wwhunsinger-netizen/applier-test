@@ -5,7 +5,7 @@ import { insertClientSchema, updateClientSchema, insertApplierSchema, updateAppl
 import { registerObjectStorageRoutes, objectStorageService } from "./replit_integrations/object_storage";
 import { scrapeJobUrl } from "./apify";
 import { presenceService } from "./presence";
-import { setupAuth, registerAuthRoutes } from "./replit_integrations/auth";
+import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integrations/auth";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -19,8 +19,8 @@ export async function registerRoutes(
   // Initialize WebSocket presence tracking for appliers
   presenceService.init(httpServer);
   
-  // Client routes
-  app.get("/api/clients", async (req, res) => {
+  // Client routes (protected)
+  app.get("/api/clients", isAuthenticated, async (req, res) => {
     try {
       const clients = await storage.getClients();
       res.json(clients);
@@ -30,7 +30,7 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/clients/:id", async (req, res) => {
+  app.get("/api/clients/:id", isAuthenticated, async (req, res) => {
     try {
       const client = await storage.getClient(req.params.id);
       if (!client) {
@@ -43,7 +43,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/clients", async (req, res) => {
+  app.post("/api/clients", isAuthenticated, async (req, res) => {
     try {
       const validatedData = insertClientSchema.parse(req.body);
       const client = await storage.createClient(validatedData);
@@ -54,7 +54,7 @@ export async function registerRoutes(
     }
   });
 
-  app.patch("/api/clients/:id", async (req, res) => {
+  app.patch("/api/clients/:id", isAuthenticated, async (req, res) => {
     try {
       const validatedData = updateClientSchema.parse(req.body);
       
@@ -117,7 +117,7 @@ export async function registerRoutes(
   });
 
   // Application routes
-  app.get("/api/applications", async (req, res) => {
+  app.get("/api/applications", isAuthenticated, async (req, res) => {
     try {
       const { client_id, applier_id } = req.query;
       
@@ -137,7 +137,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/applications", async (req, res) => {
+  app.post("/api/applications", isAuthenticated, async (req, res) => {
     try {
       const validatedData = insertApplicationSchema.parse(req.body);
       const application = await storage.createApplication(validatedData);
@@ -148,7 +148,7 @@ export async function registerRoutes(
     }
   });
 
-  app.patch("/api/applications/:id", async (req, res) => {
+  app.patch("/api/applications/:id", isAuthenticated, async (req, res) => {
     try {
       const updates = req.body;
       const updated = await storage.updateApplication(req.params.id, updates);
@@ -163,7 +163,7 @@ export async function registerRoutes(
   });
 
   // Interview routes
-  app.get("/api/interviews", async (req, res) => {
+  app.get("/api/interviews", isAuthenticated, async (req, res) => {
     try {
       const { client_id } = req.query;
       
@@ -178,7 +178,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/interviews", async (req, res) => {
+  app.post("/api/interviews", isAuthenticated, async (req, res) => {
     try {
       const validatedData = insertInterviewSchema.parse(req.body);
       const interview = await storage.createInterview(validatedData);
@@ -216,7 +216,7 @@ export async function registerRoutes(
   });
 
   // Job routes
-  app.get("/api/jobs", async (req, res) => {
+  app.get("/api/jobs", isAuthenticated, async (req, res) => {
     try {
       const { client_id } = req.query;
       
@@ -232,7 +232,7 @@ export async function registerRoutes(
   });
 
   // Get queue jobs (excludes already-applied jobs for the applier)
-  app.get("/api/queue-jobs", async (req, res) => {
+  app.get("/api/queue-jobs", isAuthenticated, async (req, res) => {
     try {
       const { client_id, applier_id } = req.query;
       
@@ -249,7 +249,7 @@ export async function registerRoutes(
   });
 
   // Applier routes
-  app.get("/api/appliers", async (req, res) => {
+  app.get("/api/appliers", isAuthenticated, async (req, res) => {
     try {
       const appliers = await storage.getAppliers();
       res.json(appliers);
@@ -259,7 +259,7 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/appliers/:id", async (req, res) => {
+  app.get("/api/appliers/:id", isAuthenticated, async (req, res) => {
     try {
       const applier = await storage.getApplier(req.params.id);
       if (!applier) {
@@ -272,7 +272,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/appliers", async (req, res) => {
+  app.post("/api/appliers", isAuthenticated, async (req, res) => {
     try {
       console.log("Creating applier with data:", JSON.stringify(req.body, null, 2));
       const validatedData = insertApplierSchema.parse(req.body);
@@ -287,7 +287,7 @@ export async function registerRoutes(
     }
   });
 
-  app.patch("/api/appliers/:id", async (req, res) => {
+  app.patch("/api/appliers/:id", isAuthenticated, async (req, res) => {
     try {
       const validatedData = updateApplierSchema.parse(req.body);
       
@@ -311,7 +311,7 @@ export async function registerRoutes(
   });
 
   // Client document routes
-  app.get("/api/clients/:clientId/documents", async (req, res) => {
+  app.get("/api/clients/:clientId/documents", isAuthenticated, async (req, res) => {
     try {
       const documents = await storage.getClientDocuments(req.params.clientId);
       res.json(documents);
@@ -321,7 +321,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/clients/:clientId/documents", async (req, res) => {
+  app.post("/api/clients/:clientId/documents", isAuthenticated, async (req, res) => {
     try {
       const validatedData = insertClientDocumentSchema.parse({
         ...req.body,
@@ -335,7 +335,7 @@ export async function registerRoutes(
     }
   });
 
-  app.delete("/api/clients/:clientId/documents/:documentType", async (req, res) => {
+  app.delete("/api/clients/:clientId/documents/:documentType", isAuthenticated, async (req, res) => {
     try {
       await storage.deleteClientDocument(req.params.clientId, req.params.documentType);
       res.status(204).send();
@@ -346,7 +346,7 @@ export async function registerRoutes(
   });
 
   // Download client document from object storage
-  app.get("/api/clients/:clientId/documents/:documentType/download", async (req, res) => {
+  app.get("/api/clients/:clientId/documents/:documentType/download", isAuthenticated, async (req, res) => {
     try {
       const documents = await storage.getClientDocuments(req.params.clientId);
       const doc = documents.find(d => d.document_type === req.params.documentType);
@@ -373,7 +373,7 @@ export async function registerRoutes(
   });
 
   // Job sample routes
-  app.get("/api/clients/:clientId/job-samples", async (req, res) => {
+  app.get("/api/clients/:clientId/job-samples", isAuthenticated, async (req, res) => {
     try {
       const samples = await storage.getJobSamples(req.params.clientId);
       res.json(samples);
@@ -383,7 +383,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/clients/:clientId/job-samples", async (req, res) => {
+  app.post("/api/clients/:clientId/job-samples", isAuthenticated, async (req, res) => {
     try {
       const validatedData = insertJobCriteriaSampleSchema.parse({
         ...req.body,
@@ -397,7 +397,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/clients/:clientId/job-samples/bulk", async (req, res) => {
+  app.post("/api/clients/:clientId/job-samples/bulk", isAuthenticated, async (req, res) => {
     try {
       const { urls } = req.body;
       if (!Array.isArray(urls)) {
@@ -423,7 +423,7 @@ export async function registerRoutes(
     }
   });
 
-  app.patch("/api/job-samples/:id", async (req, res) => {
+  app.patch("/api/job-samples/:id", isAuthenticated, async (req, res) => {
     try {
       const validatedData = updateJobCriteriaSampleSchema.parse(req.body);
       const sample = await storage.updateJobSample(req.params.id, validatedData);
@@ -440,7 +440,7 @@ export async function registerRoutes(
     }
   });
 
-  app.delete("/api/job-samples/:id", async (req, res) => {
+  app.delete("/api/job-samples/:id", isAuthenticated, async (req, res) => {
     try {
       await storage.deleteJobSample(req.params.id);
       res.status(204).send();
@@ -450,7 +450,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/job-samples/:id/scrape", async (req, res) => {
+  app.post("/api/job-samples/:id/scrape", isAuthenticated, async (req, res) => {
     try {
       if (!process.env.APIFY_API_TOKEN) {
         return res.status(500).json({ error: "Apify API token not configured. Please add APIFY_API_TOKEN to environment secrets." });
@@ -499,7 +499,7 @@ export async function registerRoutes(
   });
 
   // Client job response routes
-  app.get("/api/clients/:clientId/job-responses", async (req, res) => {
+  app.get("/api/clients/:clientId/job-responses", isAuthenticated, async (req, res) => {
     try {
       const responses = await storage.getJobResponses(req.params.clientId);
       res.json(responses);
@@ -509,7 +509,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/clients/:clientId/job-responses", async (req, res) => {
+  app.post("/api/clients/:clientId/job-responses", isAuthenticated, async (req, res) => {
     try {
       const validatedData = insertClientJobResponseSchema.parse({
         ...req.body,
@@ -533,7 +533,7 @@ export async function registerRoutes(
   // ========================================
   
   // Get applier dashboard stats
-  app.get("/api/applier-stats/:applierId", async (req, res) => {
+  app.get("/api/applier-stats/:applierId", isAuthenticated, async (req, res) => {
     try {
       const applierId = req.params.applierId;
       
@@ -658,7 +658,7 @@ export async function registerRoutes(
   // ========================================
   
   // Get applier's sessions
-  app.get("/api/applier-sessions", async (req, res) => {
+  app.get("/api/applier-sessions", isAuthenticated, async (req, res) => {
     try {
       const { applier_id } = req.query;
       
@@ -675,7 +675,7 @@ export async function registerRoutes(
   });
 
   // Start review - creates session with in_progress status and records start time
-  app.post("/api/applier-sessions/start-review", async (req, res) => {
+  app.post("/api/applier-sessions/start-review", isAuthenticated, async (req, res) => {
     try {
       const { job_id, applier_id } = req.body;
       
@@ -715,7 +715,7 @@ export async function registerRoutes(
   });
 
   // Mark applied - updates session, creates application record
-  app.post("/api/applier-sessions/:sessionId/applied", async (req, res) => {
+  app.post("/api/applier-sessions/:sessionId/applied", isAuthenticated, async (req, res) => {
     try {
       const session = await storage.getApplierSession(req.params.sessionId);
       
@@ -804,7 +804,7 @@ export async function registerRoutes(
   });
 
   // Flag job - creates flagged application for admin review
-  app.post("/api/applier-sessions/:sessionId/flag", async (req, res) => {
+  app.post("/api/applier-sessions/:sessionId/flag", isAuthenticated, async (req, res) => {
     try {
       const { comment } = req.body;
       
@@ -850,7 +850,7 @@ export async function registerRoutes(
   // FLAGGED APPLICATIONS ROUTES (Admin)
   // ========================================
   
-  app.get("/api/flagged-applications", async (req, res) => {
+  app.get("/api/flagged-applications", isAuthenticated, async (req, res) => {
     try {
       const { status } = req.query;
       
@@ -868,7 +868,7 @@ export async function registerRoutes(
     }
   });
 
-  app.patch("/api/flagged-applications/:id", async (req, res) => {
+  app.patch("/api/flagged-applications/:id", isAuthenticated, async (req, res) => {
     try {
       const validatedData = updateFlaggedApplicationSchema.parse(req.body);
       
@@ -968,7 +968,7 @@ export async function registerRoutes(
   // ========================================
   
   // Get earnings for an applier
-  app.get("/api/appliers/:applierId/earnings", async (req, res) => {
+  app.get("/api/appliers/:applierId/earnings", isAuthenticated, async (req, res) => {
     try {
       const { start_date, end_date } = req.query;
       
@@ -991,7 +991,7 @@ export async function registerRoutes(
   });
 
   // Get all earnings (admin view)
-  app.get("/api/earnings", async (req, res) => {
+  app.get("/api/earnings", isAuthenticated, async (req, res) => {
     try {
       const { client_id } = req.query;
       
@@ -1010,7 +1010,7 @@ export async function registerRoutes(
   });
 
   // Create a new earning record
-  app.post("/api/earnings", async (req, res) => {
+  app.post("/api/earnings", isAuthenticated, async (req, res) => {
     try {
       const { insertApplierEarningSchema } = await import("@shared/schema");
       const validatedData = insertApplierEarningSchema.parse(req.body);
@@ -1023,7 +1023,7 @@ export async function registerRoutes(
   });
 
   // Update earning (mark as approved/paid)
-  app.patch("/api/earnings/:id", async (req, res) => {
+  app.patch("/api/earnings/:id", isAuthenticated, async (req, res) => {
     try {
       const { updateApplierEarningSchema } = await import("@shared/schema");
       const validatedData = updateApplierEarningSchema.parse(req.body);
@@ -1045,7 +1045,7 @@ export async function registerRoutes(
   });
 
   // Admin client performance - real client stats
-  app.get("/api/admin/client-performance", async (req, res) => {
+  app.get("/api/admin/client-performance", isAuthenticated, async (req, res) => {
     try {
       const clients = await storage.getClients();
       const allApplications = await storage.getApplications();
@@ -1109,7 +1109,7 @@ export async function registerRoutes(
   });
 
   // Admin overview stats - real applier performance data
-  app.get("/api/admin/overview", async (req, res) => {
+  app.get("/api/admin/overview", isAuthenticated, async (req, res) => {
     try {
       const appliers = await storage.getAppliers();
       const allApplications = await storage.getApplications();
@@ -1213,7 +1213,7 @@ export async function registerRoutes(
   });
 
   // Get earnings summary per client (for admin cost tracking)
-  app.get("/api/admin/client-costs", async (req, res) => {
+  app.get("/api/admin/client-costs", isAuthenticated, async (req, res) => {
     try {
       const clients = await storage.getClients();
       const allEarnings = await storage.getAllEarnings();

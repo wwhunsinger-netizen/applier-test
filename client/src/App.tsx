@@ -5,13 +5,12 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import Layout from "@/components/layout";
-import LoginPage from "@/pages/login";
+import LandingPage from "@/pages/landing";
 import DashboardPage from "@/pages/dashboard";
 import QueuePage from "@/pages/queue";
 import ReviewPage from "@/pages/review";
 import LeaderboardPage from "@/pages/leaderboard";
 import LoadingScreen from "@/components/loading";
-import { useState, useEffect } from "react";
 import { UserProvider, useUser } from "@/lib/userContext";
 
 import { ApplicationsProvider } from "@/lib/applicationsContext";
@@ -29,17 +28,16 @@ import ClientJobCriteriaPage from "@/pages/client/job-criteria";
 import AppliedPage from "@/pages/applier/applied";
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated } = useUser();
-  const [location, setLocation] = useLocation();
+  const { isAuthenticated, isLoading } = useUser();
   
-  useEffect(() => {
-    if (!isAuthenticated && location !== "/login") {
-      setLocation("/login");
-    }
-  }, [isAuthenticated, location, setLocation]);
+  // Show loading while checking auth and resolving user role
+  if (isLoading) {
+    return <LoadingScreen />;
+  }
   
-  if (!isAuthenticated && location !== "/login") {
-    return null;
+  // If not authenticated, show landing page
+  if (!isAuthenticated) {
+    return <LandingPage />;
   }
   
   return <>{children}</>;
@@ -50,7 +48,6 @@ function Router() {
     <AuthGuard>
       <Layout>
         <Switch>
-          <Route path="/login" component={LoginPage} />
           <Route path="/" component={DashboardPage} />
           <Route path="/queue" component={QueuePage} />
           <Route path="/review/:id" component={ReviewPage} />

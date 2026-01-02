@@ -1,160 +1,122 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { MOCK_USERS } from "./mockData";
+import { useAuth } from "@/hooks/use-auth";
+import { useQueryClient } from "@tanstack/react-query";
 import { fetchClients, fetchAppliers } from "./api";
 
-type User = {
+type AppUser = {
   id: string;
   name: string;
   email: string;
-  role: string;
+  role: "Admin" | "Client" | "Applier";
   avatar: string | null;
   applicationsSent?: number;
   interviewsScheduled?: number;
 };
 
 interface UserContextType {
-  currentUser: User | null;
-  login: (email: string) => void;
+  currentUser: AppUser | null;
   logout: () => void;
   isAuthenticated: boolean;
+  isLoading: boolean;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
-// Cache for Supabase users
-let cachedClients: Array<{id: string; name: string; email: string}> = [];
-let cachedAppliers: Array<{id: string; name: string; email: string; is_active: boolean}> = [];
+const ADMIN_EMAILS = ["admin@jumpseat.com", "admin@jumpseathub.com"];
 
 export function UserProvider({ children }: { children: ReactNode }) {
-  // Default to null (not logged in) if no saved session
-  const [currentUser, setCurrentUser] = useState<User | null>(() => {
-    const savedUser = localStorage.getItem("jumpseat_user_data");
-    
-    if (savedUser) {
-      try {
-        return JSON.parse(savedUser);
-      } catch {
-        // Invalid data, clear it
-        localStorage.removeItem("jumpseat_user_data");
-        localStorage.removeItem("jumpseat_user_email");
-      }
-    }
-    
-    return null; // No auto-login - require user to log in
-  });
+  const { user: authUser, isLoading: authLoading, isAuthenticated: authAuthenticated, logout: authLogout } = useAuth();
+  const queryClient = useQueryClient();
+  const [appUser, setAppUser] = useState<AppUser | null>(null);
+  const [roleLoading, setRoleLoading] = useState(false);
 
-  // Fetch clients and appliers from Supabase on mount
   useEffect(() => {
-    fetchClients()
-      .then((clients) => {
-        cachedClients = clients.map(c => ({
-          id: c.id,
-          name: `${c.first_name} ${c.last_name}`.trim(),
-          email: c.email
-        }));
-      })
-      .catch(console.error);
-    
-    fetchAppliers()
-      .then((appliers) => {
-        cachedAppliers = appliers.map(a => ({
-          id: a.id,
-          name: `${a.first_name} ${a.last_name}`.trim(),
-          email: a.email,
-          is_active: a.is_active
-        }));
-      })
-      .catch(console.error);
-  }, []);
+    if (!authUser?.email) {
+      setAppUser(null);
+      return;
+    }
 
-  const login = (email: string) => {
-    // First check MOCK_USERS
-    let mockUser = MOCK_USERS.find(u => u.email === email);
-    if (mockUser) {
-      setCurrentUser(mockUser);
-      localStorage.setItem("jumpseat_user_email", email);
-      localStorage.setItem("jumpseat_user_data", JSON.stringify(mockUser));
-      return;
-    }
-    
-    // Check cached Supabase appliers
-    const foundApplier = cachedAppliers.find(a => a.email === email && a.is_active);
-    if (foundApplier) {
-      const user: User = {
-        id: foundApplier.id,
-        name: foundApplier.name,
-        email: foundApplier.email,
-        role: "Applier",
-        avatar: null
-      };
-      setCurrentUser(user);
-      localStorage.setItem("jumpseat_user_email", email);
-      localStorage.setItem("jumpseat_user_data", JSON.stringify(user));
-      return;
-    }
-    
-    // Check cached Supabase clients
-    const foundClient = cachedClients.find(c => c.email === email);
-    if (foundClient) {
-      const user: User = {
-        id: foundClient.id,
-        name: foundClient.name,
-        email: foundClient.email,
-        role: "Client",
-        avatar: null
-      };
-      setCurrentUser(user);
-      localStorage.setItem("jumpseat_user_email", email);
-      localStorage.setItem("jumpseat_user_data", JSON.stringify(user));
-      return;
-    }
-    
-    // If still not found, try fetching fresh from API
-    Promise.all([fetchAppliers(), fetchClients()])
-      .then(([appliers, clients]) => {
-        // Check appliers first
-        const applier = appliers.find(a => a.email === email && a.is_active);
+    const determineRole = async () => {
+      setRoleLoading(true);
+      const email = authUser.email!;
+      
+      if (ADMIN_EMAILS.includes(email.toLowerCase())) {
+        setAppUser({
+          id: authUser.id,
+          name: `${authUser.firstName || ""} ${authUser.lastName || ""}`.trim() || "Admin",
+          email: email,
+          role: "Admin",
+          avatar: authUser.profileImageUrl ?? null,
+        });
+        setRoleLoading(false);
+        return;
+      }
+
+      try {
+        const [appliers, clients] = await Promise.all([fetchAppliers(), fetchClients()]);
+
+        const applier = appliers.find(a => a.email.toLowerCase() === email.toLowerCase() && a.is_active);
         if (applier) {
-          const user: User = {
+          setAppUser({
             id: applier.id,
             name: `${applier.first_name} ${applier.last_name}`.trim(),
             email: applier.email,
             role: "Applier",
-            avatar: null
-          };
-          setCurrentUser(user);
-          localStorage.setItem("jumpseat_user_email", email);
-          localStorage.setItem("jumpseat_user_data", JSON.stringify(user));
+            avatar: authUser.profileImageUrl ?? null,
+          });
+          setRoleLoading(false);
           return;
         }
-        
-        // Then check clients
-        const client = clients.find(c => c.email === email);
+
+        const client = clients.find(c => c.email.toLowerCase() === email.toLowerCase());
         if (client) {
-          const user: User = {
+          setAppUser({
             id: client.id,
             name: `${client.first_name} ${client.last_name}`.trim(),
             email: client.email,
             role: "Client",
-            avatar: null
-          };
-          setCurrentUser(user);
-          localStorage.setItem("jumpseat_user_email", email);
-          localStorage.setItem("jumpseat_user_data", JSON.stringify(user));
+            avatar: authUser.profileImageUrl ?? null,
+          });
+          setRoleLoading(false);
+          return;
         }
-      })
-      .catch(console.error);
-  };
+
+        setAppUser({
+          id: authUser.id,
+          name: `${authUser.firstName || ""} ${authUser.lastName || ""}`.trim() || email,
+          email: email,
+          role: "Client",
+          avatar: authUser.profileImageUrl ?? null,
+        });
+      } catch (error) {
+        console.error("Error determining user role:", error);
+        setAppUser({
+          id: authUser.id,
+          name: `${authUser.firstName || ""} ${authUser.lastName || ""}`.trim() || email,
+          email: email,
+          role: "Client",
+          avatar: authUser.profileImageUrl ?? null,
+        });
+      }
+      setRoleLoading(false);
+    };
+
+    determineRole();
+  }, [authUser]);
 
   const logout = () => {
-    localStorage.removeItem("jumpseat_user_email");
-    localStorage.removeItem("jumpseat_user_data");
-    setCurrentUser(null);
-    window.location.href = "/login";
+    setAppUser(null);
+    queryClient.clear();
+    authLogout();
   };
 
   return (
-    <UserContext.Provider value={{ currentUser, login, logout, isAuthenticated: currentUser !== null }}>
+    <UserContext.Provider value={{ 
+      currentUser: appUser, 
+      logout, 
+      isAuthenticated: authAuthenticated && appUser !== null,
+      isLoading: authLoading || roleLoading
+    }}>
       {children}
     </UserContext.Provider>
   );
