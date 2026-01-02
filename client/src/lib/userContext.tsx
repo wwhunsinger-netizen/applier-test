@@ -13,9 +13,10 @@ type User = {
 };
 
 interface UserContextType {
-  currentUser: User;
+  currentUser: User | null;
   login: (email: string) => void;
   logout: () => void;
+  isAuthenticated: boolean;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -25,20 +26,21 @@ let cachedClients: Array<{id: string; name: string; email: string}> = [];
 let cachedAppliers: Array<{id: string; name: string; email: string; is_active: boolean}> = [];
 
 export function UserProvider({ children }: { children: ReactNode }) {
-  // Default to first user (Admin) if no one is logged in
-  const [currentUser, setCurrentUser] = useState<User>(() => {
-    const savedEmail = localStorage.getItem("jumpseat_user_email");
+  // Default to null (not logged in) if no saved session
+  const [currentUser, setCurrentUser] = useState<User | null>(() => {
     const savedUser = localStorage.getItem("jumpseat_user_data");
     
     if (savedUser) {
       try {
         return JSON.parse(savedUser);
       } catch {
-        // Fall through to default
+        // Invalid data, clear it
+        localStorage.removeItem("jumpseat_user_data");
+        localStorage.removeItem("jumpseat_user_email");
       }
     }
     
-    return MOCK_USERS.find(u => u.email === savedEmail) || MOCK_USERS[0];
+    return null; // No auto-login - require user to log in
   });
 
   // Fetch clients and appliers from Supabase on mount
