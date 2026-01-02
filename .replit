@@ -49,3 +49,6 @@ integrations = ["javascript_object_storage:2.0.0"]
 [userenv]
 
 [userenv.shared]
+
+[userenv.production]
+SEED_CREDENTIALS = "[{\"userId\":\"0b319efe-b359-4bf2-a0dd-5a4d993d23cc\",\"email\":\"admin@jumpseat.com\",\"password\":\"smGeGcbEQSaA\",\"firstName\":\"Admin\",\"lastName\":\"User\"},{\"userId\":\"a86ed547-e7da-4844-ad0c-fc194c8d0325\",\"email\":\"thm.bacalla@gmail.com\",\"password\":\"R8cXuqmmJDVT\",\"firstName\":\"Thea\",\"lastName\":\"Bacalla\"},{\"userId\":\"23709e70-5086-43f3-a8f1-49ff4d51830e\",\"email\":\"jon@desk.inc\",\"password\":\"BuTp8sW5Cmeb\",\"firstName\":\"Jonathan\",\"lastName\":\"Ramirez\"},{\"userId\":\"0bb648f3-8bab-4d94-bc0e-3ba5df4ff617\",\"email\":\"dimas@desk.inc\",\"password\":\"GTYa6f7HKyV3\",\"firstName\":\"Dimas\",\"lastName\":\"Gonzalez\"},{\"userId\":\"7eacd0d8-280b-4689-93e2-132373d7ec50\",\"email\":\"carl@desk.inc\",\"password\":\"LPxWq2N9ZmcE\",\"firstName\":\"Carl\",\"lastName\":\"Noonan\"},{\"userId\":\"46a2a696-76b8-4e97-ae1c-d23678f3c0d6\",\"email\":\"del@desk.inc\",\"password\":\"H4sRfDk7VtYp\",\"firstName\":\"Del\",\"lastName\":\"Johnson\"}]"

@@ -2,6 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
+import { seedUserCredentials } from "./replit_integrations/auth/storage";
 
 const app = express();
 const httpServer = createServer(app);
@@ -60,6 +61,9 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Seed user credentials on startup (for both dev and prod)
+  await seedUserCredentials();
+  
   await registerRoutes(httpServer, app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
