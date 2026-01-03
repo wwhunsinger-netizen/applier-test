@@ -1,5 +1,5 @@
 import { users, userCredentials, type User, type UpsertUser } from "@shared/models/auth";
-import { db } from "../../db";
+import { db, withDbRetry } from "../../db";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcrypt";
 
@@ -41,10 +41,12 @@ class AuthStorage implements IAuthStorage {
   }
 
   async getUserCredentials(email: string): Promise<UserCredentials | null> {
-    const [cred] = await db
-      .select()
-      .from(userCredentials)
-      .where(eq(userCredentials.email, email.toLowerCase()));
+    const [cred] = await withDbRetry(() => 
+      db
+        .select()
+        .from(userCredentials)
+        .where(eq(userCredentials.email, email.toLowerCase()))
+    );
     
     if (!cred) return null;
     

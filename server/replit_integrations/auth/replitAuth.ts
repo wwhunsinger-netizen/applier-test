@@ -169,7 +169,15 @@ export async function setupAuth(app: Express) {
         console.log("[auth] Credentials found:", !!credentials);
       } catch (dbError: any) {
         console.error("[auth] Database error looking up credentials:", dbError.message);
-        return res.status(500).json({ message: "Database error: " + dbError.message });
+        // Check if it's a transient network error
+        const isTransient = dbError.message?.includes('EAI_AGAIN') || 
+                           dbError.message?.includes('ETIMEDOUT') ||
+                           dbError.message?.includes('ECONNRESET') ||
+                           dbError.message?.includes('getaddrinfo');
+        if (isTransient) {
+          return res.status(503).json({ message: "Temporary connection issue. Please try again in a moment." });
+        }
+        return res.status(500).json({ message: "Unable to sign in. Please try again." });
       }
       
       if (!credentials) {
