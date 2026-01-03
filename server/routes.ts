@@ -1245,6 +1245,45 @@ export async function registerRoutes(
     }
   });
 
+  // ClientGPT - proxy to Supabase edge function
+  app.post("/api/client-chat", isAuthenticated, async (req, res) => {
+    try {
+      const { applier_id, question } = req.body;
+      
+      if (!applier_id || !question) {
+        return res.status(400).json({ error: "applier_id and question are required" });
+      }
+
+      const apiUrl = process.env.CLIENT_CHAT_API_URL;
+      const apiKey = process.env.CLIENT_CHAT_API_KEY;
+      
+      if (!apiUrl || !apiKey) {
+        return res.status(500).json({ error: "ClientGPT not configured" });
+      }
+
+      const response = await fetch(apiUrl, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ applier_id, question }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("ClientGPT API error:", errorText);
+        return res.status(response.status).json({ error: "Failed to get answer" });
+      }
+
+      const data = await response.json();
+      res.json(data);
+    } catch (error) {
+      console.error("ClientGPT error:", error);
+      res.status(500).json({ error: "Failed to process question" });
+    }
+  });
+
   // Register object storage routes for file uploads
   registerObjectStorageRoutes(app);
 

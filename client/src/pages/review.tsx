@@ -4,11 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { RESUME_COMPARISON, MOCK_JOBS } from "@/lib/mockData";
-import { ChevronLeft, ChevronRight, Clock, Check, Save, Flag, Zap, Edit2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Clock, Check, Save, Flag, Zap, Edit2, MessageSquare, Send, Loader2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { useUser } from "@/lib/userContext";
+import { apiFetch } from "@/lib/api";
 
 export default function ReviewPage() {
   const [, setLocation] = useLocation();
@@ -16,6 +19,14 @@ export default function ReviewPage() {
   const [timer, setTimer] = useState(0);
   const [isEditing, setIsEditing] = useState(false);
   const [resumeText, setResumeText] = useState(RESUME_COMPARISON.ai_tailored);
+  
+  // ClientGPT state
+  const { currentUser } = useUser();
+  const [showClientGPT, setShowClientGPT] = useState(false);
+  const [gptQuestion, setGptQuestion] = useState("");
+  const [gptAnswer, setGptAnswer] = useState("");
+  const [gptLoading, setGptLoading] = useState(false);
+  const [gptError, setGptError] = useState("");
 
   // Job ID derived from URL or prop in a real app, assuming job[0] for now
   const jobId = MOCK_JOBS[0].id;
@@ -65,6 +76,36 @@ export default function ReviewPage() {
     }
   };
 
+  const handleAskClientGPT = async () => {
+    if (!gptQuestion.trim() || !currentUser?.id) return;
+    
+    setGptLoading(true);
+    setGptError("");
+    setGptAnswer("");
+    
+    try {
+      const response = await apiFetch("/api/client-chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          applier_id: currentUser.id,
+          question: gptQuestion.trim(),
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to get answer");
+      }
+      
+      const data = await response.json();
+      setGptAnswer(data.answer || "No answer received");
+    } catch (error) {
+      setGptError("Failed to get answer. Please try again.");
+    } finally {
+      setGptLoading(false);
+    }
+  };
+
   const job = MOCK_JOBS[0]; // Just use first job for mock
 
   return (
@@ -110,10 +151,81 @@ export default function ReviewPage() {
       <div className="flex-1 flex gap-4 min-h-0">
         {/* Left: AI Context & Job Info */}
         <Card className="w-1/3 flex flex-col overflow-hidden border-border/60">
-          <div className="bg-muted/30 p-3 border-b border-border text-sm font-medium">
-            Job Details & AI Insights
+          <div className="bg-muted/30 p-3 border-b border-border text-sm font-medium flex items-center justify-between">
+            <span>Job Details & AI Insights</span>
+            <Button
+              variant={showClientGPT ? "default" : "outline"}
+              size="sm"
+              className={cn("text-xs gap-1.5", showClientGPT && "bg-primary")}
+              onClick={() => {
+                setShowClientGPT(!showClientGPT);
+                if (showClientGPT) {
+                  setGptQuestion("");
+                  setGptAnswer("");
+                  setGptError("");
+                }
+              }}
+              data-testid="button-client-gpt"
+            >
+              <MessageSquare className="w-3 h-3" />
+              ClientGPT
+            </Button>
           </div>
           <div className="p-4 overflow-y-auto flex-1 space-y-6">
+            {/* ClientGPT Chat Interface */}
+            <AnimatePresence>
+              {showClientGPT && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="space-y-3 pb-4 border-b border-border"
+                >
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Ask about their experience, skills, projects..."
+                      value={gptQuestion}
+                      onChange={(e) => setGptQuestion(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && !gptLoading && handleAskClientGPT()}
+                      className="flex-1 text-sm bg-muted/50"
+                      data-testid="input-client-gpt-question"
+                    />
+                    <Button
+                      size="sm"
+                      onClick={handleAskClientGPT}
+                      disabled={gptLoading || !gptQuestion.trim()}
+                      data-testid="button-client-gpt-ask"
+                    >
+                      {gptLoading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Send className="w-4 h-4" />
+                      )}
+                    </Button>
+                  </div>
+                  
+                  {gptLoading && (
+                    <div className="text-xs text-muted-foreground flex items-center gap-2">
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                      Thinking...
+                    </div>
+                  )}
+                  
+                  {gptError && (
+                    <div className="text-xs text-destructive bg-destructive/10 p-2 rounded">
+                      {gptError}
+                    </div>
+                  )}
+                  
+                  {gptAnswer && (
+                    <div className="text-sm bg-muted/30 p-3 rounded-lg" data-testid="text-client-gpt-answer">
+                      <p className="whitespace-pre-wrap">{gptAnswer}</p>
+                    </div>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             <div className="space-y-2">
               <div className="flex justify-between items-center text-sm font-medium">
                 <span>AI Confidence</span>

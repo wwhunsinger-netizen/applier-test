@@ -120,20 +120,33 @@ The `client_job_responses` table stores client yes/no verdicts on sample jobs:
 - `responded_at` (timestamptz, required)
 
 ### Authentication
-- **Implementation**: Replit Auth (OpenID Connect) with support for Google, GitHub, Apple, and email/password login
+- **Implementation**: Email/password authentication with bcrypt password hashing
 - **Key Files**:
   - `server/replit_integrations/auth/replitAuth.ts` - Express middleware and auth routes
+  - `server/replit_integrations/auth/storage.ts` - User credentials management
   - `client/src/hooks/use-auth.ts` - React hook for auth state
   - `client/src/lib/userContext.tsx` - User role resolution and context provider
 - **Auth Flow**:
-  1. User clicks login → redirects to `/api/login` → Replit OIDC provider
-  2. After authentication → callback to `/api/callback` → session created
+  1. User enters email/password → POST `/api/login` → validate against user_credentials table
+  2. Successful auth → session created in sessions table with express-session
   3. Frontend queries `/api/auth/user` to get authenticated user
   4. `UserProvider` resolves role by matching email against clients/appliers in Supabase
+- **Database Tables** (local PostgreSQL, auto-created on startup):
+  - `user_credentials` - stores email + bcrypt password hash
+  - `users` - stores user profile (id, email, display_name)
+  - `sessions` - stores express-session data
+- **Credentials Seeding**: SEED_CREDENTIALS environment variable seeds users on startup
 - **User Roles**: Admin (hardcoded emails), Client, Applier - each with distinct dashboard views and permissions
 - **Admin Emails**: admin@jumpseat.com, admin@jumpseathub.com
 - **Route Protection**: `isAuthenticated` middleware on all `/api/*` routes (except auth endpoints)
 - **API Credentials**: All client API calls use `credentials: "include"` via `apiFetch` wrapper
+
+### ClientGPT Feature
+- **Purpose**: Allows appliers to ask questions about the client they're reviewing applications for
+- **Endpoint**: POST `/api/client-chat` - proxies requests to Supabase edge function
+- **UI Location**: Review page (`/review`) - collapsible chat panel next to "Job Details & AI Insights"
+- **Environment Variables**: `CLIENTGPT_API_URL` and `CLIENTGPT_API_KEY` (stored as secrets)
+- **Request Format**: `{ applier_id: string, question: string }` → returns `{ answer: string }`
 
 ### Key Design Patterns
 - **Shared Types**: The `shared/` directory contains schemas used by both client and server

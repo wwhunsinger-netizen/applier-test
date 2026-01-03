@@ -2,7 +2,7 @@ import type { Client, Application, Interview, Job, Applier, InsertClient, Update
 
 const API_BASE = "/api";
 
-async function apiFetch(url: string, options?: RequestInit): Promise<Response> {
+export async function apiFetch(url: string, options?: RequestInit): Promise<Response> {
   return fetch(url, {
     ...options,
     credentials: "include",
