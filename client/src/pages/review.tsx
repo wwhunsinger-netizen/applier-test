@@ -135,9 +135,12 @@ export default function ReviewPage() {
 
         <div className="flex items-center gap-2">
           <Button
-            variant="default"
+            variant="ghost"
             size="sm"
-            className="h-8 gap-1.5 bg-primary hover:bg-primary/90"
+            className={cn(
+              "h-8 gap-1.5 text-foreground",
+              showClientGPT && "bg-muted"
+            )}
             onClick={() => {
               setShowClientGPT(!showClientGPT);
               if (showClientGPT) {
