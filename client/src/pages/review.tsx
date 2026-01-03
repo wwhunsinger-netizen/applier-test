@@ -134,6 +134,23 @@ export default function ReviewPage() {
         </div>
 
         <div className="flex items-center gap-2">
+          <Button
+            variant="default"
+            size="sm"
+            className="h-8 gap-1.5 bg-primary hover:bg-primary/90"
+            onClick={() => {
+              setShowClientGPT(!showClientGPT);
+              if (showClientGPT) {
+                setGptQuestion("");
+                setGptAnswer("");
+                setGptError("");
+              }
+            }}
+            data-testid="button-client-gpt"
+          >
+            <MessageSquare className="w-4 h-4" />
+            ClientGPT
+          </Button>
           <Button variant="ghost" size="sm" className="text-muted-foreground h-8">
             <Save className="w-4 h-4 mr-2" /> Save Draft
           </Button>
@@ -147,85 +164,89 @@ export default function ReviewPage() {
         </div>
       </header>
 
+      {/* ClientGPT Floating Panel */}
+      <AnimatePresence>
+        {showClientGPT && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="fixed top-20 right-4 w-96 bg-card border border-border rounded-lg shadow-lg z-50"
+          >
+            <div className="flex items-center justify-between p-3 border-b border-border bg-muted/30 rounded-t-lg">
+              <span className="font-medium text-sm flex items-center gap-2">
+                <MessageSquare className="w-4 h-4 text-primary" />
+                Ask about the client
+              </span>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                onClick={() => {
+                  setShowClientGPT(false);
+                  setGptQuestion("");
+                  setGptAnswer("");
+                  setGptError("");
+                }}
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            <div className="p-4 space-y-3">
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Ask about their experience, skills, projects..."
+                  value={gptQuestion}
+                  onChange={(e) => setGptQuestion(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && !gptLoading && handleAskClientGPT()}
+                  className="flex-1 text-sm bg-muted/50"
+                  data-testid="input-client-gpt-question"
+                />
+                <Button
+                  size="sm"
+                  onClick={handleAskClientGPT}
+                  disabled={gptLoading || !gptQuestion.trim()}
+                  data-testid="button-client-gpt-ask"
+                >
+                  {gptLoading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Send className="w-4 h-4" />
+                  )}
+                </Button>
+              </div>
+              
+              {gptLoading && (
+                <div className="text-xs text-muted-foreground flex items-center gap-2">
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  Thinking...
+                </div>
+              )}
+              
+              {gptError && (
+                <div className="text-xs text-destructive bg-destructive/10 p-2 rounded">
+                  {gptError}
+                </div>
+              )}
+              
+              {gptAnswer && (
+                <div className="text-sm bg-muted/30 p-3 rounded-lg max-h-64 overflow-y-auto" data-testid="text-client-gpt-answer">
+                  <p className="whitespace-pre-wrap">{gptAnswer}</p>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Main Review Area */}
       <div className="flex-1 flex gap-4 min-h-0">
         {/* Left: AI Context & Job Info */}
         <Card className="w-1/3 flex flex-col overflow-hidden border-border/60">
-          <div className="bg-muted/30 p-3 border-b border-border text-sm font-medium flex items-center justify-between">
+          <div className="bg-muted/30 p-3 border-b border-border text-sm font-medium">
             <span>Job Details & AI Insights</span>
-            <Button
-              variant={showClientGPT ? "default" : "outline"}
-              size="sm"
-              className={cn("text-xs gap-1.5", showClientGPT && "bg-primary")}
-              onClick={() => {
-                setShowClientGPT(!showClientGPT);
-                if (showClientGPT) {
-                  setGptQuestion("");
-                  setGptAnswer("");
-                  setGptError("");
-                }
-              }}
-              data-testid="button-client-gpt"
-            >
-              <MessageSquare className="w-3 h-3" />
-              ClientGPT
-            </Button>
           </div>
           <div className="p-4 overflow-y-auto flex-1 space-y-6">
-            {/* ClientGPT Chat Interface */}
-            <AnimatePresence>
-              {showClientGPT && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="space-y-3 pb-4 border-b border-border"
-                >
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="Ask about their experience, skills, projects..."
-                      value={gptQuestion}
-                      onChange={(e) => setGptQuestion(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && !gptLoading && handleAskClientGPT()}
-                      className="flex-1 text-sm bg-muted/50"
-                      data-testid="input-client-gpt-question"
-                    />
-                    <Button
-                      size="sm"
-                      onClick={handleAskClientGPT}
-                      disabled={gptLoading || !gptQuestion.trim()}
-                      data-testid="button-client-gpt-ask"
-                    >
-                      {gptLoading ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Send className="w-4 h-4" />
-                      )}
-                    </Button>
-                  </div>
-                  
-                  {gptLoading && (
-                    <div className="text-xs text-muted-foreground flex items-center gap-2">
-                      <Loader2 className="w-3 h-3 animate-spin" />
-                      Thinking...
-                    </div>
-                  )}
-                  
-                  {gptError && (
-                    <div className="text-xs text-destructive bg-destructive/10 p-2 rounded">
-                      {gptError}
-                    </div>
-                  )}
-                  
-                  {gptAnswer && (
-                    <div className="text-sm bg-muted/30 p-3 rounded-lg" data-testid="text-client-gpt-answer">
-                      <p className="whitespace-pre-wrap">{gptAnswer}</p>
-                    </div>
-                  )}
-                </motion.div>
-              )}
-            </AnimatePresence>
-
             <div className="space-y-2">
               <div className="flex justify-between items-center text-sm font-medium">
                 <span>AI Confidence</span>
