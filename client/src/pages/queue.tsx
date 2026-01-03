@@ -4,10 +4,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Building, Clock, ArrowRight, Flag, CheckCircle, Timer, Download, FileText, Bot, Briefcase } from "lucide-react";
-import { startReviewSession, markSessionApplied, flagSession, fetchClients, fetchApplier, fetchClientDocuments, fetchQueueJobs } from "@/lib/api";
+import { Input } from "@/components/ui/input";
+import { Building, Clock, ArrowRight, Flag, CheckCircle, Timer, Download, FileText, Bot, Briefcase, MessageSquare, Send, Loader2, X } from "lucide-react";
+import { startReviewSession, markSessionApplied, flagSession, fetchClients, fetchApplier, fetchClientDocuments, fetchQueueJobs, apiFetch } from "@/lib/api";
 import { toast } from "sonner";
 import { useUser } from "@/lib/userContext";
+import { motion, AnimatePresence } from "framer-motion";
 import type { ApplierJobSession, Client, ClientDocument, Job } from "@shared/schema";
 
 interface JobCardState {
@@ -35,6 +37,43 @@ export default function QueuePage() {
   const [selectedClientIndex, setSelectedClientIndex] = useState(0);
   const [clientDocuments, setClientDocuments] = useState<ClientDocument[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
+  
+  // ClientGPT state
+  const [showClientGPT, setShowClientGPT] = useState(false);
+  const [gptQuestion, setGptQuestion] = useState("");
+  const [gptAnswer, setGptAnswer] = useState("");
+  const [gptLoading, setGptLoading] = useState(false);
+  const [gptError, setGptError] = useState("");
+  
+  const handleAskClientGPT = async () => {
+    if (!gptQuestion.trim() || !currentUser?.id) return;
+    
+    setGptLoading(true);
+    setGptError("");
+    setGptAnswer("");
+    
+    try {
+      const response = await apiFetch("/api/client-chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          applier_id: currentUser.id,
+          question: gptQuestion.trim(),
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to get answer");
+      }
+      
+      const data = await response.json();
+      setGptAnswer(data.answer || "No answer received");
+    } catch (error) {
+      setGptError("Failed to get answer. Please try again.");
+    } finally {
+      setGptLoading(false);
+    }
+  };
 
   // Fetch assigned clients based on logged-in applier
   useEffect(() => {
@@ -315,15 +354,97 @@ export default function QueuePage() {
             <Button
               variant="outline"
               size="sm"
-              disabled
+              onClick={() => {
+                setShowClientGPT(!showClientGPT);
+                if (showClientGPT) {
+                  setGptQuestion("");
+                  setGptAnswer("");
+                  setGptError("");
+                }
+              }}
               data-testid="button-client-gpt"
             >
-              <Bot className="w-4 h-4 mr-2" />
+              <MessageSquare className="w-4 h-4 mr-2" />
               ClientGPT
             </Button>
           </div>
         </div>
       )}
+
+      {/* ClientGPT Floating Panel */}
+      <AnimatePresence>
+        {showClientGPT && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="fixed top-20 right-4 w-96 bg-card border border-border rounded-lg shadow-lg z-50"
+          >
+            <div className="flex items-center justify-between p-3 border-b border-border bg-muted/30 rounded-t-lg">
+              <span className="font-medium text-sm flex items-center gap-2">
+                <MessageSquare className="w-4 h-4 text-primary" />
+                Ask about the client
+              </span>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                onClick={() => {
+                  setShowClientGPT(false);
+                  setGptQuestion("");
+                  setGptAnswer("");
+                  setGptError("");
+                }}
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            <div className="p-4 space-y-3">
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Ask about their experience, skills, projects..."
+                  value={gptQuestion}
+                  onChange={(e) => setGptQuestion(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && !gptLoading && handleAskClientGPT()}
+                  className="flex-1 text-sm bg-muted/50"
+                  data-testid="input-client-gpt-question"
+                />
+                <Button
+                  size="sm"
+                  onClick={handleAskClientGPT}
+                  disabled={gptLoading || !gptQuestion.trim()}
+                  data-testid="button-client-gpt-ask"
+                >
+                  {gptLoading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Send className="w-4 h-4" />
+                  )}
+                </Button>
+              </div>
+              
+              {gptLoading && (
+                <div className="text-xs text-muted-foreground flex items-center gap-2">
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  Thinking...
+                </div>
+              )}
+              
+              {gptError && (
+                <div className="text-xs text-destructive bg-destructive/10 p-2 rounded">
+                  {gptError}
+                </div>
+              )}
+              
+              {gptAnswer && (
+                <div className="text-sm bg-muted/30 p-3 rounded-lg max-h-64 overflow-y-auto" data-testid="text-client-gpt-answer">
+                  <p className="whitespace-pre-wrap">{gptAnswer}</p>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Job List */}
       <div className="space-y-4">
