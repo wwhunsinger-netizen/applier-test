@@ -102,10 +102,13 @@ async function ensureAuthTables() {
   const pool = new Pool({ connectionString: process.env.DATABASE_URL });
   
   try {
+    // Enable pgcrypto extension for gen_random_uuid()
+    await pool.query(`CREATE EXTENSION IF NOT EXISTS pgcrypto`);
+    
     // Create user_credentials table if it doesn't exist
     await pool.query(`
       CREATE TABLE IF NOT EXISTS user_credentials (
-        user_id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id VARCHAR PRIMARY KEY,
         email VARCHAR NOT NULL UNIQUE,
         password_hash VARCHAR NOT NULL,
         first_name VARCHAR,
@@ -118,7 +121,7 @@ async function ensureAuthTables() {
     // Create users table if it doesn't exist
     await pool.query(`
       CREATE TABLE IF NOT EXISTS users (
-        id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid(),
+        id VARCHAR PRIMARY KEY,
         email VARCHAR UNIQUE,
         first_name VARCHAR,
         last_name VARCHAR,
@@ -127,6 +130,16 @@ async function ensureAuthTables() {
         updated_at TIMESTAMP DEFAULT NOW()
       )
     `);
+    
+    // Create sessions table if it doesn't exist (for connect-pg-simple)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS sessions (
+        sid VARCHAR NOT NULL PRIMARY KEY,
+        sess JSONB NOT NULL,
+        expire TIMESTAMP NOT NULL
+      )
+    `);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_session_expire ON sessions(expire)`);
     
     console.log("[auth] Auth tables verified/created");
   } catch (error) {
