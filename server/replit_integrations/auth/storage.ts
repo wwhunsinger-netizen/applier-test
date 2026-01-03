@@ -98,12 +98,20 @@ export async function upsertUserCredentials(userData: {
 
 // Ensure auth tables exist in database
 async function ensureAuthTables() {
+  console.log("[auth] Starting table creation...");
+  console.log("[auth] DATABASE_URL exists:", !!process.env.DATABASE_URL);
+  
   const { Pool } = await import("pg");
   const pool = new Pool({ connectionString: process.env.DATABASE_URL });
   
   try {
+    // Test connection first
+    const testResult = await pool.query('SELECT 1 as test');
+    console.log("[auth] Database connection successful");
+    
     // Enable pgcrypto extension for gen_random_uuid()
     await pool.query(`CREATE EXTENSION IF NOT EXISTS pgcrypto`);
+    console.log("[auth] pgcrypto extension enabled");
     
     // Create user_credentials table if it doesn't exist
     await pool.query(`
@@ -117,6 +125,7 @@ async function ensureAuthTables() {
         updated_at TIMESTAMP DEFAULT NOW()
       )
     `);
+    console.log("[auth] user_credentials table ready");
     
     // Create users table if it doesn't exist
     await pool.query(`
@@ -130,6 +139,7 @@ async function ensureAuthTables() {
         updated_at TIMESTAMP DEFAULT NOW()
       )
     `);
+    console.log("[auth] users table ready");
     
     // Create sessions table if it doesn't exist (for connect-pg-simple)
     await pool.query(`
@@ -140,10 +150,12 @@ async function ensureAuthTables() {
       )
     `);
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_session_expire ON sessions(expire)`);
+    console.log("[auth] sessions table ready");
     
-    console.log("[auth] Auth tables verified/created");
-  } catch (error) {
-    console.error("[auth] Failed to create auth tables:", error);
+    console.log("[auth] All auth tables verified/created successfully");
+  } catch (error: any) {
+    console.error("[auth] FAILED to create auth tables:", error.message);
+    console.error("[auth] Full error:", error);
   } finally {
     await pool.end();
   }

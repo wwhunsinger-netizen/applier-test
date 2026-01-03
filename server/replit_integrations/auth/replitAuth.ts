@@ -155,20 +155,31 @@ export async function setupAuth(app: Express) {
   app.post("/api/auth/login", async (req, res) => {
     try {
       const { email, password } = req.body;
+      console.log("[auth] Login attempt for:", email);
       
       if (!email || !password) {
+        console.log("[auth] Missing email or password");
         return res.status(400).json({ message: "Email and password are required" });
       }
 
       // Look up user credentials
-      const credentials = await authStorage.getUserCredentials(email.toLowerCase());
+      let credentials;
+      try {
+        credentials = await authStorage.getUserCredentials(email.toLowerCase());
+        console.log("[auth] Credentials found:", !!credentials);
+      } catch (dbError: any) {
+        console.error("[auth] Database error looking up credentials:", dbError.message);
+        return res.status(500).json({ message: "Database error: " + dbError.message });
+      }
       
       if (!credentials) {
+        console.log("[auth] No credentials found for:", email);
         return res.status(401).json({ message: "Invalid email or password" });
       }
 
       // Verify password
       const isValid = await bcrypt.compare(password, credentials.password_hash);
+      console.log("[auth] Password valid:", isValid);
       
       if (!isValid) {
         return res.status(401).json({ message: "Invalid email or password" });
@@ -186,14 +197,15 @@ export async function setupAuth(app: Express) {
 
       req.login(user, (err) => {
         if (err) {
-          console.error("Session login error:", err);
-          return res.status(500).json({ message: "Login failed" });
+          console.error("[auth] Session save error:", err.message || err);
+          return res.status(500).json({ message: "Session error: " + (err.message || "Unknown") });
         }
+        console.log("[auth] Login successful for:", email);
         res.json({ success: true, user: { id: user.id, email: user.email } });
       });
-    } catch (error) {
-      console.error("Login error:", error);
-      res.status(500).json({ message: "Login failed" });
+    } catch (error: any) {
+      console.error("[auth] Login error:", error.message || error);
+      res.status(500).json({ message: "Login error: " + (error.message || "Unknown") });
     }
   });
 }
