@@ -96,8 +96,51 @@ export async function upsertUserCredentials(userData: {
   }
 }
 
+// Ensure auth tables exist in database
+async function ensureAuthTables() {
+  const { Pool } = await import("pg");
+  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+  
+  try {
+    // Create user_credentials table if it doesn't exist
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS user_credentials (
+        user_id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid(),
+        email VARCHAR NOT NULL UNIQUE,
+        password_hash VARCHAR NOT NULL,
+        first_name VARCHAR,
+        last_name VARCHAR,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+    
+    // Create users table if it doesn't exist
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid(),
+        email VARCHAR UNIQUE,
+        first_name VARCHAR,
+        last_name VARCHAR,
+        profile_image_url VARCHAR,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+    
+    console.log("[auth] Auth tables verified/created");
+  } catch (error) {
+    console.error("[auth] Failed to create auth tables:", error);
+  } finally {
+    await pool.end();
+  }
+}
+
 // Seed credentials from environment if SEED_CREDENTIALS is set
 export async function seedUserCredentials() {
+  // First ensure tables exist
+  await ensureAuthTables();
+  
   const seedData = process.env.SEED_CREDENTIALS;
   if (!seedData) {
     return; // No seeding without environment variable
