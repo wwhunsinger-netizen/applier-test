@@ -344,6 +344,18 @@ export async function registerRoutes(
       }
       console.log("Created applier:", JSON.stringify(applier, null, 2));
       
+      // Update assigned clients to set their applier_id
+      if (validatedData.assigned_client_ids && validatedData.assigned_client_ids.length > 0) {
+        for (const clientId of validatedData.assigned_client_ids) {
+          try {
+            await storage.updateClient(clientId, { applier_id: applier.id });
+            console.log(`[applier] Set applier_id on client ${clientId}`);
+          } catch (updateError) {
+            console.error(`[applier] Failed to update applier_id on client ${clientId}:`, updateError);
+          }
+        }
+      }
+      
       // Return the applier with the generated password (so admin can share it)
       res.status(201).json({ ...applier, generatedPassword });
     } catch (error: any) {
@@ -356,6 +368,7 @@ export async function registerRoutes(
   app.patch("/api/appliers/:id", isSupabaseAuthenticated, async (req, res) => {
     try {
       const validatedData = updateApplierSchema.parse(req.body);
+      const applierId = req.params.id;
       
       // Sanitize empty strings to null to avoid unique constraint violations
       const sanitizedData = Object.fromEntries(
@@ -365,10 +378,41 @@ export async function registerRoutes(
         ])
       );
       
-      const applier = await storage.updateApplier(req.params.id, sanitizedData);
+      // Get old applier data to compare assigned_client_ids
+      const oldApplier = await storage.getApplier(applierId);
+      const oldClientIds = oldApplier?.assigned_client_ids || [];
+      const newClientIds = (sanitizedData.assigned_client_ids as string[] | undefined) || [];
+      
+      const applier = await storage.updateApplier(applierId, sanitizedData);
       if (!applier) {
         return res.status(404).json({ error: "Applier not found" });
       }
+      
+      // Sync applier_id on clients when assigned_client_ids changes
+      if (sanitizedData.assigned_client_ids !== undefined) {
+        // Remove applier_id from clients that are no longer assigned
+        const removedClients = oldClientIds.filter(id => !newClientIds.includes(id));
+        for (const clientId of removedClients) {
+          try {
+            await storage.updateClient(clientId, { applier_id: null });
+            console.log(`[applier] Removed applier_id from client ${clientId}`);
+          } catch (updateError) {
+            console.error(`[applier] Failed to remove applier_id from client ${clientId}:`, updateError);
+          }
+        }
+        
+        // Set applier_id on newly assigned clients
+        const addedClients = newClientIds.filter(id => !oldClientIds.includes(id));
+        for (const clientId of addedClients) {
+          try {
+            await storage.updateClient(clientId, { applier_id: applierId });
+            console.log(`[applier] Set applier_id on client ${clientId}`);
+          } catch (updateError) {
+            console.error(`[applier] Failed to set applier_id on client ${clientId}:`, updateError);
+          }
+        }
+      }
+      
       res.json(applier);
     } catch (error) {
       console.error("Error updating applier:", error);
