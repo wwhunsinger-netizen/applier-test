@@ -4,12 +4,20 @@ import * as schema from "@shared/schema";
 
 const { Pool } = pg;
 
-if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL environment variable is not set");
+// Use SupabaseDATABASE for auth tables (works in both dev and production)
+// Fall back to DATABASE_URL for local development if SupabaseDATABASE not set
+const connectionString = process.env.SupabaseDATABASE || process.env.DATABASE_URL;
+
+if (!connectionString) {
+  throw new Error("SupabaseDATABASE or DATABASE_URL environment variable is not set");
 }
 
+// Export for use in session store
+export const authDatabaseUrl = connectionString;
+
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString,
+  ssl: process.env.SupabaseDATABASE ? { rejectUnauthorized: false } : undefined,
 });
 
 export const db = drizzle(pool, { schema });

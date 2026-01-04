@@ -132,14 +132,21 @@ async function withStartupRetry<T>(
 // Ensure auth tables exist in database
 async function ensureAuthTables() {
   console.log("[auth] Starting table creation...");
-  console.log("[auth] DATABASE_URL exists:", !!process.env.DATABASE_URL);
+  
+  // Use SupabaseDATABASE for auth tables (works in both dev and production)
+  const connectionString = process.env.SupabaseDATABASE || process.env.DATABASE_URL;
+  const useSupabase = !!process.env.SupabaseDATABASE;
+  
+  console.log("[auth] Using Supabase:", useSupabase);
+  console.log("[auth] Connection string exists:", !!connectionString);
   console.log("[auth] NODE_ENV:", process.env.NODE_ENV);
   
   const { Pool } = await import("pg");
   const pool = new Pool({ 
-    connectionString: process.env.DATABASE_URL,
+    connectionString,
     connectionTimeoutMillis: 10000,
     idleTimeoutMillis: 30000,
+    ssl: useSupabase ? { rejectUnauthorized: false } : undefined,
   });
   
   try {

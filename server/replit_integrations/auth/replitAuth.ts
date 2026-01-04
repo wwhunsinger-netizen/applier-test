@@ -22,11 +22,17 @@ const getOidcConfig = memoize(
 export function getSession() {
   const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
   const pgStore = connectPg(session);
+  
+  // Use SupabaseDATABASE for sessions (works in both dev and production)
+  const connectionString = process.env.SupabaseDATABASE || process.env.DATABASE_URL;
+  
   const sessionStore = new pgStore({
-    conString: process.env.DATABASE_URL,
+    conString: connectionString,
     createTableIfMissing: true,
     ttl: sessionTtl,
     tableName: "sessions",
+    // SSL for Supabase connections
+    ...(process.env.SupabaseDATABASE ? { ssl: { rejectUnauthorized: false } } : {}),
   });
   return session({
     secret: process.env.SESSION_SECRET!,
