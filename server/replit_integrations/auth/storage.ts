@@ -133,11 +133,12 @@ async function withStartupRetry<T>(
 async function ensureAuthTables() {
   console.log("[auth] Starting table creation...");
   
-  // Use SupabaseDATABASE for auth tables (works in both dev and production)
-  const connectionString = process.env.SupabaseDATABASE || process.env.DATABASE_URL;
-  const useSupabase = !!process.env.SupabaseDATABASE;
+  // Only use SupabaseDATABASE if it's a valid postgres connection string
+  const supabaseDb = process.env.SupabaseDATABASE;
+  const isValidSupabaseUrl = supabaseDb && supabaseDb.startsWith('postgres');
+  const connectionString = isValidSupabaseUrl ? supabaseDb : process.env.DATABASE_URL;
   
-  console.log("[auth] Using Supabase:", useSupabase);
+  console.log("[auth] Using Supabase:", isValidSupabaseUrl);
   console.log("[auth] Connection string exists:", !!connectionString);
   console.log("[auth] NODE_ENV:", process.env.NODE_ENV);
   
@@ -146,7 +147,7 @@ async function ensureAuthTables() {
     connectionString,
     connectionTimeoutMillis: 10000,
     idleTimeoutMillis: 30000,
-    ssl: useSupabase ? { rejectUnauthorized: false } : undefined,
+    ssl: isValidSupabaseUrl ? { rejectUnauthorized: false } : undefined,
   });
   
   try {
