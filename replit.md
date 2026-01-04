@@ -119,27 +119,29 @@ The `client_job_responses` table stores client yes/no verdicts on sample jobs:
 - `comment` (text, nullable) - Required if verdict = "no" (validated in app logic)
 - `responded_at` (timestamptz, required)
 
-### Authentication
-- **Implementation**: Email/password authentication with bcrypt password hashing
+### Authentication (Supabase Auth)
+- **Implementation**: Supabase Auth with email/password - works in both development and production
 - **Key Files**:
-  - `server/replit_integrations/auth/replitAuth.ts` - Express middleware and auth routes
-  - `server/replit_integrations/auth/storage.ts` - User credentials management
-  - `client/src/hooks/use-auth.ts` - React hook for auth state
+  - `client/src/lib/supabase.ts` - Supabase client (browser)
+  - `server/supabase.ts` - Supabase client (server, with service role key)
+  - `server/supabaseAuth.ts` - Express middleware for JWT verification
+  - `client/src/hooks/use-auth.ts` - React hook using Supabase session
   - `client/src/lib/userContext.tsx` - User role resolution and context provider
+  - `client/src/pages/login.tsx` - Login page with supabase.auth.signInWithPassword()
 - **Auth Flow**:
-  1. User enters email/password → POST `/api/login` → validate against user_credentials table
-  2. Successful auth → session created in sessions table with express-session
-  3. Frontend queries `/api/auth/user` to get authenticated user
-  4. `UserProvider` resolves role by matching email against clients/appliers in Supabase
-- **Database Tables** (local PostgreSQL, auto-created on startup):
-  - `user_credentials` - stores email + bcrypt password hash
-  - `users` - stores user profile (id, email, display_name)
-  - `sessions` - stores express-session data
-- **Credentials Seeding**: SEED_CREDENTIALS environment variable seeds users on startup
+  1. User enters email/password → Login page calls `supabase.auth.signInWithPassword()`
+  2. Supabase Auth returns JWT session stored in localStorage
+  3. Frontend's `apiFetch()` includes Bearer token in Authorization header
+  4. Backend's `isSupabaseAuthenticated` middleware verifies JWT with Supabase
+  5. `UserProvider` resolves role by matching email against clients/appliers in Supabase
+- **User Creation**:
+  - Admin creates client/applier → Backend creates Supabase Auth user first via `supabase.auth.admin.createUser()`
+  - If Supabase user creation fails, API returns 500 error (no orphaned records)
+  - Generated password returned to admin to share with user
 - **User Roles**: Admin (hardcoded emails), Client, Applier - each with distinct dashboard views and permissions
 - **Admin Emails**: admin@jumpseat.com, admin@jumpseathub.com
-- **Route Protection**: `isAuthenticated` middleware on all `/api/*` routes (except auth endpoints)
-- **API Credentials**: All client API calls use `credentials: "include"` via `apiFetch` wrapper
+- **Route Protection**: `isSupabaseAuthenticated` middleware on all `/api/*` routes
+- **API Credentials**: All client API calls include Bearer token via `apiFetch` wrapper
 
 ### ClientGPT Feature
 - **Purpose**: Allows appliers to ask questions about the client they're reviewing applications for

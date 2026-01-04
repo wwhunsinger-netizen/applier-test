@@ -1,10 +1,23 @@
 import type { Client, Application, Interview, Job, Applier, InsertClient, UpdateClient, InsertApplier, UpdateApplier, InsertApplication, InsertInterview, ClientDocument, InsertClientDocument, JobCriteriaSample, ClientJobResponse, InsertClientJobResponse, ApplierJobSession, FlaggedApplication } from "@shared/schema";
+import { supabase } from "./supabase";
 
 const API_BASE = "/api";
 
 export async function apiFetch(url: string, options?: RequestInit): Promise<Response> {
+  const { data: { session } } = await supabase.auth.getSession();
+  const token = session?.access_token;
+  
+  const headers: HeadersInit = {
+    ...(options?.headers || {}),
+  };
+  
+  if (token) {
+    (headers as Record<string, string>)["Authorization"] = `Bearer ${token}`;
+  }
+  
   return fetch(url, {
     ...options,
+    headers,
     credentials: "include",
   });
 }

@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
 import logoUrl from "@assets/Jumpseat_(17)_1766203547189.png";
+import { supabase } from "@/lib/supabase";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -18,16 +19,17 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ email, password }),
+      const { data, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       });
 
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || "Invalid email or password");
+      if (authError) {
+        throw new Error(authError.message || "Invalid email or password");
+      }
+
+      if (!data.session) {
+        throw new Error("Login failed - no session created");
       }
 
       window.location.href = "/";
