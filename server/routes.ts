@@ -49,7 +49,20 @@ export async function registerRoutes(
     try {
       const validatedData = insertClientSchema.parse(req.body);
       const client = await storage.createClient(validatedData);
-      res.status(201).json(client);
+      
+      // Generate a random password and create login credentials
+      const generatedPassword = crypto.randomBytes(8).toString('base64').slice(0, 12);
+      await upsertUserCredentials({
+        userId: client.id,
+        email: client.email,
+        password: generatedPassword,
+        firstName: client.first_name,
+        lastName: client.last_name,
+      });
+      console.log(`[auth] Created credentials for new client: ${client.email}`);
+      
+      // Return the client with the generated password (so admin can share it)
+      res.status(201).json({ ...client, generatedPassword });
     } catch (error) {
       console.error("Error creating client:", error);
       res.status(400).json({ error: "Failed to create client" });
