@@ -6,6 +6,8 @@ import { registerObjectStorageRoutes, objectStorageService } from "./replit_inte
 import { scrapeJobUrl } from "./apify";
 import { presenceService } from "./presence";
 import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integrations/auth";
+import { upsertUserCredentials } from "./replit_integrations/auth/storage";
+import crypto from "crypto";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -279,7 +281,20 @@ export async function registerRoutes(
       console.log("Validated data:", JSON.stringify(validatedData, null, 2));
       const applier = await storage.createApplier(validatedData);
       console.log("Created applier:", JSON.stringify(applier, null, 2));
-      res.status(201).json(applier);
+      
+      // Generate a random password and create login credentials
+      const generatedPassword = crypto.randomBytes(8).toString('base64').slice(0, 12);
+      await upsertUserCredentials({
+        userId: applier.id,
+        email: applier.email,
+        password: generatedPassword,
+        firstName: applier.first_name,
+        lastName: applier.last_name,
+      });
+      console.log(`[auth] Created credentials for new applier: ${applier.email}`);
+      
+      // Return the applier with the generated password (so admin can share it)
+      res.status(201).json({ ...applier, generatedPassword });
     } catch (error: any) {
       console.error("Error creating applier:", error.message || error);
       console.error("Full error:", JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
