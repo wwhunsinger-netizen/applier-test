@@ -312,6 +312,13 @@ export class SupabaseStorage implements IStorage {
   }
 
   async deleteJob(id: string): Promise<void> {
+    // First delete related applier_job_sessions
+    await supabase
+      .from('applier_job_sessions')
+      .delete()
+      .eq('job_id', id);
+    
+    // Then delete the job
     const { error } = await supabase
       .from('jobs')
       .delete()
