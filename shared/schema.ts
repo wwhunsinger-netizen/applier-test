@@ -5,7 +5,12 @@ export * from "./models/auth";
 
 export type UserRole = "Admin" | "Client" | "Applier";
 
-export type ClientStatus = "onboarding_not_started" | "onboarding_in_progress" | "active" | "paused" | "placed";
+export type ClientStatus =
+  | "onboarding_not_started"
+  | "onboarding_in_progress"
+  | "active"
+  | "paused"
+  | "placed";
 
 export type RevisionStatus = "requested" | "completed" | null;
 
@@ -27,6 +32,7 @@ export interface Client {
   email: string;
   username?: string;
   created_at?: string;
+  applier_id?: string | null;
   updated_at?: string;
   status: ClientStatus;
   comments_count?: number;
@@ -81,13 +87,24 @@ export function getApplierFullName(applier: Applier): string {
 
 export interface Job {
   id: string;
-  role: string;
-  company: string;
-  location: string;
+  client_id: string;
+  applier_id?: string;
+  job_title: string;
+  company_name: string;
+  job_url: string;
+  job_description?: string;
+  job_location?: string;
+  posted_date?: string;
+  scraped_at?: string;
+  board_source: string;
+  feed_job_id?: number;
+  feed_source?: string;
+  // Legacy fields for backwards compatibility
+  role?: string;
+  company?: string;
+  location?: string;
   posted_time?: string;
   match_score?: number;
-  description?: string;
-  client_id: string;
   requirements?: string[];
 }
 
@@ -98,6 +115,8 @@ export interface Application {
   client_id: string;
   status: string;
   qa_status?: string;
+  feed_job_id?: number;
+  feed_source?: string;
   applied_at?: string;
   applied_date?: string;
   flagged_issue?: string;
@@ -135,7 +154,15 @@ export interface User {
 }
 
 // Document types: resume_original, resume_improved, cover_letter_original, cover_letter_A, cover_letter_B, cover_letter_C, linkedin_original, linkedin_improved
-export type DocumentType = "resume_original" | "resume_improved" | "cover_letter_original" | "cover_letter_A" | "cover_letter_B" | "cover_letter_C" | "linkedin_original" | "linkedin_improved";
+export type DocumentType =
+  | "resume_original"
+  | "resume_improved"
+  | "cover_letter_original"
+  | "cover_letter_A"
+  | "cover_letter_B"
+  | "cover_letter_C"
+  | "linkedin_original"
+  | "linkedin_improved";
 
 export interface ClientDocument {
   id: string;
@@ -155,7 +182,15 @@ export const insertClientSchema = z.object({
   first_name: z.string().min(1),
   last_name: z.string().min(1),
   email: z.string().email(),
-  status: z.enum(["onboarding_not_started", "onboarding_in_progress", "active", "paused", "placed"]).default("onboarding_not_started"),
+  status: z
+    .enum([
+      "onboarding_not_started",
+      "onboarding_in_progress",
+      "active",
+      "paused",
+      "placed",
+    ])
+    .default("onboarding_not_started"),
   resume_approved: z.boolean().default(false),
   cover_letter_approved: z.boolean().default(false),
   job_criteria_signoff: z.boolean().default(false),
@@ -165,7 +200,16 @@ export const updateClientSchema = z.object({
   first_name: z.string().min(1).optional(),
   last_name: z.string().min(1).optional(),
   email: z.string().email().optional(),
-  status: z.enum(["onboarding_not_started", "onboarding_in_progress", "active", "paused", "placed"]).optional(),
+  applier_id: z.string().nullable().optional(),
+  status: z
+    .enum([
+      "onboarding_not_started",
+      "onboarding_in_progress",
+      "active",
+      "paused",
+      "placed",
+    ])
+    .optional(),
   applications_sent: z.number().optional(),
   interviews_scheduled: z.number().optional(),
   job_criteria_signoff: z.boolean().optional(),
@@ -185,11 +229,22 @@ export const updateClientSchema = z.object({
   onboarding_transcript: z.string().optional(),
   daily_application_target: z.number().optional(),
   placement_date: z.string().optional(),
-  document_feedback: z.object({
-    resume: z.object({ text: z.string(), status: z.enum(["requested", "completed"]).nullable() }),
-    "cover-letter": z.object({ text: z.string(), status: z.enum(["requested", "completed"]).nullable() }),
-    linkedin: z.object({ text: z.string(), status: z.enum(["requested", "completed"]).nullable() }),
-  }).optional(),
+  document_feedback: z
+    .object({
+      resume: z.object({
+        text: z.string(),
+        status: z.enum(["requested", "completed"]).nullable(),
+      }),
+      "cover-letter": z.object({
+        text: z.string(),
+        status: z.enum(["requested", "completed"]).nullable(),
+      }),
+      linkedin: z.object({
+        text: z.string(),
+        status: z.enum(["requested", "completed"]).nullable(),
+      }),
+    })
+    .optional(),
 });
 
 // Applier schemas for Supabase table
@@ -222,6 +277,8 @@ export const insertApplicationSchema = z.object({
   job_id: z.string(),
   applier_id: z.string(),
   client_id: z.string(),
+  feed_job_id: z.number().nullable().optional(),
+  feed_source: z.string().optional(),
   status: z.string().default("applied"),
   qa_status: z.string().optional(),
   applied_date: z.string().optional(),
@@ -243,7 +300,16 @@ export const insertInterviewSchema = z.object({
 
 export const insertClientDocumentSchema = z.object({
   client_id: z.string().uuid(),
-  document_type: z.enum(["resume_original", "resume_improved", "cover_letter_original", "cover_letter_A", "cover_letter_B", "cover_letter_C", "linkedin_original", "linkedin_improved"]),
+  document_type: z.enum([
+    "resume_original",
+    "resume_improved",
+    "cover_letter_original",
+    "cover_letter_A",
+    "cover_letter_B",
+    "cover_letter_C",
+    "linkedin_original",
+    "linkedin_improved",
+  ]),
   object_path: z.string(), // Path to file in object storage
   file_name: z.string(),
   content_type: z.string().optional(),
@@ -335,9 +401,15 @@ export const updateJobCriteriaSampleSchema = z.object({
   raw_data: z.record(z.unknown()).optional(),
 });
 
-export type InsertJobCriteriaSample = z.infer<typeof insertJobCriteriaSampleSchema>;
-export type UpdateJobCriteriaSample = z.infer<typeof updateJobCriteriaSampleSchema>;
-export type InsertClientJobResponse = z.infer<typeof insertClientJobResponseSchema>;
+export type InsertJobCriteriaSample = z.infer<
+  typeof insertJobCriteriaSampleSchema
+>;
+export type UpdateJobCriteriaSample = z.infer<
+  typeof updateJobCriteriaSampleSchema
+>;
+export type InsertClientJobResponse = z.infer<
+  typeof insertClientJobResponseSchema
+>;
 
 export type InsertClient = z.input<typeof insertClientSchema>;
 export type UpdateClient = z.infer<typeof updateClientSchema>;
@@ -371,7 +443,9 @@ export interface ApplierJobSession {
 export const insertApplierJobSessionSchema = z.object({
   job_id: z.string().uuid(),
   applier_id: z.string().uuid(),
-  status: z.enum(["pending", "in_progress", "applied", "flagged"]).default("pending"),
+  status: z
+    .enum(["pending", "in_progress", "applied", "flagged"])
+    .default("pending"),
 });
 
 export const updateApplierJobSessionSchema = z.object({
@@ -382,8 +456,12 @@ export const updateApplierJobSessionSchema = z.object({
   flag_comment: z.string().optional(),
 });
 
-export type InsertApplierJobSession = z.infer<typeof insertApplierJobSessionSchema>;
-export type UpdateApplierJobSession = z.infer<typeof updateApplierJobSessionSchema>;
+export type InsertApplierJobSession = z.infer<
+  typeof insertApplierJobSessionSchema
+>;
+export type UpdateApplierJobSession = z.infer<
+  typeof updateApplierJobSessionSchema
+>;
 
 // Flagged Application - for admin review queue
 // Job/applier details come from session → job JOIN
@@ -413,15 +491,23 @@ export const updateFlaggedApplicationSchema = z.object({
   resolution_note: z.string().optional(),
 });
 
-export type InsertFlaggedApplication = z.infer<typeof insertFlaggedApplicationSchema>;
-export type UpdateFlaggedApplication = z.infer<typeof updateFlaggedApplicationSchema>;
+export type InsertFlaggedApplication = z.infer<
+  typeof insertFlaggedApplicationSchema
+>;
+export type UpdateFlaggedApplication = z.infer<
+  typeof updateFlaggedApplicationSchema
+>;
 
 export function getClientFullName(client: Client): string {
   return `${client.first_name} ${client.last_name}`.trim();
 }
 
 // Applier Earnings - tracks base pay and bonuses
-export type EarningsType = "base_pay" | "application_milestone" | "interview_bonus" | "placement_bonus";
+export type EarningsType =
+  | "base_pay"
+  | "application_milestone"
+  | "interview_bonus"
+  | "placement_bonus";
 export type PaymentStatus = "pending" | "approved" | "paid";
 
 export interface ApplierEarning {
@@ -445,7 +531,12 @@ export interface ApplierEarning {
 export const insertApplierEarningSchema = z.object({
   applier_id: z.string().uuid(),
   client_id: z.string().uuid().optional(),
-  earnings_type: z.enum(["base_pay", "application_milestone", "interview_bonus", "placement_bonus"]),
+  earnings_type: z.enum([
+    "base_pay",
+    "application_milestone",
+    "interview_bonus",
+    "placement_bonus",
+  ]),
   amount: z.number(),
   application_count: z.number().optional(),
   interview_id: z.string().uuid().optional(),
@@ -470,18 +561,24 @@ export function calculateClientStatus(client: Client): ClientStatus {
   if (client.placement_date) {
     return "placed";
   }
-  
-  const onboardingComplete = client.resume_approved && client.cover_letter_approved && client.job_criteria_signoff;
-  
+
+  const onboardingComplete =
+    client.resume_approved &&
+    client.cover_letter_approved &&
+    client.job_criteria_signoff;
+
   if (onboardingComplete) {
     return "active";
   }
-  
-  const onboardingStarted = client.resume_approved || client.cover_letter_approved || client.job_criteria_signoff;
-  
+
+  const onboardingStarted =
+    client.resume_approved ||
+    client.cover_letter_approved ||
+    client.job_criteria_signoff;
+
   if (onboardingStarted) {
     return "onboarding_in_progress";
   }
-  
+
   return "onboarding_not_started";
 }

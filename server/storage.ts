@@ -19,11 +19,13 @@ export interface IStorage {
   getInterviews(): Promise<Interview[]>;
   getInterviewsByClient(clientId: string): Promise<Interview[]>;
   createInterview(interview: InsertInterview): Promise<Interview>;
-  
+
   // Job operations
   getJobs(): Promise<Job[]>;
   getJobsByClient(clientId: string): Promise<Job[]>;
   getQueueJobs(clientId: string, applierId: string): Promise<Job[]>;
+  getJobByFeedId(feedJobId: number): Promise<Job | null>;
+  createJob(job: Partial<Job>): Promise<Job>;
   
   // Applier operations
   getAppliers(): Promise<Applier[]>;
@@ -283,9 +285,30 @@ export class SupabaseStorage implements IStorage {
     const flaggedJobIds = new Set((flaggedSessions || []).map(s => s.job_id));
     
     // Filter out jobs that have already been applied to or flagged
-    return jobs.filter(job => !appliedJobIds.has(job.id) && !flaggedJobIds.has(job.id));
+  return jobs.filter(job => !appliedJobIds.has(job.id) && !flaggedJobIds.has(job.id));
   }
 
+  async getJobByFeedId(feedJobId: number): Promise<Job | null> {
+    const { data, error } = await supabase
+      .from('jobs')
+      .select('*')
+      .eq('feed_job_id', feedJobId)
+      .maybeSingle();
+
+    if (error) throw error;
+    return data;
+  }
+
+  async createJob(job: Partial<Job>): Promise<Job> {
+    const { data, error } = await supabase
+      .from('jobs')
+      .insert(job)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
   // Applier operations
   async getAppliers(): Promise<Applier[]> {
     const { data, error } = await supabase
