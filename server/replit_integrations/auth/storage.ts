@@ -98,66 +98,114 @@ export async function upsertUserCredentials(userData: {
   }
 }
 
+// Retry helper for database operations during startup
+async function withStartupRetry<T>(
+  operation: () => Promise<T>,
+  operationName: string,
+  maxRetries: number = 5,
+  baseDelayMs: number = 1000
+): Promise<T> {
+  let lastError: Error | null = null;
+  
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await operation();
+    } catch (error: any) {
+      lastError = error;
+      const errorMsg = error.message || error.code || 'unknown';
+      
+      if (attempt === maxRetries) {
+        console.error(`[auth] ${operationName} FAILED after ${maxRetries + 1} attempts:`, errorMsg);
+        throw error;
+      }
+      
+      // Exponential backoff with jitter
+      const delay = baseDelayMs * Math.pow(2, attempt) + Math.random() * 500;
+      console.log(`[auth] ${operationName} failed (${errorMsg}), retrying in ${Math.round(delay)}ms (attempt ${attempt + 1}/${maxRetries})`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+  
+  throw lastError;
+}
+
 // Ensure auth tables exist in database
 async function ensureAuthTables() {
   console.log("[auth] Starting table creation...");
   console.log("[auth] DATABASE_URL exists:", !!process.env.DATABASE_URL);
+  console.log("[auth] NODE_ENV:", process.env.NODE_ENV);
   
   const { Pool } = await import("pg");
-  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+  const pool = new Pool({ 
+    connectionString: process.env.DATABASE_URL,
+    connectionTimeoutMillis: 10000,
+    idleTimeoutMillis: 30000,
+  });
   
   try {
-    // Test connection first
-    const testResult = await pool.query('SELECT 1 as test');
-    console.log("[auth] Database connection successful");
+    // Test connection with retry
+    await withStartupRetry(async () => {
+      const testResult = await pool.query('SELECT 1 as test');
+      console.log("[auth] Database connection successful");
+    }, "Database connection test");
     
     // Enable pgcrypto extension for gen_random_uuid()
-    await pool.query(`CREATE EXTENSION IF NOT EXISTS pgcrypto`);
-    console.log("[auth] pgcrypto extension enabled");
+    await withStartupRetry(async () => {
+      await pool.query(`CREATE EXTENSION IF NOT EXISTS pgcrypto`);
+      console.log("[auth] pgcrypto extension enabled");
+    }, "Enable pgcrypto");
     
     // Create user_credentials table if it doesn't exist
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS user_credentials (
-        user_id VARCHAR PRIMARY KEY,
-        email VARCHAR NOT NULL UNIQUE,
-        password_hash VARCHAR NOT NULL,
-        first_name VARCHAR,
-        last_name VARCHAR,
-        created_at TIMESTAMP DEFAULT NOW(),
-        updated_at TIMESTAMP DEFAULT NOW()
-      )
-    `);
-    console.log("[auth] user_credentials table ready");
+    await withStartupRetry(async () => {
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS user_credentials (
+          user_id VARCHAR PRIMARY KEY,
+          email VARCHAR NOT NULL UNIQUE,
+          password_hash VARCHAR NOT NULL,
+          first_name VARCHAR,
+          last_name VARCHAR,
+          created_at TIMESTAMP DEFAULT NOW(),
+          updated_at TIMESTAMP DEFAULT NOW()
+        )
+      `);
+      console.log("[auth] user_credentials table ready");
+    }, "Create user_credentials table");
     
     // Create users table if it doesn't exist
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS users (
-        id VARCHAR PRIMARY KEY,
-        email VARCHAR UNIQUE,
-        first_name VARCHAR,
-        last_name VARCHAR,
-        profile_image_url VARCHAR,
-        created_at TIMESTAMP DEFAULT NOW(),
-        updated_at TIMESTAMP DEFAULT NOW()
-      )
-    `);
-    console.log("[auth] users table ready");
+    await withStartupRetry(async () => {
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS users (
+          id VARCHAR PRIMARY KEY,
+          email VARCHAR UNIQUE,
+          first_name VARCHAR,
+          last_name VARCHAR,
+          profile_image_url VARCHAR,
+          created_at TIMESTAMP DEFAULT NOW(),
+          updated_at TIMESTAMP DEFAULT NOW()
+        )
+      `);
+      console.log("[auth] users table ready");
+    }, "Create users table");
     
     // Create sessions table if it doesn't exist (for connect-pg-simple)
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS sessions (
-        sid VARCHAR NOT NULL PRIMARY KEY,
-        sess JSONB NOT NULL,
-        expire TIMESTAMP NOT NULL
-      )
-    `);
-    await pool.query(`CREATE INDEX IF NOT EXISTS idx_session_expire ON sessions(expire)`);
-    console.log("[auth] sessions table ready");
+    await withStartupRetry(async () => {
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS sessions (
+          sid VARCHAR NOT NULL PRIMARY KEY,
+          sess JSONB NOT NULL,
+          expire TIMESTAMP NOT NULL
+        )
+      `);
+      await pool.query(`CREATE INDEX IF NOT EXISTS idx_session_expire ON sessions(expire)`);
+      console.log("[auth] sessions table ready");
+    }, "Create sessions table");
     
     console.log("[auth] All auth tables verified/created successfully");
   } catch (error: any) {
-    console.error("[auth] FAILED to create auth tables:", error.message);
+    console.error("[auth] CRITICAL: Failed to create auth tables:", error.message);
     console.error("[auth] Full error:", error);
+    console.error("[auth] Authentication will NOT work until this is resolved!");
+    throw error; // Propagate error to make startup fail visibly
   } finally {
     await pool.end();
   }
