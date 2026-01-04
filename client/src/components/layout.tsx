@@ -26,6 +26,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { icon: LayoutDashboard, label: "Dashboard", href: "/" },
     { icon: Users, label: "Clients", href: "/admin/clients" },
     { icon: UserCheck, label: "Appliers", href: "/admin/appliers" },
+    { icon: Briefcase, label: "Queue Manager", href: "/admin/queues" },
     { icon: List, label: "All Applications", href: "/admin/applications" },
     { icon: AlertTriangle, label: "Review Issues", href: "/admin/review" },
     { icon: ShieldCheck, label: "QA Check", href: "/admin/qa" },

@@ -396,6 +396,16 @@ export async function registerRoutes(
     }
   });
 
+  app.delete("/api/jobs/:jobId", isSupabaseAuthenticated, async (req, res) => {
+    try {
+      await storage.deleteJob(req.params.jobId);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting job:", error);
+      res.status(500).json({ error: "Failed to delete job" });
+    }
+  });
+
   // Applier routes
   app.get("/api/appliers", isSupabaseAuthenticated, async (req, res) => {
     try {

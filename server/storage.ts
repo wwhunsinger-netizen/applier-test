@@ -26,6 +26,7 @@ export interface IStorage {
   getQueueJobs(clientId: string, applierId: string): Promise<Job[]>;
   getJobByFeedId(feedJobId: number): Promise<Job | null>;
   createJob(job: Partial<Job>): Promise<Job>;
+  deleteJob(id: string): Promise<void>;
   
   // Applier operations
   getAppliers(): Promise<Applier[]>;
@@ -309,6 +310,16 @@ export class SupabaseStorage implements IStorage {
     if (error) throw error;
     return data;
   }
+
+  async deleteJob(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('jobs')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+  }
+
   // Applier operations
   async getAppliers(): Promise<Applier[]> {
     const { data, error } = await supabase
