@@ -912,17 +912,34 @@ export default function AdminClientDetailPage() {
                     />
                   </div>
                 ) : (
-                  <div className="flex items-center justify-between p-3 bg-white/5 rounded border border-white/10">
-                    <div className="flex items-center gap-3">
-                      <FileText className="w-5 h-5 text-green-400" />
-                      <span className="text-sm truncate max-w-[150px]">
-                        {uploadedFiles['resume_improved']?.startsWith('data:') ? 'Resume (Improved).pdf' : uploadedFiles['resume_improved']}
-                      </span>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between p-3 bg-white/5 rounded border border-white/10">
+                      <div className="flex items-center gap-3">
+                        <FileText className="w-5 h-5 text-green-400" />
+                        <span className="text-sm truncate max-w-[150px]">
+                          {uploadedFiles['resume_improved']?.startsWith('data:') ? 'Resume (Improved).pdf' : uploadedFiles['resume_improved']}
+                        </span>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => handleDeleteDocument('resume_improved')} data-testid="button-delete-resume-improved">
+                          <X className="w-4 h-4" />
+                        </Button>
+                        <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => handleDownload('resume_improved', 'Resume (Improved).pdf')} data-testid="button-download-resume-improved">
+                          <Download className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
-                    <div className="flex gap-2">
-                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => handleDownload('resume_improved', 'Resume (Improved).pdf')}>
-                        <Download className="w-4 h-4" />
-                      </Button>
+                    
+                    {/* Replace Resume Section */}
+                    <div className="relative border-2 border-dashed border-white/10 rounded bg-[#0a0a0a] hover:bg-white/5 transition-colors cursor-pointer p-3 flex items-center justify-center gap-2">
+                      <Upload className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-xs text-muted-foreground">Replace with new version</span>
+                      <input 
+                        type="file" 
+                        className="absolute inset-0 opacity-0 cursor-pointer"
+                        onChange={(e) => handleFileUpload('resume_improved', e)}
+                        data-testid="input-replace-resume-improved"
+                      />
                     </div>
                   </div>
                 )}
