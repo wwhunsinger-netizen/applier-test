@@ -64,8 +64,19 @@ export async function registerRoutes(
       
       console.log(`[auth] Created Supabase user for client: ${validatedData.email}`);
       
-      // Now create the client record
-      const client = await storage.createClient(validatedData);
+      // Now create the client record - rollback auth user if this fails
+      let client;
+      try {
+        client = await storage.createClient(validatedData);
+      } catch (dbError) {
+        // Rollback: delete the Supabase auth user since DB insert failed
+        console.error(`[auth] DB insert failed for client ${validatedData.email}, rolling back auth user`);
+        if (authData.user) {
+          await supabase.auth.admin.deleteUser(authData.user.id);
+          console.log(`[auth] Rolled back Supabase user for client: ${validatedData.email}`);
+        }
+        throw dbError;
+      }
       
       // Return the client with the generated password (so admin can share it)
       res.status(201).json({ ...client, generatedPassword });
@@ -318,8 +329,19 @@ export async function registerRoutes(
       
       console.log(`[auth] Created Supabase user for applier: ${validatedData.email}`);
       
-      // Now create the applier record
-      const applier = await storage.createApplier(validatedData);
+      // Now create the applier record - rollback auth user if this fails
+      let applier;
+      try {
+        applier = await storage.createApplier(validatedData);
+      } catch (dbError) {
+        // Rollback: delete the Supabase auth user since DB insert failed
+        console.error(`[auth] DB insert failed for applier ${validatedData.email}, rolling back auth user`);
+        if (authData.user) {
+          await supabase.auth.admin.deleteUser(authData.user.id);
+          console.log(`[auth] Rolled back Supabase user for applier: ${validatedData.email}`);
+        }
+        throw dbError;
+      }
       console.log("Created applier:", JSON.stringify(applier, null, 2));
       
       // Return the applier with the generated password (so admin can share it)

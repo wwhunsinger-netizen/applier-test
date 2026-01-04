@@ -6,12 +6,14 @@ import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
 import logoUrl from "@assets/Jumpseat_(17)_1766203547189.png";
 import { supabase } from "@/lib/supabase";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const queryClient = useQueryClient();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,6 +34,10 @@ export default function LoginPage() {
         throw new Error("Login failed - no session created");
       }
 
+      // Invalidate auth query so useAuth hook refetches with new session
+      await queryClient.invalidateQueries({ queryKey: ["supabase-auth-user"] });
+      
+      // Force page reload to ensure all state is fresh
       window.location.href = "/";
     } catch (err: any) {
       setError(err.message || "Login failed. Please try again.");
