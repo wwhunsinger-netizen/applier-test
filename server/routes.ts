@@ -66,6 +66,9 @@ export async function registerRoutes(
         .randomBytes(8)
         .toString("base64")
         .slice(0, 12);
+      console.log(
+        `[DEBUG] Creating applier ${validatedData.email} with password: ${generatedPassword}`,
+      );
       const { data: authData, error: authError } =
         await supabase.auth.admin.createUser({
           email: validatedData.email,
