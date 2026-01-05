@@ -216,7 +216,66 @@ export async function registerRoutes(
       res.status(400).json({ error: "Failed to update client" });
     }
   });
+  app.delete("/api/clients/:id", isSupabaseAuthenticated, async (req, res) => {
+    try {
+      const clientId = req.params.id;
 
+      // Delete related records first (foreign key constraints)
+      const { error: appsError } = await supabase
+        .from("applications")
+        .delete()
+        .eq("client_id", clientId);
+      if (appsError) console.error("Error deleting applications:", appsError);
+
+      const { error: interviewsError } = await supabase
+        .from("interviews")
+        .delete()
+        .eq("client_id", clientId);
+      if (interviewsError)
+        console.error("Error deleting interviews:", interviewsError);
+
+      const { error: jobsError } = await supabase
+        .from("jobs")
+        .delete()
+        .eq("client_id", clientId);
+      if (jobsError) console.error("Error deleting jobs:", jobsError);
+
+      const { error: earningsError } = await supabase
+        .from("applier_earnings")
+        .delete()
+        .eq("client_id", clientId);
+      if (earningsError)
+        console.error("Error deleting earnings:", earningsError);
+
+      const { error: docsError } = await supabase
+        .from("client_documents")
+        .delete()
+        .eq("client_id", clientId);
+      if (docsError) console.error("Error deleting documents:", docsError);
+
+      const { error: samplesError } = await supabase
+        .from("job_criteria_samples")
+        .delete()
+        .eq("client_id", clientId);
+      if (samplesError)
+        console.error("Error deleting job samples:", samplesError);
+
+      const { error: clientError } = await supabase
+        .from("clients")
+        .delete()
+        .eq("id", clientId);
+
+      if (clientError) {
+        console.error("Error deleting client:", clientError);
+        return res.status(500).json({ error: "Failed to delete client" });
+      }
+
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting client:", error);
+      res.status(500).json({ error: "Failed to delete client" });
+    }
+  });
   // Application routes
   app.get("/api/applications", isSupabaseAuthenticated, async (req, res) => {
     try {
