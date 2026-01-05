@@ -138,12 +138,21 @@ export interface Application {
 
 export interface Interview {
   id: string;
+  application_id: string;
   client_id: string;
-  company: string;
-  role: string;
-  date: string;
-  format: "Video" | "Panel" | "Phone" | "In-Person";
-  prep_doc_complete: boolean;
+  company_name: string;
+  job_title: string;
+  interview_datetime: string;
+  interview_type?: string;
+  google_calendar_event_id?: string;
+  calendly_event_id?: string;
+  prep_doc_url?: string;
+  prep_doc_status?: string;
+  status?: string;
+  outcome?: string;
+  outcome_notes?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface User {
@@ -293,12 +302,13 @@ export const insertApplicationSchema = z.object({
 });
 
 export const insertInterviewSchema = z.object({
-  client_id: z.string(),
-  company: z.string(),
-  role: z.string(),
-  date: z.string(),
-  format: z.enum(["Video", "Panel", "Phone", "In-Person"]),
-  prep_doc_complete: z.boolean().default(false),
+  application_id: z.string().uuid(),
+  client_id: z.string().uuid(),
+  company_name: z.string(),
+  job_title: z.string(),
+  interview_datetime: z.string(),
+  interview_type: z.string().optional(),
+  prep_doc_status: z.string().default("pending"),
 });
 
 export const insertClientDocumentSchema = z.object({

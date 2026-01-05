@@ -260,12 +260,13 @@ export async function registerRoutes(
 
             // Create interview record
             await storage.createInterview({
-              client_id: currentApp.client_id,
-              company: currentApp.company_name || "Unknown Company",
-              role: currentApp.job_title || "Unknown Role",
-              date: today,
-              format: "Video",
-              prep_doc_complete: false,
+                application_id: req.params.id,           // Required!
+                client_id: currentApp.client_id,
+                company_name: currentApp.company_name,
+                job_title: currentApp.job_title,
+                interview_datetime: new Date().toISOString(),
+                interview_type: 'Phone',
+                prep_doc_status: 'pending',
             });
             console.log(
               `[Interview] Created interview record for ${currentApp.company_name}`,
