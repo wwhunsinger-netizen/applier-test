@@ -33,6 +33,29 @@ export async function registerRoutes(
   // Initialize WebSocket presence tracking for appliers
   presenceService.init(httpServer);
 
+  // ========================================
+  // EXTERNAL API - For cofounder's search app
+  // ========================================
+
+  // Middleware to check external API key
+  const validateExternalApiKey = (req: any, res: any, next: any) => {
+    const apiKey =
+      req.headers["x-api-key"] ||
+      req.headers["authorization"]?.replace("Bearer ", "");
+    const validApiKey = process.env.EXTERNAL_API_KEY;
+
+    if (!validApiKey) {
+      console.error("EXTERNAL_API_KEY not configured");
+      return res.status(500).json({ error: "API not configured" });
+    }
+
+    if (!apiKey || apiKey !== validApiKey) {
+      return res.status(401).json({ error: "Invalid or missing API key" });
+    }
+
+    next();
+  };
+
   // Client routes (protected with Supabase auth)
   app.get("/api/clients", isSupabaseAuthenticated, async (req, res) => {
     try {
@@ -260,13 +283,13 @@ export async function registerRoutes(
 
             // Create interview record
             await storage.createInterview({
-                application_id: req.params.id,           // Required!
-                client_id: currentApp.client_id,
-                company_name: currentApp.company_name,
-                job_title: currentApp.job_title,
-                interview_datetime: new Date().toISOString(),
-                interview_type: 'Phone',
-                prep_doc_status: 'pending',
+              application_id: req.params.id, // Required!
+              client_id: currentApp.client_id,
+              company_name: currentApp.company_name,
+              job_title: currentApp.job_title,
+              interview_datetime: new Date().toISOString(),
+              interview_type: "Phone",
+              prep_doc_status: "pending",
             });
             console.log(
               `[Interview] Created interview record for ${currentApp.company_name}`,
@@ -338,7 +361,7 @@ export async function registerRoutes(
             interview_id: interview.id,
             earned_date: today,
             payment_status: "pending",
-            notes: `Interview scheduled for ${validatedData.company || "unknown company"}`,
+            notes: `Interview scheduled for ${validatedData.company_name || "unknown company"}`,
           });
         }
       } catch (bonusError) {
@@ -418,7 +441,7 @@ export async function registerRoutes(
     },
   );
 
-  app.post("/api/jobs/sync-all", isSupabaseAuthenticated, async (req, res) => {
+  app.post("/api/jobs/sync-all", validateExternalApiKey, async (req, res) => {
     try {
       const { syncJobsForAllClients } = await import("./jobFeedSync");
 
@@ -1240,7 +1263,24 @@ export async function registerRoutes(
           feed_job_id: job?.feed_job_id || null,
           feed_source: job?.feed_source || "manual",
         });
-
+        // Create base pay earning ($0.28 per application)
+        try {
+          await storage.createApplierEarning({
+            applier_id: session.applier_id,
+            client_id: clientId,
+            earnings_type: "base_pay",
+            amount: 0.28,
+            earned_date: new Date().toISOString().split("T")[0],
+            payment_status: "pending",
+            notes: `Base pay for ${application.job_title} at ${application.company_name}`,
+          });
+          console.log(
+            `[Earnings] Base pay $0.28 for ${application.company_name}`,
+          );
+        } catch (basePayError) {
+          console.error("Error creating base pay:", basePayError);
+          // Don't fail the application if base pay fails
+        }
         // If this job came from the feed, notify the feed API
         if (job?.feed_job_id && job?.feed_source === "feed") {
           try {
@@ -1418,29 +1458,6 @@ export async function registerRoutes(
       }
     },
   );
-
-  // ========================================
-  // EXTERNAL API - For cofounder's search app
-  // ========================================
-
-  // Middleware to check external API key
-  const validateExternalApiKey = (req: any, res: any, next: any) => {
-    const apiKey =
-      req.headers["x-api-key"] ||
-      req.headers["authorization"]?.replace("Bearer ", "");
-    const validApiKey = process.env.EXTERNAL_API_KEY;
-
-    if (!validApiKey) {
-      console.error("EXTERNAL_API_KEY not configured");
-      return res.status(500).json({ error: "API not configured" });
-    }
-
-    if (!apiKey || apiKey !== validApiKey) {
-      return res.status(401).json({ error: "Invalid or missing API key" });
-    }
-
-    next();
-  };
 
   // Get all clients with their job criteria (for search app)
   app.get("/api/external/clients", validateExternalApiKey, async (req, res) => {

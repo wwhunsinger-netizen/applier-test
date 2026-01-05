@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import {
   Search,
   Plus,
@@ -28,6 +29,7 @@ import {
   TrendingUp,
   Clock,
   Target,
+  Pencil,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -37,6 +39,15 @@ export default function AdminAppliersPage() {
   const queryClient = useQueryClient();
   const [searchTerm, setSearch] = useState("");
   const [isAddApplierOpen, setIsAddApplierOpen] = useState(false);
+
+  // Edit modal state
+  const [isEditApplierOpen, setIsEditApplierOpen] = useState(false);
+  const [editingApplier, setEditingApplier] = useState<Applier | null>(null);
+  const [editFirstName, setEditFirstName] = useState("");
+  const [editLastName, setEditLastName] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+  const [editIsActive, setEditIsActive] = useState(true);
+  const [editAssignedClientIds, setEditAssignedClientIds] = useState<string[]>([]);
 
   const {
     data: appliers = [],
@@ -73,6 +84,36 @@ export default function AdminAppliersPage() {
       toast({
         title: "Error",
         description: "Failed to create applier. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Update applier mutation
+  const updateApplierMutation = useMutation({
+    mutationFn: async (data: { id: string; updates: Partial<Applier> }) => {
+      const response = await fetch(`/api/appliers/${data.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(data.updates),
+      });
+      if (!response.ok) throw new Error("Failed to update applier");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["appliers"] });
+      queryClient.invalidateQueries({ queryKey: ["clients"] });
+      toast({
+        title: "Success",
+        description: "Applier updated successfully.",
+      });
+      closeEditModal();
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update applier. Please try again.",
         variant: "destructive",
       });
     },
@@ -131,6 +172,42 @@ export default function AdminAppliersPage() {
     setAssignedClientIds([]);
     setGeneratedPassword("");
     setShowPassword(false);
+  };
+
+  // Edit modal handlers
+  const openEditModal = (applier: Applier) => {
+    setEditingApplier(applier);
+    setEditFirstName(applier.first_name);
+    setEditLastName(applier.last_name);
+    setEditEmail(applier.email);
+    setEditIsActive(applier.is_active);
+    setEditAssignedClientIds(applier.assigned_client_ids || []);
+    setIsEditApplierOpen(true);
+  };
+
+  const closeEditModal = () => {
+    setIsEditApplierOpen(false);
+    setEditingApplier(null);
+    setEditFirstName("");
+    setEditLastName("");
+    setEditEmail("");
+    setEditIsActive(true);
+    setEditAssignedClientIds([]);
+  };
+
+  const handleUpdateApplier = () => {
+    if (!editingApplier) return;
+
+    updateApplierMutation.mutate({
+      id: editingApplier.id,
+      updates: {
+        first_name: editFirstName,
+        last_name: editLastName,
+        email: editEmail,
+        is_active: editIsActive,
+        assigned_client_ids: editAssignedClientIds,
+      },
+    });
   };
 
   const getStatusStyles = (status: string) => {
@@ -258,8 +335,9 @@ export default function AdminAppliersPage() {
           filteredAppliers.map((applier) => (
             <Card
               key={applier.id}
-              className="bg-[#111] border-white/10 hover:border-white/20 transition-colors group"
+              className="bg-[#111] border-white/10 hover:border-white/20 transition-colors group cursor-pointer"
               data-testid={`card-applier-${applier.id}`}
+              onClick={() => openEditModal(applier)}
             >
               <CardContent className="p-0">
                 <div className="flex items-center justify-between p-6">
@@ -283,6 +361,14 @@ export default function AdminAppliersPage() {
                           {applier.status.charAt(0).toUpperCase() +
                             applier.status.slice(1)}
                         </Badge>
+                        {!applier.is_active && (
+                          <Badge
+                            variant="outline"
+                            className="h-5 text-[10px] px-1.5 bg-red-500/10 text-red-400 border-red-500/20"
+                          >
+                            Disabled
+                          </Badge>
+                        )}
                       </div>
                       <div className="text-sm text-muted-foreground flex flex-col md:flex-row md:items-center gap-1 md:gap-3 mt-1">
                         <span data-testid={`text-email-${applier.id}`}>
@@ -331,6 +417,17 @@ export default function AdminAppliersPage() {
                           : "N/A"}
                       </p>
                     </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openEditModal(applier);
+                      }}
+                    >
+                      <Pencil className="w-4 h-4 text-muted-foreground hover:text-white" />
+                    </Button>
                   </div>
                 </div>
               </CardContent>
@@ -357,6 +454,7 @@ export default function AdminAppliersPage() {
         )}
       </div>
 
+      {/* Add New Applier Dialog */}
       <Dialog
         open={isAddApplierOpen}
         onOpenChange={(open) => !open && resetForm()}
@@ -538,6 +636,149 @@ export default function AdminAppliersPage() {
                 </Button>
               </div>
             )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Applier Dialog */}
+      <Dialog
+        open={isEditApplierOpen}
+        onOpenChange={(open) => !open && closeEditModal()}
+      >
+        <DialogContent className="bg-[#0a0a0a] border-white/10 text-white sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Edit Applier</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="editFirstName">First Name</Label>
+                <Input
+                  id="editFirstName"
+                  value={editFirstName}
+                  onChange={(e) => setEditFirstName(e.target.value)}
+                  className="bg-white/5 border-white/10"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="editLastName">Last Name</Label>
+                <Input
+                  id="editLastName"
+                  value={editLastName}
+                  onChange={(e) => setEditLastName(e.target.value)}
+                  className="bg-white/5 border-white/10"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="editEmail">Email Address</Label>
+              <Input
+                id="editEmail"
+                type="email"
+                value={editEmail}
+                onChange={(e) => setEditEmail(e.target.value)}
+                className="bg-white/5 border-white/10"
+              />
+            </div>
+
+            <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/10">
+              <div>
+                <Label className="text-white">Account Active</Label>
+                <p className="text-xs text-muted-foreground">
+                  Disabled accounts cannot log in
+                </p>
+              </div>
+              <Switch
+                checked={editIsActive}
+                onCheckedChange={setEditIsActive}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Assigned Clients</Label>
+              <div className="max-h-40 overflow-y-auto bg-white/5 border border-white/10 rounded-lg p-2 space-y-1">
+                {clients.length === 0 && (
+                  <p className="text-sm text-muted-foreground py-2 text-center">
+                    No clients available
+                  </p>
+                )}
+                {clients.map((client) => (
+                  <label
+                    key={client.id}
+                    className="flex items-center gap-2 p-2 rounded hover:bg-white/5 cursor-pointer"
+                  >
+                    <input
+                      type="checkbox"
+                      className="rounded border-white/20 bg-white/5"
+                      checked={editAssignedClientIds.includes(client.id)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setEditAssignedClientIds([
+                            ...editAssignedClientIds,
+                            client.id,
+                          ]);
+                        } else {
+                          setEditAssignedClientIds(
+                            editAssignedClientIds.filter(
+                              (id) => id !== client.id,
+                            ),
+                          );
+                        }
+                      }}
+                    />
+                    <span className="text-sm text-white">
+                      {client.first_name} {client.last_name}
+                    </span>
+                    <Badge
+                      variant="outline"
+                      className={cn(
+                        "ml-auto h-5 text-[10px] px-1.5",
+                        client.status === "active"
+                          ? "bg-green-500/10 text-green-400 border-green-500/20"
+                          : client.status === "placed"
+                            ? "bg-blue-500/10 text-blue-400 border-blue-500/20"
+                            : "bg-gray-500/10 text-gray-400 border-gray-500/20"
+                      )}
+                    >
+                      {client.status}
+                    </Badge>
+                  </label>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Select clients this applier will work on.
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={closeEditModal}
+              className="border-white/10 hover:bg-white/5"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleUpdateApplier}
+              className="bg-primary hover:bg-primary/90"
+              disabled={
+                !editFirstName ||
+                !editLastName ||
+                !editEmail ||
+                updateApplierMutation.isPending
+              }
+            >
+              {updateApplierMutation.isPending ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving...
+                </>
+              ) : (
+                "Save Changes"
+              )}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
