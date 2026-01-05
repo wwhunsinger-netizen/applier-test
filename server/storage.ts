@@ -321,8 +321,8 @@ export class SupabaseStorage implements IStorage {
     const { data, error } = await supabase
       .from("jobs")
       .select("*")
-      .eq("client_id", clientId);
-
+      .eq("client_id", clientId)
+      .eq("status", "active");
     if (error) throw error;
     return data || [];
   }
