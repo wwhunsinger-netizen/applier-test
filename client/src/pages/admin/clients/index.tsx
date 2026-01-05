@@ -39,9 +39,12 @@ export default function AdminClientsPage() {
   // Create client mutation
   const createClientMutation = useMutation({
     mutationFn: createClient,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['clients'] });
-      setIsCreated(true);
+      onSuccess: (data: any) => {
+        queryClient.invalidateQueries({ queryKey: ['clients'] });
+        if (data.generatedPassword) {
+          setGeneratedPassword(data.generatedPassword);
+        }
+        setIsCreated(true);
     },
     onError: (error) => {
       toast({
@@ -71,7 +74,7 @@ export default function AdminClientsPage() {
   const handleCreateClient = () => {
     if (!newClientFirstName || !newClientLastName || !newClientEmail) return;
     
-    handleGenerateCredentials();
+    
     
     const newClient: InsertClient = {
       first_name: newClientFirstName,
