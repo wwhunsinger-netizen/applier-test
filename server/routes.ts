@@ -1098,7 +1098,8 @@ export async function registerRoutes(
             (j) =>
               applier.assigned_client_ids?.includes(j.client_id) &&
               !appliedJobIds.has(j.id) &&
-              !flaggedSessionIds.has(j.id),
+              !flaggedSessionIds.has(j.id) &&
+              j.status === "active",
           ).length;
         }
 
