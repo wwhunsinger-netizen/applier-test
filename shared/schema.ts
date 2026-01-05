@@ -92,6 +92,7 @@ export interface Job {
   job_title: string;
   company_name: string;
   job_url: string;
+  status?: string;
   job_description?: string;
   job_location?: string;
   posted_date?: string;

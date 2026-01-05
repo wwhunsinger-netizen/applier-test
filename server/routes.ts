@@ -396,16 +396,6 @@ export async function registerRoutes(
     }
   });
 
-  app.delete("/api/jobs/:jobId", isSupabaseAuthenticated, async (req, res) => {
-    try {
-      await storage.deleteJob(req.params.jobId);
-      res.status(204).send();
-    } catch (error) {
-      console.error("Error deleting job:", error);
-      res.status(500).json({ error: "Failed to delete job" });
-    }
-  });
-
   // Applier routes
   app.get("/api/appliers", isSupabaseAuthenticated, async (req, res) => {
     try {
@@ -617,22 +607,21 @@ export async function registerRoutes(
     },
   );
 
-  app.delete(
-    "/api/clients/:clientId/documents/:documentType",
-    isSupabaseAuthenticated,
-    async (req, res) => {
-      try {
-        await storage.deleteClientDocument(
-          req.params.clientId,
-          req.params.documentType,
-        );
-        res.status(204).send();
-      } catch (error) {
-        console.error("Error deleting client document:", error);
-        res.status(500).json({ error: "Failed to delete client document" });
-      }
-    },
-  );
+  app.delete("/api/jobs/:jobId", isSupabaseAuthenticated, async (req, res) => {
+    try {
+      // Soft delete - mark as rejected instead of deleting
+      const { error } = await supabase
+        .from("jobs")
+        .update({ status: "rejected" })
+        .eq("id", req.params.jobId);
+
+      if (error) throw error;
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error rejecting job:", error);
+      res.status(500).json({ error: "Failed to reject job" });
+    }
+  });
 
   // Download client document from object storage
   app.get(
