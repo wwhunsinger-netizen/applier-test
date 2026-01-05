@@ -5,6 +5,8 @@ const FEED_API_URL =
 const FEED_AUTH_TOKEN =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoicG9zdGdyZXN0X3JlYWRlciJ9.C2u4mxuXdaFb4ObhkQCNIjhb9oyeDzAQQ3Sw8mYVD14";
 
+const TARGET_QUEUE_SIZE = 100;
+
 interface FeedJob {
   canonical_job_id: number;
   title: string;
@@ -44,6 +46,23 @@ async function fetchJobsFromFeed(
 }
 
 /**
+ * Get current queue size for a client (jobs not yet applied or flagged)
+ */
+async function getClientQueueSize(clientId: string): Promise<number> {
+  // Get all jobs for this client
+  const jobs = await storage.getJobsByClient(clientId);
+
+  // Get all applications for this client
+  const applications = await storage.getApplicationsByClient(clientId);
+  const appliedJobIds = new Set(applications.map((a) => a.job_id));
+
+  // Count jobs that haven't been applied to
+  const queueJobs = jobs.filter((j) => !appliedJobIds.has(j.id));
+
+  return queueJobs.length;
+}
+
+/**
  * Mark a job as applied in the feed API
  */
 export async function markJobAppliedInFeed(
@@ -74,30 +93,62 @@ export async function markJobAppliedInFeed(
 
 /**
  * Sync jobs from feed API to database for a specific client
- * Returns the number of new jobs added
+ * Only tops up the queue to TARGET_QUEUE_SIZE (100)
  */
 export async function syncJobsForClient(
   clientId: string,
-): Promise<{ added: number; skipped: number; errors: string[] }> {
-  const stats = { added: 0, skipped: 0, errors: [] as string[] };
+): Promise<{
+  added: number;
+  skipped: number;
+  errors: string[];
+  queueSize: number;
+}> {
+  const stats = { added: 0, skipped: 0, errors: [] as string[], queueSize: 0 };
 
   try {
-    // Fetch jobs from feed
-    const feedJobs = await fetchJobsFromFeed(clientId);
+    // Check current queue size
+    const currentQueueSize = await getClientQueueSize(clientId);
+    stats.queueSize = currentQueueSize;
+
+    // Calculate how many jobs we need
+    const jobsNeeded = TARGET_QUEUE_SIZE - currentQueueSize;
+
+    if (jobsNeeded <= 0) {
+      console.log(
+        `[Job Sync] Client ${clientId} already has ${currentQueueSize} jobs in queue. Skipping.`,
+      );
+      return stats;
+    }
+
+    console.log(
+      `[Job Sync] Client ${clientId} has ${currentQueueSize} jobs in queue. Need ${jobsNeeded} more.`,
+    );
+
+    // Fetch jobs from feed (fetch a bit extra to account for duplicates)
+    const fetchSize = Math.min(jobsNeeded + 20, 100);
+    const feedJobs = await fetchJobsFromFeed(clientId, fetchSize);
 
     console.log(
       `[Job Sync] Fetched ${feedJobs.length} jobs from feed for client ${clientId}`,
     );
 
-    // Process each job
+    // Process each job until we hit our target
     for (const feedJob of feedJobs) {
+      // Stop if we've added enough
+      if (stats.added >= jobsNeeded) {
+        console.log(
+          `[Job Sync] Reached target of ${jobsNeeded} new jobs. Stopping.`,
+        );
+        break;
+      }
+
       try {
-        // Check if job already exists in database
+        // Check if job already exists in database (by feed_job_id for this client)
         const existingJob = await storage.getJobByFeedId(
           feedJob.canonical_job_id,
         );
 
-        if (existingJob) {
+        if (existingJob && existingJob.client_id === clientId) {
           stats.skipped++;
           continue;
         }
@@ -127,8 +178,9 @@ export async function syncJobsForClient(
       }
     }
 
+    stats.queueSize = currentQueueSize + stats.added;
     console.log(
-      `[Job Sync] Complete for client ${clientId}. Added: ${stats.added}, Skipped: ${stats.skipped}, Errors: ${stats.errors.length}`,
+      `[Job Sync] Complete for client ${clientId}. Added: ${stats.added}, Skipped: ${stats.skipped}, Errors: ${stats.errors.length}, New Queue Size: ${stats.queueSize}`,
     );
 
     return stats;
@@ -145,7 +197,12 @@ export async function syncJobsForClient(
  * Sync jobs for all active clients
  */
 export async function syncJobsForAllClients(): Promise<{
-  [clientId: string]: { added: number; skipped: number; errors: string[] };
+  [clientId: string]: {
+    added: number;
+    skipped: number;
+    errors: string[];
+    queueSize: number;
+  };
 }> {
   try {
     const clients = await storage.getClients();
@@ -158,7 +215,12 @@ export async function syncJobsForAllClients(): Promise<{
     );
 
     const results: {
-      [clientId: string]: { added: number; skipped: number; errors: string[] };
+      [clientId: string]: {
+        added: number;
+        skipped: number;
+        errors: string[];
+        queueSize: number;
+      };
     } = {};
 
     for (const client of activeClients) {
@@ -169,6 +231,7 @@ export async function syncJobsForAllClients(): Promise<{
           added: 0,
           skipped: 0,
           errors: [`Fatal error: ${error}`],
+          queueSize: 0,
         };
       }
     }
