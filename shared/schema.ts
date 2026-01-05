@@ -133,6 +133,7 @@ export interface Application {
   application_proof_url?: string;
   created_at?: string;
   updated_at?: string;
+  duration_seconds?: number;
 }
 
 export interface Interview {
@@ -284,6 +285,7 @@ export const insertApplicationSchema = z.object({
   qa_status: z.string().optional(),
   applied_date: z.string().optional(),
   flagged_issue: z.string().optional(),
+  duration_seconds: z.number().optional(),
   // Job snapshot fields (NOT NULL in Supabase)
   job_title: z.string(),
   company_name: z.string(),

@@ -233,10 +233,59 @@ export async function registerRoutes(
     async (req, res) => {
       try {
         const updates = req.body;
-        const updated = await storage.updateApplication(req.params.id, updates);
-        if (!updated) {
+
+        // Get the current application to check status change
+        const currentApp = await storage.getApplication(req.params.id);
+        if (!currentApp) {
           return res.status(404).json({ error: "Application not found" });
         }
+
+        const updated = await storage.updateApplication(req.params.id, updates);
+        if (!updated) {
+          return res
+            .status(404)
+            .json({ error: "Failed to update application" });
+        }
+
+        // When status changes to Interview: create interview record + award $50 bonus
+        if (
+          updates.status?.toLowerCase() === "interview" &&
+          currentApp.status?.toLowerCase() !== "interview"
+        ) {
+          try {
+            const today = new Date().toISOString().split("T")[0];
+
+            // Create interview record
+            await storage.createInterview({
+              client_id: currentApp.client_id,
+              company: currentApp.company_name || "Unknown Company",
+              role: currentApp.job_title || "Unknown Role",
+              date: today,
+              format: "Video",
+              prep_doc_complete: false,
+            });
+            console.log(
+              `[Interview] Created interview record for ${currentApp.company_name}`,
+            );
+
+            // Award $50 interview bonus
+            await storage.createApplierEarning({
+              applier_id: currentApp.applier_id,
+              client_id: currentApp.client_id,
+              earnings_type: "interview_bonus",
+              amount: 50,
+              earned_date: today,
+              payment_status: "pending",
+              notes: `Interview for ${currentApp.job_title} at ${currentApp.company_name}`,
+            });
+            console.log(
+              `[Earnings] Awarded $50 interview bonus to applier ${currentApp.applier_id}`,
+            );
+          } catch (bonusError) {
+            console.error("Error creating interview/bonus:", bonusError);
+          }
+        }
+
         res.json(updated);
       } catch (error) {
         console.error("Error updating application:", error);
@@ -1179,6 +1228,7 @@ export async function registerRoutes(
           client_id: clientId,
           status: "applied",
           applied_date: completedAt.toISOString(),
+          duration_seconds: durationSeconds,
           // Job snapshot fields (NOT NULL in Supabase)
           job_title: job?.job_title || job?.title || "Unknown Position",
           company_name: job?.company_name || job?.company || "Unknown Company",
