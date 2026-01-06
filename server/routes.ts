@@ -2063,7 +2063,7 @@ export async function registerRoutes(
 
   Keep the entire response scannable and actionable. The applier should be able to execute these changes in 2-3 minutes.`;
 
-      const apiKey = process.env.CLIENT_CHAT_API_KEY;
+      const apiKey = process.env.ANTHROPIC_API_KEY;
       if (!apiKey) {
         return res.status(500).json({ error: "Claude API not configured" });
       }
