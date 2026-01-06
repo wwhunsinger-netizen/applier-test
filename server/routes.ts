@@ -1980,7 +1980,119 @@ export async function registerRoutes(
       res.status(500).json({ error: "Failed to process question" });
     }
   });
+  // Resume Tailor - AI-powered keyword gap analysis for appliers
+    app.post("/api/resume-tailor", isSupabaseAuthenticated, async (req, res) => {
+      try {
+        const { client_id, job_description } = req.body;
 
+        if (!client_id || !job_description) {
+          return res.status(400).json({ error: "client_id and job_description are required" });
+        }
+
+        const client = await storage.getClient(client_id);
+        if (!client) {
+          return res.status(404).json({ error: "Client not found" });
+        }
+
+        const resumeText = client.resume_text || '';
+        const onboardingTranscript = client.onboarding_transcript || '';
+
+        if (!resumeText) {
+          return res.status(400).json({ error: "Client has no resume text. Please add resume_text to the client record." });
+        }
+
+        const prompt = `You are a resume tailoring assistant. Your job is to analyze keyword coverage and suggest targeted edits to improve job match rate.
+
+  ## Key Research Insights You Must Apply:
+  - ATS systems are searchable databases, not gatekeepers. Recruiters make all decisions.
+  - Recruiters spend 6-30 seconds on initial scan - top of resume matters most.
+  - Target 60-80% keyword coverage (15-25 relevant terms). NOT 100% - that looks like stuffing.
+  - Modern ATS uses semantic matching: "collaborated" matches "collaboration" - don't stress exact phrasing.
+
+  ## Client's Resume:
+  ${resumeText}
+
+  ${onboardingTranscript ? `## Career Context:
+  ${onboardingTranscript}` : ''}
+
+  ## Job Description:
+  ${job_description}
+
+  ## Your Task:
+
+  ### 1. Keyword Gap Analysis
+  Extract 15-25 high-value keywords/phrases from the job description (technical skills, tools, methodologies, soft skills). Then assess which ones are:
+  - ✓ Already covered (present in resume, even if phrased differently - remember semantic matching)
+  - ✗ Missing (should be added if client can legitimately claim them)
+
+  Show the approximate coverage percentage.
+
+  ### 2. Prioritized Suggestions
+  Focus ONLY on high-impact, quick changes:
+
+  **Skills Section:** List specific keywords to add.
+
+  **Summary:** If the summary doesn't reflect the JD's emphasis, suggest a brief reframe. Keep the client's voice.
+
+  **Title Alignment:** Only if there's an obvious mismatch between client's titles and JD language (e.g., "Software Developer" vs "Software Engineer").
+
+  ### 3. What NOT to Change
+  - Don't suggest bullet point reordering (diminishing returns)
+  - Don't suggest changes just to hit 100% - 60-80% is the sweet spot
+  - Never suggest adding skills the client can't legitimately claim
+  - Don't rewrite content that's already working
+
+  ## Output Format:
+
+  **Keyword Coverage: ~X%** (X of Y key terms found)
+
+  **Missing High-Value Keywords:**
+  [List only the important ones worth adding]
+
+  **Quick Wins:**
+  [2-5 specific, actionable suggestions - be direct, skip fluff]
+
+  Keep the entire response scannable and actionable. The applier should be able to execute these changes in 2-3 minutes.`;
+
+        const apiKey = process.env.CLIENT_CHAT_API_KEY;
+        if (!apiKey) {
+          return res.status(500).json({ error: "Claude API not configured" });
+        }
+
+        const response = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": apiKey,
+            "anthropic-version": "2023-06-01"
+          },
+          body: JSON.stringify({
+            model: "claude-sonnet-4-20250514",
+            max_tokens: 1500,
+            messages: [{ role: "user", content: prompt }]
+          })
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error("Claude API error:", errorText);
+          return res.status(500).json({ error: "Failed to get suggestions from AI" });
+        }
+
+        const data = await response.json();
+        const suggestions = data.content?.[0]?.text || "No suggestions generated.";
+
+        res.json({ 
+          suggestions,
+          client_name: `${client.first_name} ${client.last_name}`
+        });
+
+      } catch (error) {
+        console.error("Resume tailor error:", error);
+        res.status(500).json({ error: "Failed to generate suggestions" });
+      }
+    });
+  
   // Register object storage routes for file uploads
   registerObjectStorageRoutes(app);
 

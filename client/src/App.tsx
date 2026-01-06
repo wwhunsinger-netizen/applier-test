@@ -28,19 +28,21 @@ import ClientApplicationsPage from "@/pages/client/applications";
 import ClientJobCriteriaPage from "@/pages/client/job-criteria";
 import AppliedPage from "@/pages/applier/applied";
 
+import ResumeTailorPage from "@/pages/applier/resume-tailor";
+
 function AuthGuard({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useUser();
-  
+
   // Show loading while checking auth and resolving user role
   if (isLoading) {
     return <LoadingScreen />;
   }
-  
+
   // If not authenticated, show login page
   if (!isAuthenticated) {
     return <LoginPage />;
   }
-  
+
   return <>{children}</>;
 }
 
@@ -54,7 +56,7 @@ function Router() {
           <Route path="/review/:id" component={ReviewPage} />
           <Route path="/leaderboard" component={LeaderboardPage} />
           <Route path="/applied" component={AppliedPage} />
-          
+
           {/* Admin Routes */}
           <Route path="/admin/applications" component={AdminApplicationsPage} />
           <Route path="/admin/review" component={AdminReviewPage} />
@@ -67,8 +69,15 @@ function Router() {
           {/* Client Routes */}
           <Route path="/client/interviews" component={ClientInterviewsPage} />
           <Route path="/client/documents" component={ClientDocumentsPage} />
-          <Route path="/client/applications" component={ClientApplicationsPage} />
-          <Route path="/client/job-criteria" component={ClientJobCriteriaPage} />
+          <Route
+            path="/client/applications"
+            component={ClientApplicationsPage}
+          />
+          <Route
+            path="/client/job-criteria"
+            component={ClientJobCriteriaPage}
+          />
+          <Route path="/resume-tailor" component={ResumeTailorPage} />
 
           <Route component={NotFound} />
         </Switch>
