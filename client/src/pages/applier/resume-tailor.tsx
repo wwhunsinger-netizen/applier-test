@@ -112,8 +112,7 @@ export default function ResumeTailorPage() {
           Resume Tailor
         </h1>
         <p className="text-muted-foreground mt-1">
-          Analyze keyword gaps and get targeted suggestions for 60-80% match
-          rate
+          Analyze keyword gaps and get targeted suggestions rate
         </p>
       </div>
 
@@ -125,9 +124,10 @@ export default function ResumeTailorPage() {
               Research-backed approach:
             </span>
             <span className="text-muted-foreground ml-1">
-              Target 60-80% keyword coverage (15-25 terms). ATS uses semantic
-              matching - exact phrasing doesn't matter. Recruiters scan for 6-30
-              seconds, so top of resume matters most.
+              Target 60-80% keyword coverage. We dont need to add ALL the
+              keywords, as that would look fishy. But we want to get most of
+              them. ATS also use semantic matching meaningvthe exact phrasing
+              doesn't matter(e.g. "Leader" vs "Leadership")
             </span>
           </div>
         </CardContent>
@@ -287,12 +287,12 @@ export default function ResumeTailorPage() {
             <AlertTriangle className="h-5 w-5 text-amber-500 mt-0.5 flex-shrink-0" />
             <div className="text-sm text-muted-foreground">
               <span className="font-medium text-amber-500">
-                Don't over-optimize:
+                Beware of Formatting:
               </span>
               <span className="ml-1">
-                60-80% keyword match is the sweet spot. Going higher looks like
-                keyword stuffing and makes the resume unreadable. Focus on
-                high-value terms the client can legitimately claim.
+                Pay attention to the spacing of the resume. Dont add too many
+                characters so that it is creating a new page or ruining
+                formatting.
               </span>
             </div>
           </div>

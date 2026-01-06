@@ -254,13 +254,13 @@ export class SupabaseStorage implements IStorage {
   }
   async getApplication(id: string): Promise<Application | null> {
     const { data, error } = await supabase
-      .from("applications")
-      .select("*")
-      .eq("id", id)
+      .from('applications')
+      .select('*')
+      .eq('id', id)
       .single();
 
     if (error) {
-      if (error.code === "PGRST116") return null;
+      if (error.code === 'PGRST116') return null;
       throw error;
     }
     return data;
