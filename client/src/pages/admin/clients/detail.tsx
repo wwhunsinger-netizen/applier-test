@@ -1001,14 +1001,33 @@ export default function AdminClientDetailPage() {
                   />
                 </div>
               ) : (
-                <div className="flex items-center justify-between p-3 bg-white/5 rounded border border-white/10">
-                  <div className="flex items-center gap-3">
-                    <FileText className="w-5 h-5 text-purple-400" />
-                    <span className="text-sm truncate max-w-[200px]">
-                      {uploadedFiles['cover_letter_original']?.startsWith('data:') ? 'Cover Letter (Original).pdf' : uploadedFiles['cover_letter_original']}
-                    </span>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-3 bg-white/5 rounded border border-white/10">
+                    <div className="flex items-center gap-3">
+                      <FileText className="w-5 h-5 text-purple-400" />
+                      <span className="text-sm truncate max-w-[200px]">
+                        {uploadedFiles['cover_letter_original']?.startsWith('data:') ? 'Cover Letter (Original).pdf' : uploadedFiles['cover_letter_original']}
+                      </span>
+                    </div>
+                    <div className="flex gap-1">
+                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => handleDeleteDocument('cover_letter_original')} data-testid="button-delete-cover-letter-original">
+                        <X className="w-4 h-4" />
+                      </Button>
+                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => handleDownload('cover_letter_original', 'Cover Letter (Original).pdf')} data-testid="button-download-cover-letter-original">
+                        <Download className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
-                  <Button size="sm" variant="ghost" className="h-8 w-8 p-0"><Download className="w-4 h-4" /></Button>
+                  <div className="relative p-3 border-2 border-dashed border-white/10 rounded-lg flex items-center justify-center text-center hover:bg-white/5 transition-colors cursor-pointer">
+                    <Upload className="w-4 h-4 text-muted-foreground mr-2" />
+                    <p className="text-xs text-muted-foreground">Replace with new version</p>
+                    <input 
+                      type="file" 
+                      className="absolute inset-0 opacity-0 cursor-pointer" 
+                      onChange={(e) => handleFileUpload('cover_letter_original', e)}
+                      data-testid="input-replace-cover-letter-original"
+                    />
+                  </div>
                 </div>
               )}
             </CardContent>
@@ -1032,14 +1051,33 @@ export default function AdminClientDetailPage() {
                       />
                     </div>
                   ) : (
-                    <div className="p-4 bg-white/5 rounded-lg border border-white/10 h-32 flex flex-col items-center justify-center text-center relative group">
-                       <FileText className="w-8 h-8 text-purple-400 mb-2" />
-                       <p className="text-xs text-white truncate max-w-full px-2">
-                         {uploadedFiles[`cover_letter_${version}`]?.startsWith('data:') ? `Version ${version}.pdf` : uploadedFiles[`cover_letter_${version}`]}
-                       </p>
-                       <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-lg">
-                          <Button size="sm" variant="secondary"><Download className="w-4 h-4 mr-2" /> Download</Button>
-                       </div>
+                    <div className="space-y-2">
+                      <div className="p-3 bg-white/5 rounded-lg border border-white/10 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <FileText className="w-5 h-5 text-purple-400" />
+                          <p className="text-xs text-white truncate max-w-[100px]">
+                            {uploadedFiles[`cover_letter_${version}`]?.startsWith('data:') ? `Version ${version}.pdf` : uploadedFiles[`cover_letter_${version}`]}
+                          </p>
+                        </div>
+                        <div className="flex gap-1">
+                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => handleDeleteDocument(`cover_letter_${version}`)} data-testid={`button-delete-cover-letter-${version}`}>
+                            <X className="w-3 h-3" />
+                          </Button>
+                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => handleDownload(`cover_letter_${version}`, `Cover Letter (Version ${version}).pdf`)} data-testid={`button-download-cover-letter-${version}`}>
+                            <Download className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="relative p-2 border-2 border-dashed border-white/10 rounded flex items-center justify-center hover:bg-white/5 transition-colors cursor-pointer">
+                        <Upload className="w-3 h-3 text-muted-foreground mr-1" />
+                        <p className="text-[10px] text-muted-foreground">Replace</p>
+                        <input 
+                          type="file" 
+                          className="absolute inset-0 opacity-0 cursor-pointer" 
+                          onChange={(e) => handleFileUpload(`cover_letter_${version}`, e)}
+                          data-testid={`input-replace-cover-letter-${version}`}
+                        />
+                      </div>
                     </div>
                   )}
                   <div className="flex items-center justify-between text-xs text-muted-foreground">

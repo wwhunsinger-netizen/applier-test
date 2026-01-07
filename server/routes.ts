@@ -2039,14 +2039,15 @@ export async function registerRoutes(
   ### 2. Prioritized Suggestions
   Focus ONLY on high-impact, quick changes:
 
-  **Skills Section:** List specific keywords to add.
+  **Skills Section:** List specific keywords to add. But only list 4 MAX of the most relevant ones. We dont have that much room. If you are to add additional ones tell them which ones to remove to make room. 
 
-  **Summary:** If the summary doesn't reflect the JD's emphasis, suggest a brief reframe. Keep the client's voice.
+  **Summary:** If the summary doesn't reflect the JD's emphasis, suggest a brief reframe. Keep the client's voice. But make sure that it is still readable dont just shoehorn in keywords that makes it jibberish. 
 
   **Title Alignment:** Only if there's an obvious mismatch between client's titles and JD language (e.g., "Software Developer" vs "Software Engineer").
-
+  - Word swaps in bullets OK (e.g., "built pipelines" → "built ETL pipelines")
+  
   ### 3. What NOT to Change
-  - Don't suggest bullet point reordering (diminishing returns)
+  - Don't suggest bullet point reordering or adding in new bullet points(diminishing returns)
   - Don't suggest changes just to hit 100% - 60-80% is the sweet spot
   - Never suggest adding skills the client can't legitimately claim
   - Don't rewrite content that's already working
