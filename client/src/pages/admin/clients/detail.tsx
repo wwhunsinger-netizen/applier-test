@@ -18,11 +18,14 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { ArrowLeft, Upload, FileText, Download, CheckCircle2, AlertCircle, Plus, Calendar, Clock, Video, Users, Link as LinkIcon, Linkedin, Loader2, ChevronDown, X, Target, Briefcase, ExternalLink, Trash2, RefreshCw } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { useUser } from "@/lib/userContext";
 
 export default function AdminClientDetailPage() {
   const [, params] = useRoute("/admin/clients/:id");
   const clientId = params?.id;
   const queryClient = useQueryClient();
+  const { currentUser } = useUser();
+  const isAdmin = currentUser?.role === "Admin";
 
   // All useState hooks must be declared before any early returns
   const [activeTab, setActiveTab] = useState("resume");
@@ -1010,24 +1013,28 @@ export default function AdminClientDetailPage() {
                       </span>
                     </div>
                     <div className="flex gap-1">
-                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => handleDeleteDocument('cover_letter_original')} data-testid="button-delete-cover-letter-original">
-                        <X className="w-4 h-4" />
-                      </Button>
+                      {isAdmin && (
+                        <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => handleDeleteDocument('cover_letter_original')} data-testid="button-delete-cover-letter-original">
+                          <X className="w-4 h-4" />
+                        </Button>
+                      )}
                       <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => handleDownload('cover_letter_original', 'Cover Letter (Original).pdf')} data-testid="button-download-cover-letter-original">
                         <Download className="w-4 h-4" />
                       </Button>
                     </div>
                   </div>
-                  <div className="relative p-3 border-2 border-dashed border-white/10 rounded-lg flex items-center justify-center text-center hover:bg-white/5 transition-colors cursor-pointer">
-                    <Upload className="w-4 h-4 text-muted-foreground mr-2" />
-                    <p className="text-xs text-muted-foreground">Replace with new version</p>
-                    <input 
-                      type="file" 
-                      className="absolute inset-0 opacity-0 cursor-pointer" 
-                      onChange={(e) => handleFileUpload('cover_letter_original', e)}
-                      data-testid="input-replace-cover-letter-original"
-                    />
-                  </div>
+                  {isAdmin && (
+                    <div className="relative p-3 border-2 border-dashed border-white/10 rounded-lg flex items-center justify-center text-center hover:bg-white/5 transition-colors cursor-pointer">
+                      <Upload className="w-4 h-4 text-muted-foreground mr-2" />
+                      <p className="text-xs text-muted-foreground">Replace with new version</p>
+                      <input 
+                        type="file" 
+                        className="absolute inset-0 opacity-0 cursor-pointer" 
+                        onChange={(e) => handleFileUpload('cover_letter_original', e)}
+                        data-testid="input-replace-cover-letter-original"
+                      />
+                    </div>
+                  )}
                 </div>
               )}
             </CardContent>
@@ -1060,24 +1067,28 @@ export default function AdminClientDetailPage() {
                           </p>
                         </div>
                         <div className="flex gap-1">
-                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => handleDeleteDocument(`cover_letter_${version}`)} data-testid={`button-delete-cover-letter-${version}`}>
-                            <X className="w-3 h-3" />
-                          </Button>
+                          {isAdmin && (
+                            <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => handleDeleteDocument(`cover_letter_${version}`)} data-testid={`button-delete-cover-letter-${version}`}>
+                              <X className="w-3 h-3" />
+                            </Button>
+                          )}
                           <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => handleDownload(`cover_letter_${version}`, `Cover Letter (Version ${version}).pdf`)} data-testid={`button-download-cover-letter-${version}`}>
                             <Download className="w-3 h-3" />
                           </Button>
                         </div>
                       </div>
-                      <div className="relative p-2 border-2 border-dashed border-white/10 rounded flex items-center justify-center hover:bg-white/5 transition-colors cursor-pointer">
-                        <Upload className="w-3 h-3 text-muted-foreground mr-1" />
-                        <p className="text-[10px] text-muted-foreground">Replace</p>
-                        <input 
-                          type="file" 
-                          className="absolute inset-0 opacity-0 cursor-pointer" 
-                          onChange={(e) => handleFileUpload(`cover_letter_${version}`, e)}
-                          data-testid={`input-replace-cover-letter-${version}`}
-                        />
-                      </div>
+                      {isAdmin && (
+                        <div className="relative p-2 border-2 border-dashed border-white/10 rounded flex items-center justify-center hover:bg-white/5 transition-colors cursor-pointer">
+                          <Upload className="w-3 h-3 text-muted-foreground mr-1" />
+                          <p className="text-[10px] text-muted-foreground">Replace</p>
+                          <input 
+                            type="file" 
+                            className="absolute inset-0 opacity-0 cursor-pointer" 
+                            onChange={(e) => handleFileUpload(`cover_letter_${version}`, e)}
+                            data-testid={`input-replace-cover-letter-${version}`}
+                          />
+                        </div>
+                      )}
                     </div>
                   )}
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
