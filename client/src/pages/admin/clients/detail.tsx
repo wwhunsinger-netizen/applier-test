@@ -855,7 +855,15 @@ export default function AdminClientDetailPage() {
                 <CardTitle className="text-lg">Original Resume</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {!uploadedFiles['resume_original'] ? (
+                {isUploading['resume_original'] ? (
+                  <div className="p-8 border-2 border-dashed border-primary/50 rounded-lg flex flex-col items-center justify-center text-center bg-primary/5">
+                    <Loader2 className="w-8 h-8 text-primary mb-2 animate-spin" />
+                    <p className="text-sm font-medium text-primary">Uploading...</p>
+                    <div className="w-full max-w-[200px] h-1.5 bg-white/10 rounded-full mt-3 overflow-hidden">
+                      <div className="h-full bg-primary rounded-full animate-pulse" style={{ width: '60%' }} />
+                    </div>
+                  </div>
+                ) : !uploadedFiles['resume_original'] ? (
                   <div className="relative p-8 border-2 border-dashed border-white/10 rounded-lg flex flex-col items-center justify-center text-center hover:bg-white/5 transition-colors cursor-pointer group">
                     <Upload className="w-8 h-8 text-muted-foreground mb-2" />
                     <p className="text-sm font-medium">Upload File</p>
@@ -904,7 +912,15 @@ export default function AdminClientDetailPage() {
                 )}
               </CardHeader>
               <CardContent className="space-y-4">
-                {!uploadedFiles['resume_improved'] ? (
+                {isUploading['resume_improved'] ? (
+                  <div className="p-8 border-2 border-dashed border-primary/50 rounded-lg flex flex-col items-center justify-center text-center bg-primary/5">
+                    <Loader2 className="w-8 h-8 text-primary mb-2 animate-spin" />
+                    <p className="text-sm font-medium text-primary">Uploading...</p>
+                    <div className="w-full max-w-[200px] h-1.5 bg-white/10 rounded-full mt-3 overflow-hidden">
+                      <div className="h-full bg-primary rounded-full animate-pulse" style={{ width: '60%' }} />
+                    </div>
+                  </div>
+                ) : !uploadedFiles['resume_improved'] ? (
                   <div className="relative p-8 border-2 border-dashed border-white/10 rounded-lg flex flex-col items-center justify-center text-center hover:bg-white/5 transition-colors cursor-pointer">
                     <Upload className="w-8 h-8 text-muted-foreground mb-2" />
                     <p className="text-sm font-medium">Upload Improved Version</p>
@@ -993,7 +1009,15 @@ export default function AdminClientDetailPage() {
               <CardTitle className="text-lg">Original Cover Letter</CardTitle>
             </CardHeader>
             <CardContent>
-              {!uploadedFiles['cover_letter_original'] ? (
+              {isUploading['cover_letter_original'] ? (
+                <div className="p-6 border-2 border-dashed border-primary/50 rounded-lg flex flex-col items-center justify-center text-center bg-primary/5">
+                  <Loader2 className="w-6 h-6 text-primary mb-2 animate-spin" />
+                  <p className="text-sm font-medium text-primary">Uploading...</p>
+                  <div className="w-full max-w-[200px] h-1.5 bg-white/10 rounded-full mt-3 overflow-hidden">
+                    <div className="h-full bg-primary rounded-full animate-pulse" style={{ width: '60%' }} />
+                  </div>
+                </div>
+              ) : !uploadedFiles['cover_letter_original'] ? (
                 <div className="relative p-6 border-2 border-dashed border-white/10 rounded-lg flex flex-col items-center justify-center text-center hover:bg-white/5 transition-colors cursor-pointer">
                   <Upload className="w-6 h-6 text-muted-foreground mb-2" />
                   <p className="text-sm">Upload Base Cover Letter</p>
@@ -1047,7 +1071,15 @@ export default function AdminClientDetailPage() {
                   <CardTitle className="text-base">Version {version}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {!uploadedFiles[`cover_letter_${version}`] ? (
+                  {isUploading[`cover_letter_${version}`] ? (
+                    <div className="p-4 border-2 border-dashed border-primary/50 rounded-lg flex flex-col items-center justify-center text-center bg-primary/5 h-32">
+                      <Loader2 className="w-5 h-5 text-primary mb-2 animate-spin" />
+                      <p className="text-xs font-medium text-primary">Uploading...</p>
+                      <div className="w-full max-w-[100px] h-1 bg-white/10 rounded-full mt-2 overflow-hidden">
+                        <div className="h-full bg-primary rounded-full animate-pulse" style={{ width: '60%' }} />
+                      </div>
+                    </div>
+                  ) : !uploadedFiles[`cover_letter_${version}`] ? (
                     <div className="relative p-4 border-2 border-dashed border-white/10 rounded-lg flex flex-col items-center justify-center text-center hover:bg-white/5 transition-colors cursor-pointer h-32">
                       <Upload className="w-5 h-5 text-muted-foreground mb-2" />
                       <p className="text-xs">Upload Version {version}</p>

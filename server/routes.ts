@@ -742,6 +742,23 @@ export async function registerRoutes(
     },
   );
 
+  app.delete(
+    "/api/clients/:clientId/documents/:documentType",
+    isSupabaseAuthenticated,
+    async (req, res) => {
+      try {
+        await storage.deleteClientDocument(
+          req.params.clientId,
+          req.params.documentType,
+        );
+        res.status(204).send();
+      } catch (error) {
+        console.error("Error deleting client document:", error);
+        res.status(500).json({ error: "Failed to delete client document" });
+      }
+    },
+  );
+
   app.delete("/api/jobs/:jobId", isSupabaseAuthenticated, async (req, res) => {
     try {
       // Soft delete - mark as rejected instead of deleting
