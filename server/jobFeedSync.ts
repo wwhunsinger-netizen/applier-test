@@ -1,4 +1,5 @@
 import { storage } from "./storage";
+import { supabase } from "./supabase";
 
 const FEED_API_URL =
   "https://p01--jobindex-postgrest--54lkjbzvq5q4.code.run/rpc";
@@ -56,8 +57,19 @@ async function getClientQueueSize(clientId: string): Promise<number> {
   const applications = await storage.getApplicationsByClient(clientId);
   const appliedJobIds = new Set(applications.map((a) => a.job_id));
 
-  // Count jobs that haven't been applied to
-  const queueJobs = jobs.filter((j) => !appliedJobIds.has(j.id));
+  // Get all flagged sessions for this client's jobs
+  const { data: flaggedSessions } = await supabase
+    .from("applier_job_sessions")
+    .select("job_id")
+    .eq("status", "flagged");
+  const flaggedJobIds = new Set(
+    (flaggedSessions || []).map((s: { job_id: string }) => s.job_id),
+  );
+
+  // Count jobs that haven't been applied to OR flagged
+  const queueJobs = jobs.filter(
+    (j) => !appliedJobIds.has(j.id) && !flaggedJobIds.has(j.id),
+  );
 
   return queueJobs.length;
 }
@@ -95,9 +107,7 @@ export async function markJobAppliedInFeed(
  * Sync jobs from feed API to database for a specific client
  * Only tops up the queue to TARGET_QUEUE_SIZE (100)
  */
-export async function syncJobsForClient(
-  clientId: string,
-): Promise<{
+export async function syncJobsForClient(clientId: string): Promise<{
   added: number;
   skipped: number;
   errors: string[];
