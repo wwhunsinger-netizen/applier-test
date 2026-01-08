@@ -163,6 +163,12 @@ export async function syncJobsForClient(clientId: string): Promise<{
           continue;
         }
 
+        // Skip jobs with missing required fields
+        if (!feedJob.title || !feedJob.company || !feedJob.apply_url) {
+          stats.skipped++;
+          continue;
+        }
+
         // Insert new job into database
         await storage.createJob({
           client_id: clientId,
