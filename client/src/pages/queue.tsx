@@ -155,7 +155,9 @@ export default function QueuePage() {
   }, [assignedClient, currentUser]);
 
   // Get download URLs for resume and cover letter
-  const getDocumentUrl = (type: "resume_improved" | "cover_letter_A") => {
+  const getDocumentUrl = (
+    type: "resume_improved" | "cover_letter_A" | "cover_letter_B",
+  ) => {
     const doc = clientDocuments.find((d) => d.document_type === type);
     if (doc) {
       // Use the API endpoint to download from object storage
@@ -420,18 +422,39 @@ export default function QueuePage() {
               variant="outline"
               size="sm"
               onClick={() => {
-                const coverLetterUrl = getDocumentUrl("cover_letter_A");
-                if (coverLetterUrl) {
-                  window.open(coverLetterUrl, "_blank");
+                const url = getDocumentUrl("cover_letter_A");
+                if (url) {
+                  window.open(url, "_blank");
                 } else {
-                  toast.error("No cover letter uploaded for this client");
+                  toast.error(
+                    "No Narrative cover letter uploaded for this client",
+                  );
                 }
               }}
-              data-testid="button-download-cover-letter"
+              data-testid="button-download-cover-letter-narrative"
             >
               <FileText className="w-4 h-4 mr-2" />
-              Cover Letter
+              CL (Narrative)
             </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const url = getDocumentUrl("cover_letter_B");
+                if (url) {
+                  window.open(url, "_blank");
+                } else {
+                  toast.error(
+                    "No Exact Match cover letter uploaded for this client",
+                  );
+                }
+              }}
+              data-testid="button-download-cover-letter-exact-match"
+            >
+              <FileText className="w-4 h-4 mr-2" />
+              CL (Exact Match)
+            </Button>
+
             <Button
               variant="outline"
               size="sm"
