@@ -1237,22 +1237,9 @@ export async function registerRoutes(
           return appDate >= new Date(startOfWeek);
         });
 
-        // Get today's sessions for time tracking
-        const allSessions = await storage.getApplierSessions(applierId);
-        const todaySessions = allSessions.filter((s) => {
-          const sessionDate = new Date(s.started_at || s.created_at || "");
-          return (
-            sessionDate >= new Date(startOfDay) &&
-            sessionDate < new Date(endOfDay)
-          );
-        });
-
-        // Calculate time worked today (from completed sessions)
-        const completedSessions = todaySessions.filter(
-          (s) => s.status === "applied",
-        );
-        const totalSeconds = completedSessions.reduce(
-          (sum, s) => sum + (s.duration_seconds || 0),
+        // Calculate time worked today from application duration_seconds
+        const totalSeconds = todayApps.reduce(
+          (sum, app) => sum + (app.duration_seconds || 0),
           0,
         );
         const hours = Math.floor(totalSeconds / 3600);
@@ -1271,26 +1258,13 @@ export async function registerRoutes(
             ? `${avgMins}:${avgSecs.toString().padStart(2, "0")}`
             : "-";
 
-        // Get jobs waiting in queue for this applier's assigned clients
-        const applier = await storage.getApplier(applierId);
+        // Get jobs waiting from Feed API
         let jobsWaiting = 0;
-        if (applier?.assigned_client_ids?.length) {
-          const jobs = await storage.getJobs();
-          // Filter jobs for assigned clients that haven't been applied to yet
-          const appliedJobIds = new Set(allApps.map((a) => a.job_id));
-          const flaggedSessionIds = new Set(
-            allSessions
-              .filter((s) => s.status === "flagged")
-              .map((s) => s.job_id),
-          );
-
-          jobsWaiting = jobs.filter(
-            (j) =>
-              applier.assigned_client_ids?.includes(j.client_id) &&
-              !appliedJobIds.has(j.id) &&
-              !flaggedSessionIds.has(j.id) &&
-              j.status === "active",
-          ).length;
+        try {
+          const feedJobs = await feedApi.getApplierQueue(applierId);
+          jobsWaiting = feedJobs.length;
+        } catch (err) {
+          console.error("[Stats] Error fetching queue count:", err);
         }
 
         // Calculate projected finish time (remaining apps * avg time)
