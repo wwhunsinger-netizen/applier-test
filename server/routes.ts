@@ -473,12 +473,9 @@ export async function registerRoutes(
       }
 
       const feedJobs = await feedApi.getApplierQueue(applier_id as string);
-      //const jobs = feedApi.toDisplayJobs(feedJobs);
+      const jobs = feedApi.toDisplayJobs(feedJobs);
 
-      //console.log(
-      //`[Queue] Fetched ${jobs.length} jobs from Feed API for applier ${applier_id}`,
-      //);
-      res.json(feedJobs);
+      res.json(jobs);
     } catch (error) {
       console.error("[Queue] Error fetching queue jobs:", error);
       res.status(500).json({ error: "Failed to fetch queue jobs" });
