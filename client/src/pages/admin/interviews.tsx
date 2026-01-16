@@ -59,9 +59,7 @@ export default function AdminInterviewsPage() {
       if (!response.ok) throw new Error("Failed to fetch applications");
       const apps = await response.json();
       // Filter for interview status on frontend
-      return apps.filter(
-        (app: Application) => app.status?.toLowerCase() === "interview",
-      );
+      return apps.filter((app: Application) => app.status === "Interview");
     },
     enabled: !!selectedClientId,
   });
