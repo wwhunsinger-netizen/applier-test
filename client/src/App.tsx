@@ -29,6 +29,7 @@ import ClientJobCriteriaPage from "@/pages/client/job-criteria";
 import AppliedPage from "@/pages/applier/applied";
 
 import ResumeTailorPage from "@/pages/applier/resume-tailor";
+import AdminInterviewsPage from "@/pages/admin/interviews";
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useUser();
@@ -65,6 +66,7 @@ function Router() {
           <Route path="/admin/clients/:id" component={AdminClientDetailPage} />
           <Route path="/admin/appliers" component={AdminAppliersPage} />
           <Route path="/admin/queues" component={AdminQueuesPage} />
+          <Route path="/admin/interviews" component={AdminInterviewsPage} />
 
           {/* Client Routes */}
           <Route path="/client/interviews" component={ClientInterviewsPage} />
