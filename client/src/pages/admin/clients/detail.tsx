@@ -415,7 +415,26 @@ export default function AdminClientDetailPage() {
       setIsUploading((prev) => ({ ...prev, [key]: false }));
     }
   };
+  if (isLoading) {
+    return (
+      <div className="p-8 text-center">
+        <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-primary" />
+        <p className="text-muted-foreground">Loading client...</p>
+      </div>
+    );
+  }
 
+  if (error || !client) {
+    return (
+      <div className="p-8 text-center">
+        <AlertCircle className="w-12 h-12 mx-auto mb-4 text-red-400" />
+        <h2 className="text-xl font-bold text-white mb-4">Client Not Found</h2>
+        <Link href="/admin/clients">
+          <Button variant="outline">Back to Clients</Button>
+        </Link>
+      </div>
+    );
+  }
   return (
     <div className="space-y-6">
       {/* Header */}
