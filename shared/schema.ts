@@ -85,6 +85,7 @@ export function getApplierFullName(applier: Applier): string {
   return `${applier.first_name} ${applier.last_name}`.trim();
 }
 
+// @deprecated - Use DisplayJob for new code. This interface will be removed after migration.
 export interface Job {
   id: string;
   client_id: string;
@@ -109,14 +110,67 @@ export interface Job {
   requirements?: string[];
 }
 
+// ============================================
+// Feed API Types (cofounder's job database)
+// ============================================
+
+export interface FeedJobDataPoint {
+  id: number;
+  title: string;
+  company: string;
+  company_logo: string | null;
+  job_location: string | null;
+  source_url: string;
+  apply_url: string;
+  posted_day: string;
+}
+
+export interface FeedJob {
+  canonical_job_id: number;
+  job_data_points: FeedJobDataPoint[];
+  admin_note: string | null;
+}
+
+// Display format for UI (flattened from FeedJob)
+export interface DisplayJob {
+  id: number; // canonical_job_id
+  job_title: string;
+  company_name: string;
+  company_logo: string | null;
+  job_url: string;
+  job_location: string | null;
+  source_url: string;
+  posted_date: string;
+  admin_note: string | null;
+}
+
+export interface FeedAppliedJob {
+  canonical_job_id: number;
+  applier: string;
+  status: number;
+  duration_seconds: number;
+  applied_at: string;
+  job_data_points: FeedJobDataPoint[];
+}
+
+export interface FeedFlaggedJob {
+  canonical_job_id: number;
+  applier: string;
+  comment: string;
+  flagged_at: string;
+  resolved: boolean;
+  resolution_note: string | null;
+  job_data_points: FeedJobDataPoint[];
+}
+
 export interface Application {
   id: string;
-  job_id: string;
+  job_id?: string | null; // Optional - legacy reference to local jobs table
   applier_id: string;
   client_id: string;
   status: string;
   qa_status?: string;
-  feed_job_id?: number;
+  feed_job_id: number; // Required - cofounder's canonical_job_id
   feed_source?: string;
   applied_at?: string;
   applied_date?: string;
@@ -285,10 +339,10 @@ export type InsertApplier = z.infer<typeof insertApplierSchema>;
 export type UpdateApplier = z.infer<typeof updateApplierSchema>;
 
 export const insertApplicationSchema = z.object({
-  job_id: z.string(),
+  job_id: z.string().nullable().optional(), // Legacy - will be removed
   applier_id: z.string(),
   client_id: z.string(),
-  feed_job_id: z.number().nullable().optional(),
+  feed_job_id: z.number(), // Required - cofounder's canonical_job_id
   feed_source: z.string().optional(),
   status: z.string().default("applied"),
   qa_status: z.string().optional(),
@@ -430,6 +484,7 @@ export type InsertApplication = z.infer<typeof insertApplicationSchema>;
 export type InsertInterview = z.infer<typeof insertInterviewSchema>;
 export type InsertClientDocument = z.infer<typeof insertClientDocumentSchema>;
 
+// @deprecated - No longer used. Job sessions now tracked in cofounder's system.
 // Applier Job Session - tracks applier workflow for each job (start, apply, flag)
 // Job details (title, company, url) come from JOIN to jobs table
 export type SessionStatus = "pending" | "in_progress" | "applied" | "flagged";
@@ -476,6 +531,7 @@ export type UpdateApplierJobSession = z.infer<
   typeof updateApplierJobSessionSchema
 >;
 
+// @deprecated - Use FeedFlaggedJob for new code. Flags now in cofounder's system.
 // Flagged Application - for admin review queue
 // Job/applier details come from session → job JOIN
 export type FlagStatus = "open" | "resolved";

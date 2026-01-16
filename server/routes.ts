@@ -25,6 +25,15 @@ import { presenceService } from "./presence";
 import { isSupabaseAuthenticated } from "./supabaseAuth";
 import { supabase } from "./supabase";
 import crypto from "crypto";
+import * as feedApi from "./feedApi";
+import {
+  getApplierQueue,
+  setApplicationStatus,
+  setJobFlag,
+  setJobFlagResolved,
+  getAdminFlaggedJobs,
+  toDisplayJobs,
+} from "./feedApi";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -451,25 +460,166 @@ export async function registerRoutes(
     }
   });
 
-  // Get queue jobs (excludes already-applied jobs for the applier)
-  app.get("/api/queue-jobs", isSupabaseAuthenticated, async (req, res) => {
-    try {
-      const { client_id, applier_id } = req.query;
+  // ========================================
+  // Feed API Integration - New endpoints
+  // ========================================
 
-      if (!client_id || !applier_id) {
+  // Apply to job via Feed API
+  app.post("/api/apply-job", isSupabaseAuthenticated, async (req, res) => {
+    try {
+      const {
+        applier_id,
+        job_id,
+        duration_seconds,
+        job_title,
+        company_name,
+        job_url,
+        client_id,
+      } = req.body;
+
+      if (!applier_id || !job_id) {
         return res
           .status(400)
-          .json({ error: "client_id and applier_id are required" });
+          .json({ error: "applier_id and job_id are required" });
       }
 
-      const jobs = await storage.getQueueJobs(
-        client_id as string,
-        applier_id as string,
+      // 1. Mark applied in cofounder's system
+      await setApplicationStatus(
+        applier_id,
+        job_id,
+        1, // status 1 = applied
+        duration_seconds || 0,
       );
-      res.json(jobs);
+
+      // 2. Create local application record (for earnings, interviews, QA)
+      const application = await storage.createApplication({
+        applier_id,
+        client_id,
+        job_id: null, // No local job anymore
+        feed_job_id: job_id,
+        feed_source: "feed",
+        status: "applied",
+        job_title: job_title || "Unknown Position",
+        company_name: company_name || "Unknown Company",
+        job_url: job_url || "",
+        applied_date: new Date().toISOString(),
+        duration_seconds: duration_seconds || 0,
+      });
+
+      // 3. Create base pay earning ($0.28 per application)
+      try {
+        await storage.createApplierEarning({
+          applier_id,
+          client_id,
+          earnings_type: "base_pay",
+          amount: 0.28,
+          earned_date: new Date().toISOString().split("T")[0],
+          payment_status: "pending",
+          notes: `Base pay for ${job_title} at ${company_name}`,
+        });
+        console.log(`[Earnings] Base pay $0.28 for ${company_name}`);
+      } catch (basePayError) {
+        console.error("Error creating base pay:", basePayError);
+        // Don't fail the application if base pay fails
+      }
+
+      // 4. Check for 100 application milestone bonus
+      try {
+        const today = new Date().toISOString().split("T")[0];
+        const applications = await storage.getApplicationsByApplier(applier_id);
+        const todaysApps = applications.filter((a) => {
+          const appDate = new Date(a.applied_date || a.created_at || "")
+            .toISOString()
+            .split("T")[0];
+          return appDate === today;
+        });
+
+        if (todaysApps.length >= 100) {
+          const existingEarnings = await storage.getApplierEarnings(applier_id);
+          const existingMilestoneToday = existingEarnings.find(
+            (e) =>
+              e.earnings_type === "application_milestone" &&
+              e.earned_date === today &&
+              e.application_count === 100,
+          );
+
+          if (!existingMilestoneToday && todaysApps.length === 100) {
+            await storage.createApplierEarning({
+              applier_id,
+              client_id,
+              earnings_type: "application_milestone",
+              amount: 25,
+              application_count: 100,
+              earned_date: today,
+              payment_status: "pending",
+              notes: `100 application milestone reached for ${job_title}`,
+            });
+          }
+        }
+      } catch (bonusError) {
+        console.error("Error checking milestone bonus:", bonusError);
+      }
+
+      res.json({ success: true, application });
     } catch (error) {
-      console.error("Error fetching queue jobs:", error);
-      res.status(500).json({ error: "Failed to fetch queue jobs" });
+      console.error("Error applying to job:", error);
+      res.status(500).json({ error: "Failed to apply to job" });
+    }
+  });
+
+  // Flag job via Feed API
+  app.post("/api/flag-job", isSupabaseAuthenticated, async (req, res) => {
+    try {
+      const { applier_id, job_id, comment } = req.body;
+
+      if (!applier_id || !job_id || !comment?.trim()) {
+        return res
+          .status(400)
+          .json({ error: "applier_id, job_id, and comment are required" });
+      }
+
+      // Flag in cofounder's system
+      await setJobFlag(applier_id, job_id, comment.trim());
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error flagging job:", error);
+      res.status(500).json({ error: "Failed to flag job" });
+    }
+  });
+
+  // Get all flagged jobs (admin view) via Feed API
+  app.get(
+    "/api/feed-flagged-jobs",
+    isSupabaseAuthenticated,
+    async (req, res) => {
+      try {
+        const flaggedJobs = await getAdminFlaggedJobs();
+        res.json(flaggedJobs);
+      } catch (error) {
+        console.error("Error fetching flagged jobs:", error);
+        res.status(500).json({ error: "Failed to fetch flagged jobs" });
+      }
+    },
+  );
+
+  // Resolve flagged job via Feed API
+  app.post("/api/resolve-flag", isSupabaseAuthenticated, async (req, res) => {
+    try {
+      const { applier_id, job_id, note } = req.body;
+
+      if (!applier_id || !job_id) {
+        return res
+          .status(400)
+          .json({ error: "applier_id and job_id are required" });
+      }
+
+      await setJobFlagResolved(applier_id, job_id, note || "");
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error resolving flag:", error);
+      res.status(500).json({ error: "Failed to resolve flag" });
     }
   });
 
@@ -1537,6 +1687,7 @@ export async function registerRoutes(
   );
 
   // Get all clients with their job criteria (for search app)
+
   app.get("/api/external/clients", validateExternalApiKey, async (req, res) => {
     try {
       const clients = await storage.getClients();
@@ -2062,7 +2213,7 @@ export async function registerRoutes(
 
   **Title Alignment:** Only if there's an obvious mismatch between client's titles and JD language (e.g., "Software Developer" vs "Software Engineer").
   - Word swaps in bullets OK (e.g., "built pipelines" → "built ETL pipelines")
-  
+
   ### 3. What NOT to Change
   - Don't suggest bullet point reordering or adding in new bullet points(diminishing returns)
   - Don't suggest changes just to hit 100% - 60-80% is the sweet spot

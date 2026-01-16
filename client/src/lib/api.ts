@@ -17,6 +17,8 @@ import type {
   InsertClientJobResponse,
   ApplierJobSession,
   FlaggedApplication,
+  DisplayJob,
+  FeedFlaggedJob,
 } from "@shared/schema";
 import { supabase } from "./supabase";
 
@@ -295,12 +297,9 @@ export async function fetchJobs(params?: {
   return res.json();
 }
 
-export async function fetchQueueJobs(
-  clientId: string,
-  applierId: string,
-): Promise<Job[]> {
+// Queue Jobs API - now uses Feed API
+export async function fetchQueueJobs(applierId: string): Promise<DisplayJob[]> {
   const queryParams = new URLSearchParams();
-  queryParams.set("client_id", clientId);
   queryParams.set("applier_id", applierId);
 
   const res = await apiFetch(`${API_BASE}/queue-jobs?${queryParams}`);
@@ -384,6 +383,7 @@ export async function createJobResponse(
 }
 
 // Applier Session API
+// @deprecated - Use applyToJob and flagJob instead
 export async function fetchApplierSessions(
   applierId: string,
 ): Promise<ApplierJobSession[]> {
@@ -394,6 +394,7 @@ export async function fetchApplierSessions(
   return res.json();
 }
 
+// @deprecated - Timer now tracked locally, no need to start session
 export async function startReviewSession(data: {
   job_id: string;
   applier_id: string;
@@ -407,6 +408,7 @@ export async function startReviewSession(data: {
   return res.json();
 }
 
+// @deprecated - Use applyToJob instead
 export async function markSessionApplied(
   sessionId: string,
 ): Promise<{ session: ApplierJobSession; application: Application }> {
@@ -420,6 +422,7 @@ export async function markSessionApplied(
   return res.json();
 }
 
+// @deprecated - Use flagJob instead
 export async function flagSession(
   sessionId: string,
   comment: string,
@@ -436,7 +439,67 @@ export async function flagSession(
   return res.json();
 }
 
-// Flagged Applications API (Admin)
+// ========================================
+// Feed API Functions (New)
+// ========================================
+
+// Apply to job via Feed API
+export async function applyToJob(data: {
+  applier_id: string;
+  job_id: number;
+  duration_seconds: number;
+  job_title: string;
+  company_name: string;
+  job_url: string;
+  client_id: string;
+}): Promise<{ success: boolean; application: Application }> {
+  const res = await apiFetch(`${API_BASE}/apply-job`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error("Failed to apply to job");
+  return res.json();
+}
+
+// Flag job via Feed API
+export async function flagJob(data: {
+  applier_id: string;
+  job_id: number;
+  comment: string;
+}): Promise<{ success: boolean }> {
+  const res = await apiFetch(`${API_BASE}/flag-job`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error("Failed to flag job");
+  return res.json();
+}
+
+// Get flagged jobs via Feed API (Admin)
+export async function fetchFeedFlaggedJobs(): Promise<FeedFlaggedJob[]> {
+  const res = await apiFetch(`${API_BASE}/feed-flagged-jobs`);
+  if (!res.ok) throw new Error("Failed to fetch flagged jobs");
+  return res.json();
+}
+
+// Resolve flagged job via Feed API
+export async function resolveFlag(data: {
+  applier_id: string;
+  job_id: number;
+  note?: string;
+}): Promise<{ success: boolean }> {
+  const res = await apiFetch(`${API_BASE}/resolve-flag`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error("Failed to resolve flag");
+  return res.json();
+}
+
+// Flagged Applications API (Admin) - @deprecated Use fetchFeedFlaggedJobs instead
 export async function fetchFlaggedApplications(
   status?: "open" | "resolved",
 ): Promise<FlaggedApplication[]> {

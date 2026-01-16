@@ -1,192 +1,285 @@
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import type { Client, Job } from "@shared/schema";
-import { fetchClients, fetchJobs, apiFetch } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { X, RefreshCw, Briefcase, Building2, MapPin, Loader2, Rss } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-
-async function deleteJob(jobId: string): Promise<void> {
-  const res = await apiFetch(`/api/jobs/${jobId}`, { method: "DELETE" });
-  if (!res.ok) throw new Error("Failed to delete job");
-}
-
-async function syncJobsFromFeed(clientId: string): Promise<{ success: boolean; message: string; added: number; skipped: number }> {
-  const res = await apiFetch(`/api/jobs/sync/${clientId}`, { method: "POST" });
-  if (!res.ok) throw new Error("Failed to sync jobs");
-  return res.json();
-}
+import {
+  RefreshCw,
+  Briefcase,
+  Rss,
+  AlertTriangle,
+  Users,
+  Building2,
+  DollarSign,
+  CheckCircle,
+  Info,
+} from "lucide-react";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 export default function AdminQueuesPage() {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [selectedClientId, setSelectedClientId] = useState<string>("");
-
-  const { data: clients = [], isLoading: clientsLoading } = useQuery({
-    queryKey: ["clients"],
-    queryFn: fetchClients,
-  });
-
-  const activeClients = clients.filter(
-    (c) => c.status === "active" || c.status === "placed"
-  );
-
-  const { data: jobs = [], isLoading: jobsLoading, refetch: refetchJobs } = useQuery({
-    queryKey: ["jobs", selectedClientId],
-    queryFn: () => fetchJobs({ client_id: selectedClientId }),
-    enabled: !!selectedClientId,
-  });
-
-  const deleteJobMutation = useMutation({
-    mutationFn: deleteJob,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["jobs", selectedClientId] });
-      toast({ title: "Job deleted", description: "The job has been removed from the queue." });
-    },
-    onError: () => {
-      toast({ title: "Error", description: "Failed to delete job.", variant: "destructive" });
-    },
-  });
-
-  const syncJobsMutation = useMutation({
-    mutationFn: () => syncJobsFromFeed(selectedClientId),
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["jobs", selectedClientId] });
-      toast({ title: "Sync complete", description: `Added ${data.added} jobs, skipped ${data.skipped}.` });
-    },
-    onError: () => {
-      toast({ title: "Error", description: "Failed to sync jobs from feed.", variant: "destructive" });
-    },
-  });
-
-  const selectedClient = clients.find((c) => c.id === selectedClientId);
+  const [showTechnicalDetails, setShowTechnicalDetails] = useState(false);
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-white">Queue Manager</h1>
-          <p className="text-muted-foreground mt-1">View and prune job queues for clients.</p>
+          <h1 className="text-3xl font-bold tracking-tight text-white">
+            Queue Manager
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            Job queues are now managed automatically by the Feed API system.
+          </p>
         </div>
       </div>
 
-      <Card className="bg-[#111] border-white/10">
-        <CardHeader className="pb-4">
-          <CardTitle className="text-white text-lg">Select Client</CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col md:flex-row gap-4">
-          <Select value={selectedClientId} onValueChange={setSelectedClientId}>
-            <SelectTrigger className="w-full md:w-80 bg-black/50 border-white/10 text-white" data-testid="select-client">
-              <SelectValue placeholder="Select a client..." />
-            </SelectTrigger>
-            <SelectContent className="bg-[#111] border-white/10">
-              {clientsLoading ? (
-                <SelectItem value="loading" disabled>Loading clients...</SelectItem>
-              ) : activeClients.length === 0 ? (
-                <SelectItem value="none" disabled>No active clients</SelectItem>
-              ) : (
-                activeClients.map((client) => (
-                  <SelectItem key={client.id} value={client.id} className="text-white hover:bg-white/10">
-                    {client.first_name} {client.last_name}
-                  </SelectItem>
-                ))
-              )}
-            </SelectContent>
-          </Select>
-
-          {selectedClientId && (
-            <Button
-              onClick={() => syncJobsMutation.mutate()}
-              disabled={syncJobsMutation.isPending}
-              className="bg-primary hover:bg-primary/90"
-              data-testid="button-sync-jobs"
-            >
-              {syncJobsMutation.isPending ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <RefreshCw className="w-4 h-4 mr-2" />
-              )}
-              Sync Jobs from Feed
-            </Button>
-          )}
+      {/* Status Card */}
+      <Card className="bg-gradient-to-r from-blue-500/10 to-indigo-500/10 border-blue-500/20">
+        <CardContent className="p-6">
+          <div className="flex items-start gap-4">
+            <div className="p-3 bg-blue-500/20 rounded-lg">
+              <RefreshCw className="w-6 h-6 text-blue-400" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-white">
+                Automatic Queue Sync Active
+              </h2>
+              <p className="text-muted-foreground mt-1">
+                Job queues are automatically managed by the centralized feed
+                system. No manual sync required.
+              </p>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
-      {selectedClientId && (
-        <Card className="bg-[#111] border-white/10">
-          <CardHeader className="pb-4">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-white text-lg">
-                Jobs for {selectedClient?.first_name} {selectedClient?.last_name}
-              </CardTitle>
-              <Badge variant="outline" className="border-white/20 text-white">
-                {jobs.length} jobs
-              </Badge>
+      {/* How It Works */}
+      <Card className="bg-[#111] border-white/10">
+        <CardHeader>
+          <CardTitle className="text-white text-lg flex items-center gap-2">
+            <Info className="w-5 h-5 text-blue-400" />
+            How the New System Works
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-4">
+            <div className="flex gap-4 items-start">
+              <div className="flex-shrink-0 w-8 h-8 bg-blue-500/20 text-blue-400 rounded-full flex items-center justify-center font-semibold text-sm">
+                1
+              </div>
+              <div>
+                <h4 className="font-medium text-white">Job Feed Aggregation</h4>
+                <p className="text-sm text-muted-foreground">
+                  Jobs are collected from multiple sources (LinkedIn, Indeed,
+                  etc.) and stored in the centralized feed database.
+                </p>
+              </div>
             </div>
-          </CardHeader>
-          <CardContent>
-            {jobsLoading ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="w-6 h-6 animate-spin text-primary" />
+
+            <div className="flex gap-4 items-start">
+              <div className="flex-shrink-0 w-8 h-8 bg-blue-500/20 text-blue-400 rounded-full flex items-center justify-center font-semibold text-sm">
+                2
               </div>
-            ) : jobs.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
-                No jobs in queue for this client.
+              <div>
+                <h4 className="font-medium text-white">AI Filtering</h4>
+                <p className="text-sm text-muted-foreground">
+                  Jobs are filtered based on client preferences, location,
+                  salary requirements, and role matching.
+                </p>
               </div>
-            ) : (
-              <div className="space-y-3">
-                {jobs.map((job) => (
-                  <div
-                    key={job.id}
-                    className="flex items-center justify-between p-4 bg-black/50 rounded-lg border border-white/10 hover:border-white/20 transition-colors"
-                    data-testid={`job-card-${job.id}`}
-                  >
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <Briefcase className="w-4 h-4 text-primary shrink-0" />
-                        <span className="font-medium text-white truncate" data-testid={`text-job-title-${job.id}`}>
-                          {job.job_title}
-                        </span>
-                        {job.feed_source === "feed" && (
-                          <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 text-xs" data-testid={`badge-feed-${job.id}`}>
-                            <Rss className="w-3 h-3 mr-1" />
-                            Feed
-                          </Badge>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <Building2 className="w-3 h-3" />
-                          {job.company_name}
-                        </span>
-                        {job.job_location && (
-                          <span className="flex items-center gap-1">
-                            <MapPin className="w-3 h-3" />
-                            {job.job_location}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="shrink-0 text-muted-foreground hover:text-red-400 hover:bg-red-500/10"
-                      onClick={() => deleteJobMutation.mutate(job.id)}
-                      disabled={deleteJobMutation.isPending}
-                      data-testid={`button-delete-job-${job.id}`}
-                    >
-                      <X className="w-4 h-4" />
-                    </Button>
-                  </div>
-                ))}
+            </div>
+
+            <div className="flex gap-4 items-start">
+              <div className="flex-shrink-0 w-8 h-8 bg-blue-500/20 text-blue-400 rounded-full flex items-center justify-center font-semibold text-sm">
+                3
               </div>
-            )}
-          </CardContent>
+              <div>
+                <h4 className="font-medium text-white">Queue Assignment</h4>
+                <p className="text-sm text-muted-foreground">
+                  Filtered jobs are assigned to appliers based on client
+                  assignments and workload balancing.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-4 items-start">
+              <div className="flex-shrink-0 w-8 h-8 bg-green-500/20 text-green-400 rounded-full flex items-center justify-center font-semibold text-sm">
+                4
+              </div>
+              <div>
+                <h4 className="font-medium text-white">Application Flow</h4>
+                <p className="text-sm text-muted-foreground">
+                  Appliers see their queue, apply to jobs, and the system tracks
+                  everything automatically.
+                </p>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Quick Actions */}
+      <Card className="bg-[#111] border-white/10">
+        <CardHeader>
+          <CardTitle className="text-white text-lg">Admin Actions</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <a
+              href="/admin/review"
+              className="flex items-center gap-4 p-4 bg-black/50 rounded-lg border border-white/10 hover:border-white/20 transition-colors"
+            >
+              <div className="p-2 bg-red-500/20 rounded-lg">
+                <AlertTriangle className="w-5 h-5 text-red-400" />
+              </div>
+              <div>
+                <h4 className="font-medium text-white">Review Flagged Jobs</h4>
+                <p className="text-sm text-muted-foreground">
+                  Review and resolve jobs flagged by appliers
+                </p>
+              </div>
+            </a>
+
+            <a
+              href="/admin/appliers"
+              className="flex items-center gap-4 p-4 bg-black/50 rounded-lg border border-white/10 hover:border-white/20 transition-colors"
+            >
+              <div className="p-2 bg-blue-500/20 rounded-lg">
+                <Users className="w-5 h-5 text-blue-400" />
+              </div>
+              <div>
+                <h4 className="font-medium text-white">Manage Appliers</h4>
+                <p className="text-sm text-muted-foreground">
+                  View applier performance and assignments
+                </p>
+              </div>
+            </a>
+
+            <a
+              href="/admin/clients"
+              className="flex items-center gap-4 p-4 bg-black/50 rounded-lg border border-white/10 hover:border-white/20 transition-colors"
+            >
+              <div className="p-2 bg-purple-500/20 rounded-lg">
+                <Building2 className="w-5 h-5 text-purple-400" />
+              </div>
+              <div>
+                <h4 className="font-medium text-white">Manage Clients</h4>
+                <p className="text-sm text-muted-foreground">
+                  View client preferences and application stats
+                </p>
+              </div>
+            </a>
+
+            <a
+              href="/admin/applications"
+              className="flex items-center gap-4 p-4 bg-black/50 rounded-lg border border-white/10 hover:border-white/20 transition-colors"
+            >
+              <div className="p-2 bg-green-500/20 rounded-lg">
+                <Briefcase className="w-5 h-5 text-green-400" />
+              </div>
+              <div>
+                <h4 className="font-medium text-white">All Applications</h4>
+                <p className="text-sm text-muted-foreground">
+                  View all submitted applications
+                </p>
+              </div>
+            </a>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Technical Details (collapsible) */}
+      <Collapsible
+        open={showTechnicalDetails}
+        onOpenChange={setShowTechnicalDetails}
+      >
+        <Card className="bg-[#111] border-white/10">
+          <CollapsibleTrigger asChild>
+            <CardHeader className="cursor-pointer hover:bg-white/5 transition-colors">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-white text-lg">
+                  Technical Details
+                </CardTitle>
+                <Badge
+                  variant="outline"
+                  className="border-white/20 text-muted-foreground"
+                >
+                  {showTechnicalDetails ? "Hide" : "Show"}
+                </Badge>
+              </div>
+            </CardHeader>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <CardContent className="space-y-4 pt-0">
+              <div className="p-4 bg-black/50 rounded-lg border border-white/10">
+                <h4 className="font-medium text-white mb-2">
+                  Feed API Base URL
+                </h4>
+                <code className="text-xs text-muted-foreground break-all bg-black/50 px-2 py-1 rounded">
+                  https://p01--jobindex-postgrest--54lkjbzvq5q4.code.run/rpc
+                </code>
+              </div>
+
+              <div className="p-4 bg-black/50 rounded-lg border border-white/10">
+                <h4 className="font-medium text-white mb-2">
+                  Available Endpoints
+                </h4>
+                <ul className="space-y-1 text-sm text-muted-foreground">
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-3 h-3 text-green-400" />
+                    <code>applier_jobs_queue</code> - Get queue for applier
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-3 h-3 text-green-400" />
+                    <code>set_application_status</code> - Mark job applied
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-3 h-3 text-green-400" />
+                    <code>set_job_flag</code> - Flag a job
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-3 h-3 text-green-400" />
+                    <code>set_job_flag_resolved</code> - Resolve flag
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-3 h-3 text-green-400" />
+                    <code>admin_flagged_jobs</code> - Get all flags
+                  </li>
+                </ul>
+              </div>
+
+              <div className="p-4 bg-black/50 rounded-lg border border-white/10">
+                <h4 className="font-medium text-white mb-2">Local Storage</h4>
+                <p className="text-sm text-muted-foreground">
+                  Applications are still stored locally in Supabase for earnings
+                  tracking, interview management, and reporting.
+                </p>
+              </div>
+
+              <div className="p-4 bg-yellow-500/10 rounded-lg border border-yellow-500/20">
+                <h4 className="font-medium text-yellow-400 mb-2">
+                  Migration Note
+                </h4>
+                <p className="text-sm text-yellow-200/70">
+                  The local{" "}
+                  <code className="bg-black/30 px-1 rounded">jobs</code>,{" "}
+                  <code className="bg-black/30 px-1 rounded">
+                    applier_job_sessions
+                  </code>
+                  , and{" "}
+                  <code className="bg-black/30 px-1 rounded">
+                    flagged_applications
+                  </code>{" "}
+                  tables are deprecated and will be removed after the migration
+                  is verified.
+                </p>
+              </div>
+            </CardContent>
+          </CollapsibleContent>
         </Card>
-      )}
+      </Collapsible>
     </div>
   );
 }

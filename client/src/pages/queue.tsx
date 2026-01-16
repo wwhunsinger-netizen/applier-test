@@ -30,27 +30,29 @@ import {
   Target,
 } from "lucide-react";
 import {
-  startReviewSession,
-  markSessionApplied,
-  flagSession,
   fetchClients,
   fetchApplier,
   fetchClientDocuments,
-  fetchQueueJobs,
   apiFetch,
 } from "@/lib/api";
 import { toast } from "sonner";
 import { useUser } from "@/lib/userContext";
 import { motion, AnimatePresence } from "framer-motion";
-import type {
-  ApplierJobSession,
-  Client,
-  ClientDocument,
-  Job,
-} from "@shared/schema";
+import type { Client, ClientDocument } from "@shared/schema";
+
+// Feed API job type
+interface FeedJob {
+  job_id: number;
+  job_title: string;
+  company_name: string;
+  job_url: string;
+  client_id: string;
+  location?: string;
+  posted_date?: string;
+}
 
 interface JobCardState {
-  session?: ApplierJobSession;
+  status: "idle" | "reviewing" | "applied" | "flagged";
   timerSeconds: number;
   isTimerRunning: boolean;
   isLoading: boolean;
@@ -73,7 +75,7 @@ export default function QueuePage() {
   const [assignedClients, setAssignedClients] = useState<Client[]>([]);
   const [selectedClientIndex, setSelectedClientIndex] = useState(0);
   const [clientDocuments, setClientDocuments] = useState<ClientDocument[]>([]);
-  const [jobs, setJobs] = useState<Job[]>([]);
+  const [jobs, setJobs] = useState<FeedJob[]>([]);
 
   // ClientGPT state
   const [showClientGPT, setShowClientGPT] = useState(false);
@@ -145,14 +147,25 @@ export default function QueuePage() {
       .catch(console.error);
   }, [assignedClient]);
 
-  // Fetch queue jobs for assigned clients (excludes already-applied jobs)
+  // Fetch queue jobs from Feed API
   useEffect(() => {
-    if (!assignedClient || !currentUser) return;
+    if (!currentUser) return;
 
-    fetchQueueJobs(assignedClient.id, currentUser.id)
-      .then(setJobs)
-      .catch(console.error);
-  }, [assignedClient, currentUser]);
+    const fetchQueue = async () => {
+      try {
+        const res = await apiFetch(
+          `/api/queue-jobs?applier_id=${currentUser.id}`,
+        );
+        if (!res.ok) throw new Error("Failed to fetch queue");
+        const data = await res.json();
+        setJobs(data);
+      } catch (error) {
+        console.error("Error fetching queue:", error);
+      }
+    };
+
+    fetchQueue();
+  }, [currentUser]);
 
   // Get download URLs for resume and cover letter
   const getDocumentUrl = (
@@ -194,94 +207,72 @@ export default function QueuePage() {
   }, []);
 
   const handleStartReview = useCallback(
-    async (job: Job) => {
-      const state = jobStates[job.id];
-      const jobUrl =
-        (job as any).job_url || `https://example.com/job/${job.id}`;
+    (job: FeedJob) => {
+      const jobId = String(job.job_id);
+      const state = jobStates[jobId];
 
-      if (
-        state?.session?.status === "in_progress" ||
-        state?.session?.status === "applied"
-      ) {
-        // Already started or applied, just open URL
-        window.open(jobUrl, "_blank");
+      // If already reviewing or applied, just open URL
+      if (state?.status === "reviewing" || state?.status === "applied") {
+        window.open(job.job_url, "_blank");
         return;
       }
 
+      // Open job URL in new tab
+      window.open(job.job_url, "_blank");
+
+      // Start local timer (no backend call needed)
       setJobStates((prev) => ({
         ...prev,
-        [job.id]: {
-          ...prev[job.id],
-          isLoading: true,
+        [jobId]: {
+          status: "reviewing",
           timerSeconds: 0,
-          isTimerRunning: false,
+          isTimerRunning: true,
+          isLoading: false,
         },
       }));
 
-      try {
-        // Start review session - job details come from jobs table via JOIN
-        const session = await startReviewSession({
-          job_id: job.id,
-          applier_id: currentUser?.id || "",
-        });
-
-        // Open job URL in new tab
-        window.open(jobUrl, "_blank");
-
-        setJobStates((prev) => ({
-          ...prev,
-          [job.id]: {
-            session,
-            timerSeconds: 0,
-            isTimerRunning: true,
-            isLoading: false,
-          },
-        }));
-
-        toast.success("Review started! Timer is now running.");
-      } catch (error) {
-        console.error("Error starting review:", error);
-
-        // Fallback: Open URL anyway and start local timer
-        window.open(jobUrl, "_blank");
-
-        setJobStates((prev) => ({
-          ...prev,
-          [job.id]: {
-            session: {
-              id: `local-${job.id}`,
-              status: "in_progress",
-            } as ApplierJobSession,
-            timerSeconds: 0,
-            isTimerRunning: true,
-            isLoading: false,
-          },
-        }));
-
-        toast.info("Review started (offline mode). Timer is running.");
-      }
+      toast.success("Review started! Timer is now running.");
     },
     [jobStates],
   );
 
   const handleApplied = useCallback(
-    async (job: Job) => {
-      const state = jobStates[job.id];
-      if (!state?.session?.id) return;
+    async (job: FeedJob) => {
+      const jobId = String(job.job_id);
+      const state = jobStates[jobId];
+
+      if (!state || state.status !== "reviewing") {
+        toast.error("Please start reviewing before marking as applied");
+        return;
+      }
 
       setJobStates((prev) => ({
         ...prev,
-        [job.id]: { ...prev[job.id], isLoading: true },
+        [jobId]: { ...prev[jobId], isLoading: true, isTimerRunning: false },
       }));
 
       try {
-        const result = await markSessionApplied(state.session.id);
+        // Call Feed API to mark as applied
+        const res = await apiFetch("/api/apply-job", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            applier_id: currentUser?.id,
+            job_id: job.job_id,
+            client_id: job.client_id,
+            duration_seconds: state.timerSeconds,
+            job_title: job.job_title,
+            company_name: job.company_name,
+            job_url: job.job_url,
+          }),
+        });
 
-        // Remove job from queue after successful application
-        setJobs((prev) => prev.filter((j) => j.id !== job.id));
+        if (!res.ok) throw new Error("Failed to apply");
 
+        // Remove job from queue
+        setJobs((prev) => prev.filter((j) => j.job_id !== job.job_id));
         setJobStates((prev) => {
-          const { [job.id]: removed, ...rest } = prev;
+          const { [jobId]: removed, ...rest } = prev;
           return rest;
         });
 
@@ -289,22 +280,15 @@ export default function QueuePage() {
           `Application recorded! Time: ${formatTime(state.timerSeconds)}`,
         );
       } catch (error) {
-        console.error("Error marking as applied:", error);
-
-        // Fallback: still remove from queue since we attempted to apply
-        setJobs((prev) => prev.filter((j) => j.id !== job.id));
-
-        setJobStates((prev) => {
-          const { [job.id]: removed, ...rest } = prev;
-          return rest;
-        });
-
-        toast.success(
-          `Application recorded locally! Time: ${formatTime(state.timerSeconds)}`,
-        );
+        console.error("Error applying:", error);
+        toast.error("Failed to record application");
+        setJobStates((prev) => ({
+          ...prev,
+          [jobId]: { ...prev[jobId], isLoading: false, isTimerRunning: true },
+        }));
       }
     },
-    [jobStates],
+    [jobStates, currentUser],
   );
 
   const openFlagDialog = (jobId: string) => {
@@ -316,20 +300,30 @@ export default function QueuePage() {
   const handleFlagSubmit = async () => {
     if (!flaggingJobId || !flagComment.trim()) return;
 
-    const state = jobStates[flaggingJobId];
-    if (!state?.session?.id) {
-      toast.error("Please start a review before flagging");
+    const job = jobs.find((j) => String(j.job_id) === flaggingJobId);
+    if (!job) {
+      toast.error("Job not found");
       return;
     }
 
     setIsFlagging(true);
 
     try {
-      const result = await flagSession(state.session.id, flagComment.trim());
+      // Call Feed API to flag job
+      const res = await apiFetch("/api/flag-job", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          applier_id: currentUser?.id,
+          job_id: job.job_id,
+          comment: flagComment.trim(),
+        }),
+      });
 
-      // Remove job from queue after flagging
-      setJobs((prev) => prev.filter((j) => j.id !== flaggingJobId));
+      if (!res.ok) throw new Error("Failed to flag");
 
+      // Remove job from queue
+      setJobs((prev) => prev.filter((j) => j.job_id !== job.job_id));
       setJobStates((prev) => {
         const { [flaggingJobId]: removed, ...rest } = prev;
         return rest;
@@ -339,25 +333,17 @@ export default function QueuePage() {
       setFlagDialogOpen(false);
     } catch (error) {
       console.error("Error flagging job:", error);
-
-      // Fallback: still remove from queue since we attempted to flag
-      setJobs((prev) => prev.filter((j) => j.id !== flaggingJobId));
-
-      setJobStates((prev) => {
-        const { [flaggingJobId]: removed, ...rest } = prev;
-        return rest;
-      });
-
-      toast.success("Job flagged locally for review");
-      setFlagDialogOpen(false);
+      toast.error("Failed to flag job");
     } finally {
       setIsFlagging(false);
     }
   };
 
-  const getJobState = (jobId: string): JobCardState => {
+  const getJobState = (jobId: string | number): JobCardState => {
+    const key = String(jobId);
     return (
-      jobStates[jobId] || {
+      jobStates[key] || {
+        status: "idle",
         timerSeconds: 0,
         isTimerRunning: false,
         isLoading: false,
@@ -571,15 +557,16 @@ export default function QueuePage() {
           </Card>
         ) : (
           jobs.map((job) => {
-            const state = getJobState(job.id);
-            const hasStarted = state.session?.status === "in_progress";
-            const isApplied = state.session?.status === "applied";
-            const isFlagged = state.session?.status === "flagged";
+            const jobId = String(job.job_id);
+            const state = getJobState(jobId);
+            const hasStarted = state.status === "reviewing";
+            const isApplied = state.status === "applied";
+            const isFlagged = state.status === "flagged";
             const isCompleted = isApplied || isFlagged;
 
             return (
               <Card
-                key={job.id}
+                key={job.job_id}
                 className={`group transition-all duration-200 border-l-4 ${
                   isApplied
                     ? "border-l-green-500 bg-green-500/5"
@@ -589,7 +576,7 @@ export default function QueuePage() {
                         ? "border-l-blue-500"
                         : "border-l-transparent hover:border-l-primary hover:shadow-md"
                 }`}
-                data-testid={`card-job-${job.id}`}
+                data-testid={`card-job-${job.job_id}`}
               >
                 <CardContent className="p-6">
                   <div className="flex flex-col md:flex-row gap-6">
@@ -597,22 +584,20 @@ export default function QueuePage() {
                       <div>
                         <h3
                           className="text-xl font-bold font-heading"
-                          data-testid={`text-job-title-${job.id}`}
+                          data-testid={`text-job-title-${job.job_id}`}
                         >
-                          {(job as any).job_title || job.role}
+                          {job.job_title}
                         </h3>
                         <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
                           <span className="flex items-center gap-1">
-                            <Building className="w-3 h-3" />{" "}
-                            {(job as any).company_name || job.company}
+                            <Building className="w-3 h-3" /> {job.company_name}
                           </span>
                           <span className="flex items-center gap-1">
                             <Clock className="w-3 h-3" />{" "}
-                            {(job as any).posted_date
-                              ? formatDistanceToNow(
-                                  new Date((job as any).posted_date),
-                                  { addSuffix: true },
-                                )
+                            {job.posted_date
+                              ? formatDistanceToNow(new Date(job.posted_date), {
+                                  addSuffix: true,
+                                })
                               : "Recently"}
                           </span>
                         </div>
@@ -639,7 +624,7 @@ export default function QueuePage() {
                         !isCompleted && (
                           <div
                             className="flex items-center gap-2 px-3 py-2 bg-muted rounded-lg min-w-[80px] justify-center"
-                            data-testid={`timer-${job.id}`}
+                            data-testid={`timer-${job.job_id}`}
                           >
                             <Timer
                               className={`w-4 h-4 ${state.isTimerRunning ? "text-blue-500 animate-pulse" : "text-muted-foreground"}`}
@@ -659,7 +644,7 @@ export default function QueuePage() {
                               className="w-full shadow-lg shadow-primary/10"
                               onClick={() => handleStartReview(job)}
                               disabled={state.isLoading}
-                              data-testid={`button-start-review-${job.id}`}
+                              data-testid={`button-start-review-${job.job_id}`}
                             >
                               {hasStarted ? "Open Job" : "Start Review"}
                               <ArrowRight className="w-4 h-4 ml-2" />
@@ -670,7 +655,7 @@ export default function QueuePage() {
                               className="w-full bg-green-600 hover:bg-green-700 text-white"
                               onClick={() => handleApplied(job)}
                               disabled={!hasStarted || state.isLoading}
-                              data-testid={`button-applied-${job.id}`}
+                              data-testid={`button-applied-${job.job_id}`}
                             >
                               <CheckCircle className="w-4 h-4 mr-2" />
                               Applied
@@ -697,9 +682,9 @@ export default function QueuePage() {
                           variant="outline"
                           size="icon"
                           className="h-[88px] w-12 border-dashed hover:border-yellow-500 hover:text-yellow-600"
-                          onClick={() => openFlagDialog(job.id)}
+                          onClick={() => openFlagDialog(jobId)}
                           disabled={state.isLoading}
-                          data-testid={`button-flag-${job.id}`}
+                          data-testid={`button-flag-${job.job_id}`}
                         >
                           <Flag className="w-5 h-5" />
                         </Button>
