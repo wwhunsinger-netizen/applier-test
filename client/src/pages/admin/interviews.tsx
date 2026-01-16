@@ -1,8 +1,7 @@
 import { useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import {
   Select,
@@ -11,36 +10,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import {
-  Calendar,
-  Building,
-  Briefcase,
-  ExternalLink,
-  Loader2,
-  Edit,
-  Save,
-  X,
-} from "lucide-react";
+import { Calendar, Briefcase, ExternalLink, Loader2 } from "lucide-react";
 import { fetchClients, apiFetch } from "@/lib/api";
-import type { Client, Application, Interview } from "@shared/schema";
-import { toast } from "sonner";
+import type { Client, Application } from "@shared/schema";
 import { format } from "date-fns";
 
 export default function AdminInterviewsPage() {
-  const queryClient = useQueryClient();
   const [selectedClientId, setSelectedClientId] = useState<string>("");
-  const [editingInterview, setEditingInterview] = useState<Interview | null>(
-    null,
-  );
-  const [prepDocContent, setPrepDocContent] = useState("");
-  const [isSaving, setIsSaving] = useState(false);
 
   // Fetch all clients
   const { data: clients = [] } = useQuery({
@@ -58,64 +34,10 @@ export default function AdminInterviewsPage() {
       );
       if (!response.ok) throw new Error("Failed to fetch applications");
       const apps = await response.json();
-      // Filter for interview status on frontend
       return apps.filter((app: Application) => app.status === "Interview");
     },
     enabled: !!selectedClientId,
   });
-
-  // Fetch interviews for selected client
-  const { data: interviews = [], isLoading: isLoadingInterviews } = useQuery({
-    queryKey: ["interviews", selectedClientId],
-    queryFn: async () => {
-      if (!selectedClientId) return [];
-      const response = await apiFetch(
-        `/api/interviews?client_id=${selectedClientId}`,
-      );
-      if (!response.ok) throw new Error("Failed to fetch interviews");
-      return response.json();
-    },
-    enabled: !!selectedClientId,
-  });
-
-  // Save prep doc
-  const handleSavePrepDoc = async () => {
-    if (!editingInterview) return;
-
-    setIsSaving(true);
-    try {
-      const response = await apiFetch(
-        `/api/interviews/${editingInterview.id}`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            prep_doc_url: prepDocContent,
-            prep_doc_status: "complete",
-          }),
-        },
-      );
-
-      if (!response.ok) throw new Error("Failed to save prep doc");
-
-      toast.success("Prep doc saved successfully");
-      queryClient.invalidateQueries({
-        queryKey: ["interviews", selectedClientId],
-      });
-      setEditingInterview(null);
-    } catch (error) {
-      console.error("Error saving prep doc:", error);
-      toast.error("Failed to save prep doc");
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  // Open prep doc editor
-  const handleEditPrepDoc = (interview: Interview) => {
-    setEditingInterview(interview);
-    setPrepDocContent(interview.prep_doc_url || "");
-  };
 
   // Filter active clients (active or placed)
   const activeClients = clients.filter(
@@ -131,7 +53,7 @@ export default function AdminInterviewsPage() {
             Interviews
           </h1>
           <p className="text-muted-foreground mt-1">
-            Manage client interviews and prep documents.
+            Manage client interviews.
           </p>
         </div>
       </div>
@@ -174,104 +96,27 @@ export default function AdminInterviewsPage() {
                 Select a Client
               </h3>
               <p className="text-muted-foreground max-w-md">
-                Choose a client from the dropdown above to view their interviews
-                and applications marked for interviews.
+                Choose a client from the dropdown above to view their
+                interviews.
               </p>
             </div>
           </CardContent>
         </Card>
-      ) : isLoadingApps || isLoadingInterviews ? (
+      ) : isLoadingApps ? (
         <div className="flex justify-center py-12">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
         </div>
       ) : (
         <div className="space-y-6">
-          {/* Scheduled Interviews */}
+          {/* Interviews */}
           <div>
             <h2 className="text-xl font-bold text-white mb-4">
-              Scheduled Interviews ({interviews.length})
-            </h2>
-            {interviews.length === 0 ? (
-              <Card className="bg-[#111] border-white/10">
-                <CardContent className="py-8 text-center text-muted-foreground">
-                  No scheduled interviews for this client.
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="space-y-3">
-                {interviews.map((interview: Interview) => (
-                  <Card
-                    key={interview.id}
-                    className="bg-[#111] border-white/10 hover:border-white/20 transition-colors"
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                          <div className="h-12 w-12 rounded-lg bg-green-500/10 flex items-center justify-center">
-                            <Building className="w-6 h-6 text-green-500" />
-                          </div>
-                          <div>
-                            <h3 className="font-semibold text-white">
-                              {interview.company_name}
-                            </h3>
-                            <p className="text-sm text-muted-foreground">
-                              {interview.job_title}
-                            </p>
-                            <div className="flex items-center gap-2 mt-1">
-                              <Calendar className="w-3 h-3 text-muted-foreground" />
-                              <span className="text-xs text-muted-foreground">
-                                {interview.interview_datetime
-                                  ? format(
-                                      new Date(interview.interview_datetime),
-                                      "MMM d, yyyy 'at' h:mm a",
-                                    )
-                                  : "No date set"}
-                              </span>
-                              {interview.interview_type && (
-                                <Badge variant="outline" className="text-xs">
-                                  {interview.interview_type}
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {interview.prep_doc_status === "complete" ? (
-                            <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
-                              Prep Doc Complete
-                            </Badge>
-                          ) : (
-                            <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">
-                              Needs Prep Doc
-                            </Badge>
-                          )}
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEditPrepDoc(interview)}
-                          >
-                            <Edit className="w-4 h-4 mr-2" />
-                            {interview.prep_doc_url ? "Edit" : "Create"} Prep
-                            Doc
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Applications Marked as Interview */}
-          <div>
-            <h2 className="text-xl font-bold text-white mb-4">
-              Applications with Interview Status ({interviewApps.length})
+              Interviews ({interviewApps.length})
             </h2>
             {interviewApps.length === 0 ? (
               <Card className="bg-[#111] border-white/10">
                 <CardContent className="py-8 text-center text-muted-foreground">
-                  No applications marked as "interview" for this client.
+                  No interviews for this client.
                 </CardContent>
               </Card>
             ) : (
@@ -329,47 +174,6 @@ export default function AdminInterviewsPage() {
           </div>
         </div>
       )}
-
-      {/* Prep Doc Editor Dialog */}
-      <Dialog
-        open={!!editingInterview}
-        onOpenChange={(open) => !open && setEditingInterview(null)}
-      >
-        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>
-              Prep Doc - {editingInterview?.company_name} (
-              {editingInterview?.job_title})
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <Textarea
-              value={prepDocContent}
-              onChange={(e) => setPrepDocContent(e.target.value)}
-              placeholder="Enter interview prep notes, questions to expect, company research, etc..."
-              className="min-h-[400px] font-mono text-sm"
-            />
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setEditingInterview(null)}
-              disabled={isSaving}
-            >
-              <X className="w-4 h-4 mr-2" />
-              Cancel
-            </Button>
-            <Button onClick={handleSavePrepDoc} disabled={isSaving}>
-              {isSaving ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <Save className="w-4 h-4 mr-2" />
-              )}
-              Save Prep Doc
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
