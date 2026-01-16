@@ -463,6 +463,27 @@ export async function registerRoutes(
   // ========================================
   // Feed API Integration - New endpoints
   // ========================================
+  // GET /api/queue-jobs - Fetch queue from Feed API
+  app.get("/api/queue-jobs", isSupabaseAuthenticated, async (req, res) => {
+    try {
+      const { applier_id } = req.query;
+
+      if (!applier_id) {
+        return res.status(400).json({ error: "applier_id is required" });
+      }
+
+      const feedJobs = await feedApi.getApplierQueue(applier_id as string);
+      const jobs = feedApi.toDisplayJobs(feedJobs);
+
+      console.log(
+        `[Queue] Fetched ${jobs.length} jobs from Feed API for applier ${applier_id}`,
+      );
+      res.json(jobs);
+    } catch (error) {
+      console.error("[Queue] Error fetching queue jobs:", error);
+      res.status(500).json({ error: "Failed to fetch queue jobs" });
+    }
+  });
 
   // Apply to job via Feed API
   app.post("/api/apply-job", isSupabaseAuthenticated, async (req, res) => {
@@ -606,19 +627,24 @@ export async function registerRoutes(
   // Resolve flagged job via Feed API
   app.post("/api/resolve-flag", isSupabaseAuthenticated, async (req, res) => {
     try {
-      const { applier_id, job_id, note } = req.body;
+      const { applier_id, job_id, resolved_by, resolution_note } = req.body;
 
-      if (!applier_id || !job_id) {
-        return res
-          .status(400)
-          .json({ error: "applier_id and job_id are required" });
+      if (!applier_id || !job_id || !resolved_by) {
+        return res.status(400).json({
+          error: "applier_id, job_id, and resolved_by are required",
+        });
       }
 
-      await setJobFlagResolved(applier_id, job_id, note || "");
+      await setJobFlagResolved(
+        applier_id,
+        job_id,
+        resolved_by,
+        resolution_note || "",
+      );
 
-      res.json({ success: true });
+      res.json({ success: true, message: "Flag resolved successfully" });
     } catch (error) {
-      console.error("Error resolving flag:", error);
+      console.error("[Admin] Error resolving flag:", error);
       res.status(500).json({ error: "Failed to resolve flag" });
     }
   });
