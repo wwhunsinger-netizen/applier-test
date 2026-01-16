@@ -10,6 +10,9 @@
 const FEED_API_BASE =
   "https://p01--jobindex-postgrest--54lkjbzvq5q4.code.run/rpc";
 
+const FEED_AUTH_TOKEN =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoicG9zdGdyZXN0X3JlYWRlciJ9.C2u4mxuXdaFb4ObhkQCNIjhb9oyeDzAQQ3Sw8mYVD14";
+
 // ============================================================
 // Types from cofounder's API
 // ============================================================
@@ -27,10 +30,9 @@ export interface FeedJob {
   posted_date: string | null;
   salary_min: number | null;
   salary_max: number | null;
-  job_type: string | null; // "Full-time", "Contract", etc.
+  job_type: string | null;
   remote: boolean | null;
-  source: string | null; // "LinkedIn", "Indeed", etc.
-  // Jumpseat-specific fields set by cofounder's system
+  source: string | null;
   client_id?: string;
   applier_id?: string;
 }
@@ -59,7 +61,6 @@ export interface FeedFlaggedJob {
   resolved_at: string | null;
   resolved_by: string | null;
   resolution_note: string | null;
-  // Denormalized job info for display
   job_title: string;
   company_name: string;
   job_url: string;
@@ -72,28 +73,18 @@ export interface FeedFlaggedJob {
  * This is what the queue.tsx component expects
  */
 export interface DisplayJob {
-  // Core identifiers
-  job_id: number; // Feed's job ID (primary key now)
-
-  // Job details
+  job_id: number;
   job_title: string;
   company_name: string;
   job_url: string;
   location: string | null;
-  apply_url: string;
   description: string | null;
   posted_date: string | null;
-
-  // Salary info
   salary_min: number | null;
   salary_max: number | null;
-
-  // Job metadata
   job_type: string | null;
   remote: boolean | null;
   source: string | null;
-
-  // Assignment info (for applier context)
   client_id: string;
   applier_id: string;
 }
@@ -112,6 +103,7 @@ export async function getApplierQueue(applierId: string): Promise<FeedJob[]> {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${FEED_AUTH_TOKEN}`,
       },
       body: JSON.stringify({
         applier: applierId,
@@ -149,6 +141,7 @@ export async function setApplicationStatus(
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${FEED_AUTH_TOKEN}`,
       },
       body: JSON.stringify({
         p_applier_id: applierId,
@@ -188,6 +181,7 @@ export async function setJobFlag(
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${FEED_AUTH_TOKEN}`,
       },
       body: JSON.stringify({
         p_applier_id: applierId,
@@ -226,6 +220,7 @@ export async function setJobFlagResolved(
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${FEED_AUTH_TOKEN}`,
       },
       body: JSON.stringify({
         p_applier_id: applierId,
@@ -259,6 +254,7 @@ export async function getAdminFlaggedJobs(
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${FEED_AUTH_TOKEN}`,
       },
       body: JSON.stringify({
         p_include_resolved: includeResolved,
@@ -284,15 +280,15 @@ export async function getAdminFlaggedJobs(
 
 /**
  * Convert FeedJob array to DisplayJob array for UI
- * Flattens the structure for easier consumption by React components
+ * Maps cofounder's field names to what queue.tsx expects
  */
 export function toDisplayJobs(feedJobs: FeedJob[]): DisplayJob[] {
   return feedJobs.map((job) => ({
     job_id: job.job_id,
     job_title: job.title,
     company_name: job.company,
-    location: job.location,
     job_url: job.apply_url,
+    location: job.location,
     description: job.description,
     posted_date: job.posted_date,
     salary_min: job.salary_min,
