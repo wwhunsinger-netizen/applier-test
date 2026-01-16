@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
@@ -22,7 +22,6 @@ import {
   Calendar,
   Building,
   Briefcase,
-  FileText,
   ExternalLink,
   Loader2,
   Edit,
@@ -44,7 +43,7 @@ export default function AdminInterviewsPage() {
   const [isSaving, setIsSaving] = useState(false);
 
   // Fetch all clients
-  const { data: clients = [], isLoading: isLoadingClients } = useQuery({
+  const { data: clients = [] } = useQuery({
     queryKey: ["clients"],
     queryFn: fetchClients,
   });
@@ -55,10 +54,14 @@ export default function AdminInterviewsPage() {
     queryFn: async () => {
       if (!selectedClientId) return [];
       const response = await apiFetch(
-        `/api/applications?client_id=${selectedClientId}&status=interview`,
+        `/api/applications?client_id=${selectedClientId}`,
       );
       if (!response.ok) throw new Error("Failed to fetch applications");
-      return response.json();
+      const apps = await response.json();
+      // Filter for interview status on frontend
+      return apps.filter(
+        (app: Application) => app.status?.toLowerCase() === "interview",
+      );
     },
     enabled: !!selectedClientId,
   });
@@ -76,12 +79,6 @@ export default function AdminInterviewsPage() {
     },
     enabled: !!selectedClientId,
   });
-
-  // Get client name helper
-  const getClientName = (clientId: string) => {
-    const client = clients.find((c: Client) => c.id === clientId);
-    return client ? `${client.first_name} ${client.last_name}` : "Unknown";
-  };
 
   // Save prep doc
   const handleSavePrepDoc = async () => {
