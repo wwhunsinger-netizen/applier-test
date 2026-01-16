@@ -114,7 +114,7 @@ export async function getApplierQueue(applierId: string): Promise<FeedJob[]> {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        p_applier_id: applierId,
+        applier: applierId,
       }),
     });
 
