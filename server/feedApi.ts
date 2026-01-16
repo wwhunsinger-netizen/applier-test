@@ -18,34 +18,28 @@ const FEED_AUTH_TOKEN =
 // ============================================================
 
 /**
- * Job structure returned from the feed API
+ * Job data point structure (nested inside FeedJob)
  */
-export interface FeedJob {
-  job_id: number;
+export interface JobDataPoint {
+  id: number;
   title: string;
   company: string;
-  location: string | null;
+  company_logo: string;
+  job_location: string;
+  source_url: string;
   apply_url: string;
-  description: string | null;
-  posted_date: string | null;
-  salary_min: number | null;
-  salary_max: number | null;
-  job_type: string | null;
-  remote: boolean | null;
-  source: string | null;
-  client_id?: string;
-  applier_id?: string;
+  posted_day: string;
 }
 
 /**
- * Applied job record from Feed API
+ * Job structure returned from the feed API
  */
-export interface FeedAppliedJob {
-  job_id: number;
-  applier_id: string;
-  client_id: string;
-  applied_at: string;
-  duration_seconds: number;
+export interface FeedJob {
+  canonical_job_id: number;
+  admin_note: string | null;
+  job_data_points: JobDataPoint[];
+  client_id?: string;
+  applier_id?: string;
 }
 
 /**
@@ -126,7 +120,7 @@ export async function getApplierQueue(applierId: string): Promise<FeedJob[]> {
 /**
  * Mark a job as applied
  * @param applierId - The applier who applied
- * @param jobId - The feed job ID
+ * @param jobId - The feed job ID (canonical_job_id)
  * @param status - 1 for applied, 0 for not applied
  * @param durationSeconds - How long the application took
  */
@@ -168,7 +162,7 @@ export async function setApplicationStatus(
 /**
  * Flag a job with a comment
  * @param applierId - The applier who flagged
- * @param jobId - The feed job ID
+ * @param jobId - The feed job ID (canonical_job_id)
  * @param comment - Reason for flagging
  */
 export async function setJobFlag(
@@ -205,7 +199,7 @@ export async function setJobFlag(
 /**
  * Resolve a flagged job
  * @param applierId - The applier whose flag we're resolving
- * @param jobId - The feed job ID
+ * @param jobId - The feed job ID (canonical_job_id)
  * @param resolvedBy - Who resolved it (admin user ID)
  * @param resolutionNote - Note explaining resolution
  */
@@ -280,25 +274,30 @@ export async function getAdminFlaggedJobs(
 
 /**
  * Convert FeedJob array to DisplayJob array for UI
- * Maps cofounder's field names to what queue.tsx expects
+ * Maps cofounder's nested structure to flat structure for queue.tsx
  */
 export function toDisplayJobs(feedJobs: FeedJob[]): DisplayJob[] {
-  return feedJobs.map((job) => ({
-    job_id: job.job_id,
-    job_title: job.title,
-    company_name: job.company,
-    job_url: job.apply_url,
-    location: job.location,
-    description: job.description,
-    posted_date: job.posted_date,
-    salary_min: job.salary_min,
-    salary_max: job.salary_max,
-    job_type: job.job_type,
-    remote: job.remote,
-    source: job.source,
-    client_id: job.client_id || "",
-    applier_id: job.applier_id || "",
-  }));
+  return feedJobs.map((job) => {
+    // Get the first job_data_point (or empty object if none)
+    const jobData = job.job_data_points?.[0] || ({} as JobDataPoint);
+
+    return {
+      job_id: job.canonical_job_id,
+      job_title: jobData.title || "Unknown Title",
+      company_name: jobData.company || "Unknown Company",
+      job_url: jobData.apply_url || jobData.source_url || "",
+      location: jobData.job_location || null,
+      description: null,
+      posted_date: jobData.posted_day || null,
+      salary_min: null,
+      salary_max: null,
+      job_type: null,
+      remote: null,
+      source: null,
+      client_id: job.client_id || "",
+      applier_id: job.applier_id || "",
+    };
+  });
 }
 
 /**
