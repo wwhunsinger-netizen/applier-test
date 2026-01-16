@@ -24,6 +24,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { deleteClient } from "@/lib/api";
 import {
   Select,
   SelectContent,
@@ -172,37 +173,22 @@ export default function AdminClientDetailPage() {
     }
   }, [clientDocuments]);
 
-  const handleDeleteClient = () => {
+  const handleDeleteClient = async () => {
     if (
       confirm(
         "Are you sure you want to delete this client? This action cannot be undone and will remove all associated documents and data.",
       )
     ) {
-      // TODO: Implement delete API call
-      alert("Delete functionality not yet implemented");
+      try {
+        await deleteClient(clientId!);
+        toast.success("Client deleted successfully");
+        window.location.href = "/admin/clients";
+      } catch (error) {
+        console.error("Error deleting client:", error);
+        toast.error("Failed to delete client");
+      }
     }
   };
-
-  if (isLoading) {
-    return (
-      <div className="p-8 text-center">
-        <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-primary" />
-        <p className="text-muted-foreground">Loading client...</p>
-      </div>
-    );
-  }
-
-  if (error || !client) {
-    return (
-      <div className="p-8 text-center">
-        <AlertCircle className="w-12 h-12 mx-auto mb-4 text-red-400" />
-        <h2 className="text-xl font-bold text-white mb-4">Client Not Found</h2>
-        <Link href="/admin/clients">
-          <Button>Back to Clients</Button>
-        </Link>
-      </div>
-    );
-  }
 
   // Add tag to array
   const addTag = (

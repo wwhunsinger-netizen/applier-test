@@ -360,14 +360,6 @@ export default function QueuePage() {
             {jobs.length} jobs waiting for review
           </p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => window.open("/resume-tailor", "_blank")}
-        >
-          <Target className="h-4 w-4 mr-2" />
-          Resume Tailor
-        </Button>
       </div>
 
       {/* Client Context */}

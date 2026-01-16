@@ -1,6 +1,20 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, Briefcase, Send, Trophy, User, LogOut, ShieldCheck, List, AlertTriangle, Users, FileText, Calendar, ClipboardCheck, UserCheck } from "lucide-react";
+import {
+  LayoutDashboard,
+  Briefcase,
+  Send,
+  Trophy,
+  User,
+  LogOut,
+  List,
+  AlertTriangle,
+  Users,
+  FileText,
+  Calendar,
+  ClipboardCheck,
+  UserCheck,
+} from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useUser } from "@/lib/userContext";
@@ -29,34 +43,43 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { icon: Briefcase, label: "Queue Manager", href: "/admin/queues" },
     { icon: List, label: "All Applications", href: "/admin/applications" },
     { icon: AlertTriangle, label: "Review Issues", href: "/admin/review" },
-    { icon: ShieldCheck, label: "QA Check", href: "/admin/qa" },
   ];
 
   const clientNavItems = [
     { icon: LayoutDashboard, label: "Overview", href: "/" },
-    { icon: ClipboardCheck, label: "Job Criteria", href: "/client/job-criteria" },
+    {
+      icon: ClipboardCheck,
+      label: "Job Criteria",
+      href: "/client/job-criteria",
+    },
     { icon: FileText, label: "Documents", href: "/client/documents" },
     { icon: Calendar, label: "Interviews", href: "/client/interviews" },
     { icon: Send, label: "Applications", href: "/client/applications" },
   ];
 
-  const navItems = currentUser.role === "Admin" ? adminNavItems : 
-                   currentUser.role === "Client" ? clientNavItems : 
-                   applierNavItems;
+  const navItems =
+    currentUser?.role === "Admin"
+      ? adminNavItems
+      : currentUser?.role === "Client"
+        ? clientNavItems
+        : applierNavItems;
 
   return (
     <div className="flex h-screen bg-black overflow-hidden font-sans relative">
       {/* Premium Background Glow */}
       <div className="absolute -bottom-[20%] -right-[10%] w-[50%] h-[50%] bg-primary/20 blur-[150px] rounded-full opacity-40 pointer-events-none z-0" />
-      
+
       {/* Sidebar */}
       <aside className="w-64 bg-[#050505] border-r border-white/5 hidden md:flex flex-col z-20 shadow-xl">
         <div className="p-6 h-[88px] flex items-center justify-center border-b border-white/5">
-          <img 
-            src={logoUrl} 
-            alt="Jumpseat" 
-            className="h-12 w-auto object-contain" 
-            style={{ filter: currentUser.role === "Client" ? "hue-rotate(0deg)" : "none" }}
+          <img
+            src={logoUrl}
+            alt="Jumpseat"
+            className="h-12 w-auto object-contain"
+            style={{
+              filter:
+                currentUser?.role === "Client" ? "hue-rotate(0deg)" : "none",
+            }}
           />
         </div>
 
@@ -71,13 +94,15 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   "flex items-center gap-3 px-4 py-3 rounded-md text-sm font-medium transition-all duration-200 group",
                   isActive
                     ? "bg-primary/10 text-primary shadow-sm"
-                    : "text-muted-foreground hover:bg-white/5 hover:text-white"
+                    : "text-muted-foreground hover:bg-white/5 hover:text-white",
                 )}
               >
                 <item.icon
                   className={cn(
                     "w-5 h-5 transition-colors",
-                    isActive ? "text-primary" : "text-muted-foreground group-hover:text-white"
+                    isActive
+                      ? "text-primary"
+                      : "text-muted-foreground group-hover:text-white",
                   )}
                 />
                 {item.label}
@@ -89,28 +114,39 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <div className="p-4 border-t border-white/5 bg-white/5">
           <div className="flex items-center gap-3 mb-4">
             <Avatar className="h-9 w-9 border border-white/10">
-              <AvatarImage src={currentUser.avatar} />
-              <AvatarFallback>{currentUser.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+              <AvatarImage src={undefined} />
+              <AvatarFallback>
+                {currentUser?.name?.substring(0, 2).toUpperCase() || "??"}
+              </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <p className="text-sm font-medium truncate text-white">{currentUser.name}</p>
-                <span className={cn(
-                  "text-[10px] px-1.5 py-0.5 rounded uppercase font-bold tracking-wider",
-                  currentUser.role === "Reviewer" ? "bg-primary/20 text-primary" : 
-                  currentUser.role === "Admin" ? "bg-red-500 text-white shadow-[0_0_10px_rgba(239,68,68,0.5)]" :
-                  currentUser.role === "Client" ? "bg-purple-500 text-white shadow-[0_0_10px_rgba(168,85,247,0.5)]" :
-                  "bg-white/10 text-muted-foreground"
-                )}>
-                  {currentUser.role}
+                <p className="text-sm font-medium truncate text-white">
+                  {currentUser?.name}
+                </p>
+                <span
+                  className={cn(
+                    "text-[10px] px-1.5 py-0.5 rounded uppercase font-bold tracking-wider",
+                    currentUser?.role === "Applier"
+                      ? "bg-primary/20 text-primary"
+                      : currentUser?.role === "Admin"
+                        ? "bg-red-500 text-white shadow-[0_0_10px_rgba(239,68,68,0.5)]"
+                        : currentUser?.role === "Client"
+                          ? "bg-purple-500 text-white shadow-[0_0_10px_rgba(168,85,247,0.5)]"
+                          : "bg-white/10 text-muted-foreground",
+                  )}
+                >
+                  {currentUser?.role}
                 </span>
               </div>
-              <p className="text-xs text-muted-foreground truncate">{currentUser.email}</p>
+              <p className="text-xs text-muted-foreground truncate">
+                {currentUser?.email}
+              </p>
             </div>
           </div>
-          <Button 
-            variant="outline" 
-            size="sm" 
+          <Button
+            variant="outline"
+            size="sm"
             onClick={logout}
             className="w-full justify-start text-muted-foreground hover:text-destructive hover:bg-destructive/10 hover:border-destructive/20 border-white/10 bg-transparent"
           >

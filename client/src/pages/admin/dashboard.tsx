@@ -4,19 +4,46 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { HoverCardWrapper } from "@/components/hover-card-wrapper";
-import { Users, Zap, Trophy, AlertTriangle, TrendingUp, Mail, Briefcase, Calendar, CheckCircle, DollarSign, Award, Gift, Target, Loader2 } from "lucide-react";
+import {
+  Users,
+  Zap,
+  Trophy,
+  AlertTriangle,
+  TrendingUp,
+  Mail,
+  Briefcase,
+  Calendar,
+  CheckCircle,
+  DollarSign,
+  Award,
+  Gift,
+  Target,
+  Loader2,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { EmailDialog } from "@/components/admin/email-dialog";
-import { fetchClientCosts, fetchAdminOverview, fetchClientPerformance, type ClientCost, type ApplierPerformance, type AdminOverview, type ClientPerformance } from "@/lib/api";
+import {
+  fetchClientCosts,
+  fetchAdminOverview,
+  fetchClientPerformance,
+  type ClientCost,
+  type ApplierPerformance,
+  type AdminOverview,
+  type ClientPerformance,
+} from "@/lib/api";
 
 export default function AdminDashboardPage() {
-  const [selectedUser, setSelectedUser] = useState<ApplierPerformance | null>(null);
+  const [selectedUser, setSelectedUser] = useState<ApplierPerformance | null>(
+    null,
+  );
   const [isEmailOpen, setIsEmailOpen] = useState(false);
   const [clientCosts, setClientCosts] = useState<ClientCost[]>([]);
   const [isCostsLoading, setIsCostsLoading] = useState(true);
   const [overview, setOverview] = useState<AdminOverview | null>(null);
   const [isOverviewLoading, setIsOverviewLoading] = useState(true);
-  const [clientPerformance, setClientPerformance] = useState<ClientPerformance[]>([]);
+  const [clientPerformance, setClientPerformance] = useState<
+    ClientPerformance[]
+  >([]);
   const [isClientPerfLoading, setIsClientPerfLoading] = useState(true);
 
   useEffect(() => {
@@ -24,12 +51,12 @@ export default function AdminDashboardPage() {
       .then(setClientCosts)
       .catch(console.error)
       .finally(() => setIsCostsLoading(false));
-    
+
     fetchAdminOverview()
       .then(setOverview)
       .catch(console.error)
       .finally(() => setIsOverviewLoading(false));
-    
+
     fetchClientPerformance()
       .then(setClientPerformance)
       .catch(console.error)
@@ -43,22 +70,28 @@ export default function AdminDashboardPage() {
 
   // Calculate total costs across all clients
   const totalCosts = clientCosts.reduce((acc, c) => acc + c.total_cost, 0);
-  const totalPending = clientCosts.reduce((acc, c) => acc + c.pending_amount, 0);
+  const totalPending = clientCosts.reduce(
+    (acc, c) => acc + c.pending_amount,
+    0,
+  );
 
   // Use real data from overview API
   const totalDailyApps = overview?.summary.totalDailyApps || 0;
   const totalWeeklyApps = overview?.summary.totalWeeklyApps || 0;
   const activeReviewers = overview?.summary.activeReviewers || 0;
   const totalAppliers = overview?.summary.totalAppliers || 0;
-  const avgQaScore = overview?.summary.avgQaScore || 0;
   const appliers = overview?.appliers || [];
 
   return (
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold tracking-tight text-white">Admin Overview</h1>
-        <p className="text-muted-foreground mt-1">Real-time team performance monitoring.</p>
+        <h1 className="text-3xl font-bold tracking-tight text-white">
+          Admin Overview
+        </h1>
+        <p className="text-muted-foreground mt-1">
+          Real-time team performance monitoring.
+        </p>
       </div>
 
       {/* Top Level Stats */}
@@ -66,20 +99,31 @@ export default function AdminDashboardPage() {
         <Card className="bg-[#111] border-white/10">
           <CardContent className="p-6 flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Total Daily Apps</p>
-              <div className="text-2xl font-bold text-white mt-1">{totalDailyApps}</div>
+              <p className="text-sm font-medium text-muted-foreground">
+                Total Daily Apps
+              </p>
+              <div className="text-2xl font-bold text-white mt-1">
+                {totalDailyApps}
+              </div>
             </div>
             <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
               <Zap className="w-5 h-5" />
             </div>
           </CardContent>
         </Card>
-        
+
         <Card className="bg-[#111] border-white/10">
           <CardContent className="p-6 flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Active Reviewers</p>
-              <div className="text-2xl font-bold text-white mt-1">{activeReviewers} <span className="text-sm font-normal text-muted-foreground">/ {totalAppliers}</span></div>
+              <p className="text-sm font-medium text-muted-foreground">
+                Active Reviewers
+              </p>
+              <div className="text-2xl font-bold text-white mt-1">
+                {activeReviewers}{" "}
+                <span className="text-sm font-normal text-muted-foreground">
+                  / {totalAppliers}
+                </span>
+              </div>
             </div>
             <div className="h-10 w-10 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-500">
               <Users className="w-5 h-5" />
@@ -90,20 +134,12 @@ export default function AdminDashboardPage() {
         <Card className="bg-[#111] border-white/10">
           <CardContent className="p-6 flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Avg QA Score</p>
-              <div className="text-2xl font-bold text-white mt-1">{avgQaScore}%</div>
-            </div>
-            <div className="h-10 w-10 rounded-full bg-green-500/10 flex items-center justify-center text-green-500">
-              <Trophy className="w-5 h-5" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-[#111] border-white/10">
-          <CardContent className="p-6 flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Weekly Volume</p>
-              <div className="text-2xl font-bold text-white mt-1">{totalWeeklyApps}</div>
+              <p className="text-sm font-medium text-muted-foreground">
+                Weekly Volume
+              </p>
+              <div className="text-2xl font-bold text-white mt-1">
+                {totalWeeklyApps}
+              </div>
             </div>
             <div className="h-10 w-10 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-500">
               <TrendingUp className="w-5 h-5" />
@@ -127,25 +163,38 @@ export default function AdminDashboardPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {appliers.map((user) => (
               <HoverCardWrapper key={user.id}>
-                <Card className="bg-[#111] border-white/10 overflow-hidden" data-testid={`applier-card-${user.id}`}>
+                <Card
+                  className="bg-[#111] border-white/10 overflow-hidden"
+                  data-testid={`applier-card-${user.id}`}
+                >
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <div className="flex items-center gap-3">
                       <div className="relative">
                         <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">
-                          {user.name.split(' ').map(n => n[0]).join('')}
+                          {user.name
+                            .split(" ")
+                            .map((n) => n[0])
+                            .join("")}
                         </div>
-                        <div className={cn(
-                          "absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-[#111]",
-                          user.status === "Active" ? "bg-green-500" :
-                          user.status === "Idle" ? "bg-yellow-500" : "bg-gray-500"
-                        )} />
+                        <div
+                          className={cn(
+                            "absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-[#111]",
+                            user.status === "Active"
+                              ? "bg-green-500"
+                              : user.status === "Idle"
+                                ? "bg-yellow-500"
+                                : "bg-gray-500",
+                          )}
+                        />
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <CardTitle className="text-base font-medium text-white">{user.name}</CardTitle>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
+                          <CardTitle className="text-base font-medium text-white">
+                            {user.name}
+                          </CardTitle>
+                          <Button
+                            variant="ghost"
+                            size="icon"
                             className="h-6 w-6 text-muted-foreground hover:text-white hover:bg-white/10"
                             onClick={() => handleEmailClick(user)}
                             data-testid={`email-${user.id}`}
@@ -153,65 +202,84 @@ export default function AdminDashboardPage() {
                             <Mail className="w-3.5 h-3.5" />
                           </Button>
                         </div>
-                        <p className="text-xs text-muted-foreground">{user.status} • {user.lastActive}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {user.status} • {user.lastActive}
+                        </p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-2xl font-bold text-white">{user.dailyApps}</div>
-                      <div className="text-xs text-muted-foreground">apps today</div>
+                      <div className="text-2xl font-bold text-white">
+                        {user.dailyApps}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        apps today
+                      </div>
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-4 pt-4">
                     {/* Daily Progress Bar */}
                     <div className="space-y-1">
                       <div className="flex justify-between text-xs">
-                        <span className="text-muted-foreground">Daily Goal ({user.dailyGoal})</span>
-                        <span className={cn(
-                          "font-medium",
-                          user.dailyApps >= user.dailyGoal ? "text-green-500" : "text-white"
-                        )}>
+                        <span className="text-muted-foreground">
+                          Daily Goal ({user.dailyGoal})
+                        </span>
+                        <span
+                          className={cn(
+                            "font-medium",
+                            user.dailyApps >= user.dailyGoal
+                              ? "text-green-500"
+                              : "text-white",
+                          )}
+                        >
                           {Math.round((user.dailyApps / user.dailyGoal) * 100)}%
                         </span>
                       </div>
-                      <Progress 
-                        value={Math.min((user.dailyApps / user.dailyGoal) * 100, 100)} 
-                        className="h-2 bg-white/5" 
+                      <Progress
+                        value={Math.min(
+                          (user.dailyApps / user.dailyGoal) * 100,
+                          100,
+                        )}
+                        className="h-2 bg-white/5"
                         indicatorClassName={cn(
-                          user.dailyApps >= user.dailyGoal ? "bg-green-500" : "bg-primary"
-                        )} 
+                          user.dailyApps >= user.dailyGoal
+                            ? "bg-green-500"
+                            : "bg-primary",
+                        )}
                       />
                     </div>
 
                     {/* Weekly Progress Bar */}
                     <div className="space-y-1">
                       <div className="flex justify-between text-xs">
-                        <span className="text-muted-foreground">Weekly Goal ({user.weeklyGoal})</span>
+                        <span className="text-muted-foreground">
+                          Weekly Goal ({user.weeklyGoal})
+                        </span>
                         <span className="text-white font-medium">
-                          {Math.round((user.weeklyApps / user.weeklyGoal) * 100)}%
+                          {Math.round(
+                            (user.weeklyApps / user.weeklyGoal) * 100,
+                          )}
+                          %
                         </span>
                       </div>
-                      <Progress 
-                        value={Math.min((user.weeklyApps / user.weeklyGoal) * 100, 100)} 
-                        className="h-1.5 bg-white/5" 
-                        indicatorClassName="bg-blue-500" 
+                      <Progress
+                        value={Math.min(
+                          (user.weeklyApps / user.weeklyGoal) * 100,
+                          100,
+                        )}
+                        className="h-1.5 bg-white/5"
+                        indicatorClassName="bg-blue-500"
                       />
                     </div>
 
                     {/* KPIs */}
                     <div className="grid grid-cols-2 gap-2 pt-2">
                       <div className="bg-white/5 rounded p-2 text-center">
-                        <div className="text-xs text-muted-foreground mb-1">QA Score</div>
-                        <div className={cn(
-                          "font-bold font-mono",
-                          user.qaScore >= 95 ? "text-green-500" : 
-                          user.qaScore >= 90 ? "text-blue-500" : "text-yellow-500"
-                        )}>
-                          {user.qaScore}%
+                        <div className="text-xs text-muted-foreground mb-1">
+                          Interview Rate
                         </div>
-                      </div>
-                      <div className="bg-white/5 rounded p-2 text-center">
-                        <div className="text-xs text-muted-foreground mb-1">Interview Rate</div>
-                        <div className="font-bold font-mono text-white">{user.interviewRate}%</div>
+                        <div className="font-bold font-mono text-white">
+                          {user.interviewRate}%
+                        </div>
                       </div>
                     </div>
                   </CardContent>
@@ -221,14 +289,16 @@ export default function AdminDashboardPage() {
           </div>
         )}
       </div>
-      
+
       {/* Client Performance Section */}
       <div>
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold text-white">Client Performance</h2>
-          <Button variant="outline" size="sm">View All Clients</Button>
+          <Button variant="outline" size="sm">
+            View All Clients
+          </Button>
         </div>
-        
+
         {isClientPerfLoading ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
@@ -240,67 +310,95 @@ export default function AdminDashboardPage() {
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {clientPerformance.map((client) => (
-               <Card key={client.id} className="bg-[#111] border-white/10 hover:border-white/20 transition-colors group" data-testid={`client-card-${client.id}`}>
-                 <CardContent className="p-6">
-                   <div className="flex items-center justify-between mb-6">
-                     <div className="flex items-center gap-4">
-                       <div className="relative">
-                         <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold border border-white/10">
-                           {client.name.split(' ').map(n => n[0]).join('')}
-                         </div>
-                         <span className={cn(
-                           "absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-[#111]",
-                           client.status === "active" ? "bg-green-500" : 
-                           client.status === "placed" ? "bg-blue-500" : "bg-yellow-500"
-                         )} />
-                       </div>
-                       <div>
-                         <div className="flex items-center gap-2">
-                           <h3 className="text-lg font-bold text-white">{client.name}</h3>
-                           <span className="text-xs text-muted-foreground bg-white/5 px-1.5 py-0.5 rounded border border-white/10">
-                             Started {client.startDate}
-                           </span>
-                         </div>
-                         <p className="text-xs text-muted-foreground mt-0.5">Last activity {client.lastActivity}</p>
-                       </div>
-                     </div>
-                     <Button variant="ghost" size="icon" className="opacity-0 group-hover:opacity-100 transition-opacity">
-                       <TrendingUp className="w-4 h-4 text-muted-foreground hover:text-white" />
-                     </Button>
-                   </div>
+              <Card
+                key={client.id}
+                className="bg-[#111] border-white/10 hover:border-white/20 transition-colors group"
+                data-testid={`client-card-${client.id}`}
+              >
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-4">
+                      <div className="relative">
+                        <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold border border-white/10">
+                          {client.name
+                            .split(" ")
+                            .map((n) => n[0])
+                            .join("")}
+                        </div>
+                        <span
+                          className={cn(
+                            "absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-[#111]",
+                            client.status === "active"
+                              ? "bg-green-500"
+                              : client.status === "placed"
+                                ? "bg-blue-500"
+                                : "bg-yellow-500",
+                          )}
+                        />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-lg font-bold text-white">
+                            {client.name}
+                          </h3>
+                          <span className="text-xs text-muted-foreground bg-white/5 px-1.5 py-0.5 rounded border border-white/10">
+                            Started {client.startDate}
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          Last activity {client.lastActivity}
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <TrendingUp className="w-4 h-4 text-muted-foreground hover:text-white" />
+                    </Button>
+                  </div>
 
-                   <div className="grid grid-cols-4 gap-4">
-                     <div className="bg-white/5 rounded-lg p-3 text-center border border-white/5 group-hover:border-white/10 transition-colors">
-                       <div className="flex items-center justify-center gap-1.5 mb-1 text-muted-foreground">
-                         <Briefcase className="w-3.5 h-3.5" />
-                         <span className="text-xs font-medium">Applied</span>
-                       </div>
-                       <div className="text-xl font-bold text-white">{client.totalApps}</div>
-                     </div>
-                     <div className="bg-white/5 rounded-lg p-3 text-center border border-white/5 group-hover:border-white/10 transition-colors">
-                       <div className="flex items-center justify-center gap-1.5 mb-1 text-muted-foreground">
-                         <Calendar className="w-3.5 h-3.5" />
-                         <span className="text-xs font-medium">Interviews</span>
-                       </div>
-                       <div className="text-xl font-bold text-white">{client.interviews}</div>
-                     </div>
-                     <div className="bg-white/5 rounded-lg p-3 text-center border border-white/5 group-hover:border-white/10 transition-colors">
-                       <div className="flex items-center justify-center gap-1.5 mb-1 text-muted-foreground">
-                         <CheckCircle className="w-3.5 h-3.5" />
-                         <span className="text-xs font-medium">Offers</span>
-                       </div>
-                       <div className="text-xl font-bold text-green-400">{client.offers}</div>
-                     </div>
-                     <div className="bg-white/5 rounded-lg p-3 text-center border border-white/5 group-hover:border-white/10 transition-colors">
-                       <div className="flex items-center justify-center gap-1.5 mb-1 text-muted-foreground">
-                         <DollarSign className="w-3.5 h-3.5" />
-                         <span className="text-xs font-medium">Spend</span>
-                       </div>
-                       <div className="text-xl font-bold text-white">${client.spend.toLocaleString()}</div>
-                     </div>
-                   </div>
-                 </CardContent>
-               </Card>
+                  <div className="grid grid-cols-4 gap-4">
+                    <div className="bg-white/5 rounded-lg p-3 text-center border border-white/5 group-hover:border-white/10 transition-colors">
+                      <div className="flex items-center justify-center gap-1.5 mb-1 text-muted-foreground">
+                        <Briefcase className="w-3.5 h-3.5" />
+                        <span className="text-xs font-medium">Applied</span>
+                      </div>
+                      <div className="text-xl font-bold text-white">
+                        {client.totalApps}
+                      </div>
+                    </div>
+                    <div className="bg-white/5 rounded-lg p-3 text-center border border-white/5 group-hover:border-white/10 transition-colors">
+                      <div className="flex items-center justify-center gap-1.5 mb-1 text-muted-foreground">
+                        <Calendar className="w-3.5 h-3.5" />
+                        <span className="text-xs font-medium">Interviews</span>
+                      </div>
+                      <div className="text-xl font-bold text-white">
+                        {client.interviews}
+                      </div>
+                    </div>
+                    <div className="bg-white/5 rounded-lg p-3 text-center border border-white/5 group-hover:border-white/10 transition-colors">
+                      <div className="flex items-center justify-center gap-1.5 mb-1 text-muted-foreground">
+                        <CheckCircle className="w-3.5 h-3.5" />
+                        <span className="text-xs font-medium">Offers</span>
+                      </div>
+                      <div className="text-xl font-bold text-green-400">
+                        {client.offers}
+                      </div>
+                    </div>
+                    <div className="bg-white/5 rounded-lg p-3 text-center border border-white/5 group-hover:border-white/10 transition-colors">
+                      <div className="flex items-center justify-center gap-1.5 mb-1 text-muted-foreground">
+                        <DollarSign className="w-3.5 h-3.5" />
+                        <span className="text-xs font-medium">Spend</span>
+                      </div>
+                      <div className="text-xl font-bold text-white">
+                        ${client.spend.toLocaleString()}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             ))}
           </div>
         )}
@@ -311,68 +409,109 @@ export default function AdminDashboardPage() {
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold text-white">Client Cost Tracking</h2>
           <div className="flex items-center gap-4 text-sm">
-            <span className="text-muted-foreground">Total: <span className="text-white font-bold">${totalCosts.toFixed(2)}</span></span>
-            <span className="text-muted-foreground">Pending: <span className="text-warning font-bold">${totalPending.toFixed(2)}</span></span>
+            <span className="text-muted-foreground">
+              Total:{" "}
+              <span className="text-white font-bold">
+                ${totalCosts.toFixed(2)}
+              </span>
+            </span>
+            <span className="text-muted-foreground">
+              Pending:{" "}
+              <span className="text-warning font-bold">
+                ${totalPending.toFixed(2)}
+              </span>
+            </span>
           </div>
         </div>
-        
+
         {isCostsLoading ? (
-          <div className="text-center py-8 text-muted-foreground">Loading cost data...</div>
+          <div className="text-center py-8 text-muted-foreground">
+            Loading cost data...
+          </div>
         ) : clientCosts.length === 0 ? (
           <Card className="bg-[#111] border-white/10">
             <CardContent className="py-8 text-center text-muted-foreground">
-              No cost data available yet. Earnings will appear here when bonuses are awarded.
+              No cost data available yet. Earnings will appear here when bonuses
+              are awarded.
             </CardContent>
           </Card>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {clientCosts.filter(c => c.total_cost > 0).map((cost) => (
-              <Card key={cost.client_id} className="bg-[#111] border-white/10 hover:border-white/20 transition-colors">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-bold text-white">{cost.client_name}</h3>
-                    <div className="text-2xl font-bold text-primary">${cost.total_cost.toFixed(2)}</div>
-                  </div>
-                  
-                  <div className="grid grid-cols-3 gap-3 mb-4">
-                    <div className="bg-white/5 rounded-lg p-3 text-center border border-white/5">
-                      <div className="flex items-center justify-center gap-1.5 mb-1 text-muted-foreground">
-                        <Target className="w-3.5 h-3.5" />
-                        <span className="text-xs">100 App Bonus</span>
+            {clientCosts
+              .filter((c) => c.total_cost > 0)
+              .map((cost) => (
+                <Card
+                  key={cost.client_id}
+                  className="bg-[#111] border-white/10 hover:border-white/20 transition-colors"
+                >
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-bold text-white">
+                        {cost.client_name}
+                      </h3>
+                      <div className="text-2xl font-bold text-primary">
+                        ${cost.total_cost.toFixed(2)}
                       </div>
-                      <div className="text-lg font-bold text-white">${cost.earnings_breakdown.application_milestone.toFixed(2)}</div>
                     </div>
-                    <div className="bg-white/5 rounded-lg p-3 text-center border border-white/5">
-                      <div className="flex items-center justify-center gap-1.5 mb-1 text-muted-foreground">
-                        <Award className="w-3.5 h-3.5" />
-                        <span className="text-xs">Interviews</span>
+
+                    <div className="grid grid-cols-3 gap-3 mb-4">
+                      <div className="bg-white/5 rounded-lg p-3 text-center border border-white/5">
+                        <div className="flex items-center justify-center gap-1.5 mb-1 text-muted-foreground">
+                          <Target className="w-3.5 h-3.5" />
+                          <span className="text-xs">100 App Bonus</span>
+                        </div>
+                        <div className="text-lg font-bold text-white">
+                          $
+                          {cost.earnings_breakdown.application_milestone.toFixed(
+                            2,
+                          )}
+                        </div>
                       </div>
-                      <div className="text-lg font-bold text-white">${cost.earnings_breakdown.interview_bonus.toFixed(2)}</div>
-                    </div>
-                    <div className="bg-white/5 rounded-lg p-3 text-center border border-white/5">
-                      <div className="flex items-center justify-center gap-1.5 mb-1 text-muted-foreground">
-                        <Gift className="w-3.5 h-3.5" />
-                        <span className="text-xs">Placements</span>
+                      <div className="bg-white/5 rounded-lg p-3 text-center border border-white/5">
+                        <div className="flex items-center justify-center gap-1.5 mb-1 text-muted-foreground">
+                          <Award className="w-3.5 h-3.5" />
+                          <span className="text-xs">Interviews</span>
+                        </div>
+                        <div className="text-lg font-bold text-white">
+                          ${cost.earnings_breakdown.interview_bonus.toFixed(2)}
+                        </div>
                       </div>
-                      <div className="text-lg font-bold text-success">${cost.earnings_breakdown.placement_bonus.toFixed(2)}</div>
+                      <div className="bg-white/5 rounded-lg p-3 text-center border border-white/5">
+                        <div className="flex items-center justify-center gap-1.5 mb-1 text-muted-foreground">
+                          <Gift className="w-3.5 h-3.5" />
+                          <span className="text-xs">Placements</span>
+                        </div>
+                        <div className="text-lg font-bold text-success">
+                          ${cost.earnings_breakdown.placement_bonus.toFixed(2)}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                  
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Paid: <span className="text-success">${cost.paid_amount.toFixed(2)}</span></span>
-                    <span className="text-muted-foreground">Pending: <span className="text-warning">${cost.pending_amount.toFixed(2)}</span></span>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">
+                        Paid:{" "}
+                        <span className="text-success">
+                          ${cost.paid_amount.toFixed(2)}
+                        </span>
+                      </span>
+                      <span className="text-muted-foreground">
+                        Pending:{" "}
+                        <span className="text-warning">
+                          ${cost.pending_amount.toFixed(2)}
+                        </span>
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
           </div>
         )}
       </div>
 
-      <EmailDialog 
-        isOpen={isEmailOpen} 
-        onClose={() => setIsEmailOpen(false)} 
-        recipient={selectedUser} 
+      <EmailDialog
+        isOpen={isEmailOpen}
+        onClose={() => setIsEmailOpen(false)}
+        recipient={selectedUser}
       />
     </div>
   );

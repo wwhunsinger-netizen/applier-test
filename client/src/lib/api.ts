@@ -600,6 +600,14 @@ export interface ResumeTailorResponse {
   suggestions: string;
   client_name: string;
 }
+export async function deleteClient(id: string): Promise<void> {
+  const response = await apiFetch(`${API_BASE}/clients/${id}`, {
+    method: "DELETE",
+  });
+  if (!response.ok) {
+    throw new Error("Failed to delete client");
+  }
+}
 
 export async function getResumeSuggestions(
   clientId: string,
