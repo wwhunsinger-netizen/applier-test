@@ -3,19 +3,28 @@ import { supabase } from "@/lib/supabase";
 import type { User } from "@shared/models/auth";
 
 async function fetchUser(): Promise<User | null> {
-  const { data: { session }, error } = await supabase.auth.getSession();
-  
+  const {
+    data: { session },
+    error,
+  } = await supabase.auth.getSession();
+
   if (error || !session?.user) {
     return null;
   }
 
   const supabaseUser = session.user;
-  
+
   return {
     id: supabaseUser.id,
     email: supabaseUser.email || "",
-    firstName: supabaseUser.user_metadata?.first_name || supabaseUser.user_metadata?.firstName || null,
-    lastName: supabaseUser.user_metadata?.last_name || supabaseUser.user_metadata?.lastName || null,
+    firstName:
+      supabaseUser.user_metadata?.first_name ||
+      supabaseUser.user_metadata?.firstName ||
+      null,
+    lastName:
+      supabaseUser.user_metadata?.last_name ||
+      supabaseUser.user_metadata?.lastName ||
+      null,
     profileImageUrl: supabaseUser.user_metadata?.avatar_url || null,
     createdAt: new Date(supabaseUser.created_at),
     updatedAt: new Date(),
@@ -45,7 +54,7 @@ export function useAuth() {
 
   return {
     user,
-    isLoading,
+    isLoading: isLoading || user === undefined,
     isAuthenticated: !!user,
     logout: logoutMutation.mutate,
     isLoggingOut: logoutMutation.isPending,
