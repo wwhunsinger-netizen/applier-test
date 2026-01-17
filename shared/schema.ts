@@ -188,6 +188,8 @@ export interface Application {
   created_at?: string;
   updated_at?: string;
   duration_seconds?: number;
+  prep_doc: string | null;
+  prep_doc_generated_at: string | null;
 }
 
 export interface Interview {

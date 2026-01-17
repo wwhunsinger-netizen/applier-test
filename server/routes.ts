@@ -388,6 +388,219 @@ export async function registerRoutes(
       }
     },
   );
+  app.post(
+    "/api/applications/:id/generate-prep",
+    isSupabaseAuthenticated,
+    async (req, res) => {
+      try {
+        const { jd_text } = req.body;
+        const applicationId = req.params.id;
+
+        if (!jd_text) {
+          return res.status(400).json({ error: "jd_text is required" });
+        }
+
+        // Fetch application
+        const application = await storage.getApplication(applicationId);
+        if (!application) {
+          return res.status(404).json({ error: "Application not found" });
+        }
+
+        // Fetch client for resume
+        const client = await storage.getClient(application.client_id);
+        if (!client) {
+          return res.status(404).json({ error: "Client not found" });
+        }
+
+        const resumeText = client.resume_text || "Resume not provided";
+
+        const apiKey = process.env.ANTHROPIC_API_KEY;
+        if (!apiKey) {
+          return res.status(500).json({ error: "Claude API not configured" });
+        }
+
+        const systemPrompt = `You are preparing a client for a job interview. Research the company thoroughly, then create a scannable cheat sheet.
+
+  STEP 1: RESEARCH (THIS IS CRITICAL - DO THIS FIRST)
+
+  Search extensively before writing anything. Dig into:
+
+  1. **Company basics** — what they do, size, funding stage, public/private, valuation if known, headquarters, remote policy
+
+  2. **Recent news (last 6 months)** — product launches, acquisitions, partnerships, earnings, leadership changes, layoffs, pivots, controversies. Search for "[company name] news", "[company name] 2024", "[company name] 2025"
+
+  3. **Strategic direction** — where are they headed? What are they betting on? Search for CEO interviews, company blog posts, conference talks, investor updates. What's their big narrative right now?
+
+  4. **Competitors** — who do they compete with? How are they positioned differently? What's their moat?
+
+  5. **Culture signals** — anything from the JD language, news, Glassdoor themes (but don't dwell on drama), company values page, how they talk about themselves
+
+  6. **Role context** — why does this role exist now? What problem are they solving? Is this a new team, backfill, or growth hire? Any clues about team structure or who they'd work with?
+
+  7. **Potential landmines** — layoffs, bad press, failed products, leadership departures, anything sensitive. The candidate needs to know but shouldn't bring up unprompted.
+
+  8. **Resume connections** — where does the candidate's experience connect to what this company needs? Where are the gaps they'll need to address?
+
+  Spend time here. The quality of the prep doc depends on the depth of your research.
+
+  STEP 2: OUTPUT
+
+  THE FORMAT BELOW IS MANDATORY. NOT SUGGESTIONS. REQUIREMENTS.
+
+  ## 60-SECOND BRIEFING
+  You MUST include this section first. Four bullets exactly:
+  - **Company:** [1 sentence, plain English]
+  - **Why they'd want you:** [1 sentence connecting resume to role]
+  - **Drop this in conversation:** [ONE short sentence they can actually say out loud, like "I saw you hit $400M ARR this year" or "I noticed you just launched X." MAX 15 words. Not a data dump. Not two facts. One punchy line.] If nothing found, write "Nothing recent worth mentioning"
+  - **Ask this question:** [1 smart question]
+
+  ## COMPANY SNAPSHOT
+  You MUST include this section. Four bullets exactly:
+  - **What they do:** [1 sentence]
+  - **Size/stage:** [employees, funding, public/private] — write "Couldn't confirm" if unknown
+  - **Competitors:** [2-3 names]
+  - **Trajectory:** [1 sentence]
+
+  ## NEWS WORTH KNOWING
+  You MUST include this section. 2-3 items MAX. Not 4. Not 5. Two or three.
+
+  Format EACH item exactly like this:
+  **[Headline]**
+  [1-2 sentences]
+  → *"I saw that [verbatim sentence they can speak]"*
+
+  If no news found: "No major news found. Focus on the role and product instead."
+
+  ## WHY YOU WANT TO WORK HERE
+  You MUST include this section. 3 bullets MAX.
+
+  CRITICAL: Write in FIRST PERSON. The candidate will say these OUT LOUD.
+
+  ✅ CORRECT: "I want to work here because the multi-tenancy challenge matches what I did at Duke Energy."
+  ❌ WRONG: "This aligns with your experience at Duke Energy."
+  ❌ WRONG: "The multi-tenancy challenge directly matches your background."
+
+  Start each bullet with:
+  - "I want to work here because..."
+  - "What excites me about this role is..."
+  - "I've been following..."
+
+  ## QUESTIONS TO ASK
+  You MUST include this section. 5 MAX. Label each [NEWS] or [ROLE].
+
+  No categories. No sub-headers. Just a flat list of 5 questions with labels.
+
+  ## QUESTIONS THEY'LL ASK
+  You MUST include this section. 6-8 questions.
+
+  Format EACH question EXACTLY like this — no other format allowed:
+
+  **"[Question]"**
+  - **What they're really asking:** [1 sentence]
+  - **Your angle:** [1 sentence referencing resume]
+
+  NO CATEGORIES. No "Technical:" or "Behavioral:" headers. Just the questions in this exact format.
+
+  ## SKILL GAPS
+  You MUST include this section. Check the JD against the resume.
+
+  Format:
+  **[Skill from JD not on resume]:** "[Exact sentence they can say to address it]"
+
+  If no gaps: "None identified — strong match."
+
+  DO NOT SKIP THIS SECTION.
+
+  ## LANDMINES
+  Include ONLY if research found something sensitive. 2 items MAX.
+
+  - **[Topic]:** [1 factual sentence]
+
+  DO NOT include Glassdoor drama, "backstabbing," "secretly disappeared," or anything that will stress the candidate out. If you can't state it in one calm sentence, leave it out.
+
+  If nothing sensitive: Skip this section entirely.
+
+  ---
+
+  STYLE RULES — VIOLATIONS ARE UNACCEPTABLE:
+
+  1. NO EM DASHES (—). This is critical. Replace every em dash with a period and new sentence, or use "but". Example: "multi-tenancy—HA—scalability" should be "multi-tenancy, HA, and scalability" or split into sentences.
+  2. NO SEMICOLONS.
+  3. BANNED PHRASES: "leverage," "robust," "streamline," "aligns with," "positions you well," "perfect for," "directly matches"
+  4. Short sentences (3-8 words) mixed with longer ones. Fragments OK.
+  5. Start sentences with And, But, So, Look, Here's the thing.
+  6. FIRST PERSON for "Why You Want to Work Here." These are speakable.
+  7. Parentheses for asides (like this).
+  8. If you wouldn't say it to a friend, rewrite it.
+
+  ---
+
+  BEFORE YOU RESPOND, CHECK:
+  □ Did I include 60-SECOND BRIEFING? (REQUIRED)
+  □ Did I include SKILL GAPS? (REQUIRED)
+  □ Is "WHY YOU WANT TO WORK HERE" in first person? (REQUIRED)
+  □ Did I use any em dashes (—)? Search your response. Replace ALL of them with periods or commas.
+  □ Is "Drop this in conversation" under 15 words and actually speakable? (Not a data dump)
+  □ Did I add anxiety-inducing Glassdoor drama to Landmines? (REMOVE IT)
+  □ Did I add category headers to "Questions They'll Ask"? (REMOVE THEM)`;
+
+        const userMessage = `JOB DESCRIPTION:
+  ${jd_text}
+
+  CLIENT RESUME:
+  ${resumeText}`;
+
+        console.log(
+          `[PrepDoc] Generating for application ${applicationId}, company: ${application.company_name}`,
+        );
+
+        const response = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": apiKey,
+            "anthropic-version": "2023-06-01",
+          },
+          body: JSON.stringify({
+            model: "claude-sonnet-4-5-20250929",
+            max_tokens: 8000,
+            system: systemPrompt,
+            tools: [{ type: "web_search_20250305", name: "web_search" }],
+            messages: [{ role: "user", content: userMessage }],
+          }),
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error("[PrepDoc] Claude API error:", errorText);
+          return res.status(500).json({ error: "Failed to generate prep doc" });
+        }
+
+        const data = await response.json();
+
+        // Extract text from response (may have multiple content blocks due to web search)
+        const prepDoc = data.content
+          .filter((block: any) => block.type === "text")
+          .map((block: any) => block.text)
+          .join("\n");
+
+        // Save to application
+        const updated = await storage.updateApplication(applicationId, {
+          prep_doc: prepDoc,
+          prep_doc_generated_at: new Date().toISOString(),
+        });
+
+        console.log(
+          `[PrepDoc] Generated and saved for ${application.company_name}`,
+        );
+
+        res.json({ success: true, prep_doc: prepDoc });
+      } catch (error) {
+        console.error("[PrepDoc] Error:", error);
+        res.status(500).json({ error: "Failed to generate prep doc" });
+      }
+    },
+  );
 
   // Interview routes
   app.get("/api/interviews", isSupabaseAuthenticated, async (req, res) => {
