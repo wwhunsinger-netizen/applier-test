@@ -1,4 +1,10 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useQueryClient } from "@tanstack/react-query";
 import { fetchClients, fetchAppliers } from "./api";
@@ -25,10 +31,15 @@ const UserContext = createContext<UserContextType | undefined>(undefined);
 const ADMIN_EMAILS = ["admin@jumpseat.com", "admin@jumpseathub.com"];
 
 export function UserProvider({ children }: { children: ReactNode }) {
-  const { user: authUser, isLoading: authLoading, isAuthenticated: authAuthenticated, logout: authLogout } = useAuth();
+  const {
+    user: authUser,
+    isLoading: authLoading,
+    isAuthenticated: authAuthenticated,
+    logout: authLogout,
+  } = useAuth();
   const queryClient = useQueryClient();
   const [appUser, setAppUser] = useState<AppUser | null>(null);
-  const [roleLoading, setRoleLoading] = useState(false);
+  const [roleLoading, setRoleLoading] = useState(true);
 
   useEffect(() => {
     if (!authUser?.email) {
@@ -39,11 +50,13 @@ export function UserProvider({ children }: { children: ReactNode }) {
     const determineRole = async () => {
       setRoleLoading(true);
       const email = authUser.email!;
-      
+
       if (ADMIN_EMAILS.includes(email.toLowerCase())) {
         setAppUser({
           id: authUser.id,
-          name: `${authUser.firstName || ""} ${authUser.lastName || ""}`.trim() || "Admin",
+          name:
+            `${authUser.firstName || ""} ${authUser.lastName || ""}`.trim() ||
+            "Admin",
           email: email,
           role: "Admin",
           avatar: authUser.profileImageUrl ?? null,
@@ -53,9 +66,14 @@ export function UserProvider({ children }: { children: ReactNode }) {
       }
 
       try {
-        const [appliers, clients] = await Promise.all([fetchAppliers(), fetchClients()]);
+        const [appliers, clients] = await Promise.all([
+          fetchAppliers(),
+          fetchClients(),
+        ]);
 
-        const applier = appliers.find(a => a.email.toLowerCase() === email.toLowerCase() && a.is_active);
+        const applier = appliers.find(
+          (a) => a.email.toLowerCase() === email.toLowerCase() && a.is_active,
+        );
         if (applier) {
           setAppUser({
             id: applier.id,
@@ -68,7 +86,9 @@ export function UserProvider({ children }: { children: ReactNode }) {
           return;
         }
 
-        const client = clients.find(c => c.email.toLowerCase() === email.toLowerCase());
+        const client = clients.find(
+          (c) => c.email.toLowerCase() === email.toLowerCase(),
+        );
         if (client) {
           setAppUser({
             id: client.id,
@@ -83,7 +103,9 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
         setAppUser({
           id: authUser.id,
-          name: `${authUser.firstName || ""} ${authUser.lastName || ""}`.trim() || email,
+          name:
+            `${authUser.firstName || ""} ${authUser.lastName || ""}`.trim() ||
+            email,
           email: email,
           role: "Client",
           avatar: authUser.profileImageUrl ?? null,
@@ -92,7 +114,9 @@ export function UserProvider({ children }: { children: ReactNode }) {
         console.error("Error determining user role:", error);
         setAppUser({
           id: authUser.id,
-          name: `${authUser.firstName || ""} ${authUser.lastName || ""}`.trim() || email,
+          name:
+            `${authUser.firstName || ""} ${authUser.lastName || ""}`.trim() ||
+            email,
           email: email,
           role: "Client",
           avatar: authUser.profileImageUrl ?? null,
@@ -111,12 +135,14 @@ export function UserProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <UserContext.Provider value={{ 
-      currentUser: appUser, 
-      logout, 
-      isAuthenticated: authAuthenticated && appUser !== null,
-      isLoading: authLoading || roleLoading
-    }}>
+    <UserContext.Provider
+      value={{
+        currentUser: appUser,
+        logout,
+        isAuthenticated: authAuthenticated && appUser !== null,
+        isLoading: authLoading || roleLoading,
+      }}
+    >
       {children}
     </UserContext.Provider>
   );
