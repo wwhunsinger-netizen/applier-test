@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import type { User } from "@shared/models/auth";
+
 async function fetchUser(): Promise<User | null> {
   const {
     data: { session },
@@ -26,14 +27,16 @@ async function fetchUser(): Promise<User | null> {
     updatedAt: new Date(),
   };
 }
+
 async function logout(): Promise<void> {
   await supabase.auth.signOut();
-  window.location.href = "/login";
+  window.location.href = "/";
 }
+
 export function useAuth() {
   const queryClient = useQueryClient();
 
-  const { data: user, isPending } = useQuery<User | null>({
+  const { data: user, isLoading } = useQuery<User | null>({
     queryKey: ["supabase-auth-user"],
     queryFn: fetchUser,
     retry: false,
@@ -49,7 +52,7 @@ export function useAuth() {
 
   return {
     user,
-    isLoading: isPending,
+    isLoading,
     isAuthenticated: !!user,
     logout: logoutMutation.mutate,
     isLoggingOut: logoutMutation.isPending,
