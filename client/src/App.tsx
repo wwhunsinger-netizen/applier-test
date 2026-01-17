@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import Layout from "@/components/layout";
 import LoginPage from "@/pages/login";
+import ResetPasswordPage from "@/pages/reset-password";
 import DashboardPage from "@/pages/dashboard";
 import QueuePage from "@/pages/queue";
 import ReviewPage from "@/pages/review";
@@ -89,6 +90,18 @@ function Router() {
 }
 
 function App() {
+  // Handle reset-password route outside of auth (check URL hash for recovery token)
+  if (window.location.hash.includes("type=recovery")) {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Toaster />
+          <ResetPasswordPage />
+        </TooltipProvider>
+      </QueryClientProvider>
+    );
+  }
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
