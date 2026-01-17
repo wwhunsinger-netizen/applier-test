@@ -32,16 +32,16 @@ export default function ClientInterviewsPage() {
 
   // Fetch applications with interview status for this client
   const { data: interviewApps = [], isLoading } = useQuery({
-    queryKey: ["client-interviews", currentUser.id],
+    queryKey: ["client-interviews", currentUser?.id],
     queryFn: async () => {
       const response = await apiFetch(
-        `/api/applications?client_id=${currentUser.id}`,
+        `/api/applications?client_id=${currentUser?.id}`,
       );
       if (!response.ok) throw new Error("Failed to fetch applications");
       const apps = await response.json();
       return apps.filter((app: Application) => app.status === "Interview");
     },
-    enabled: !!currentUser.id,
+    enabled: !!currentUser?.id,
   });
 
   // Open prep doc modal
