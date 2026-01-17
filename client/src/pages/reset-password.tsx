@@ -63,7 +63,7 @@ export default function ResetPasswordPage() {
 
       // Redirect to login after 2 seconds
       setTimeout(() => {
-        window.location.href = "/login";
+        window.location.href = "/";
       }, 2000);
     } catch (err: any) {
       setError(err.message || "Failed to reset password. Please try again.");
@@ -96,7 +96,7 @@ export default function ResetPasswordPage() {
           <CardContent>
             <Button
               className="w-full font-bold shadow-lg shadow-primary/20 bg-primary hover:bg-primary/90 text-white h-11"
-              onClick={() => (window.location.href = "/login")}
+              onClick={() => (window.location.href = "/")}
             >
               Back to Login
             </Button>
