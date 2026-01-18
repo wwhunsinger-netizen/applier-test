@@ -83,7 +83,7 @@ export default function ClientDocumentsPage() {
   const [isFlipped, setIsFlipped] = useState(false);
   
   // Check if this is a real Supabase UUID vs mock ID
-  const isRealClientId = Boolean(currentUser.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(currentUser.id));
+  const isRealClientId = Boolean(currentUser?.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(currentUser.id));
   
   // Fetch client data from API to get current approval status
   const { data: clientData } = useQuery({

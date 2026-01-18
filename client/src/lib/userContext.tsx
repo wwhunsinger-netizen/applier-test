@@ -44,6 +44,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!authUser?.email) {
       setAppUser(null);
+      setRoleLoading(false);
       return;
     }
 
