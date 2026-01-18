@@ -80,7 +80,6 @@ export default function AdminClientDetailPage() {
 
   // All useState hooks must be declared before any early returns
   const [activeTab, setActiveTab] = useState("resume");
-  const [isAddInterviewOpen, setIsAddInterviewOpen] = useState(false);
   const [isCommentsOpen, setIsCommentsOpen] = useState(false);
   const [isJobCriteriaOpen, setIsJobCriteriaOpen] = useState(true);
   const [isCredentialsOpen, setIsCredentialsOpen] = useState(false);
@@ -1179,7 +1178,6 @@ export default function AdminClientDetailPage() {
           <TabsTrigger value="resume">Resume</TabsTrigger>
           <TabsTrigger value="cover-letters">Cover Letters</TabsTrigger>
           <TabsTrigger value="linkedin">LinkedIn</TabsTrigger>
-          <TabsTrigger value="interviews">Interviews</TabsTrigger>
         </TabsList>
 
         {/* Resume Tab */}
@@ -1723,77 +1721,6 @@ export default function AdminClientDetailPage() {
                     </div>
                   </div>
                 )}
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        {/* Interviews Tab */}
-        <TabsContent value="interviews" className="space-y-6">
-          <div className="flex justify-between items-center bg-white/5 p-4 rounded-lg border border-white/10">
-            <div>
-              <h3 className="font-medium text-white flex items-center gap-2">
-                <img
-                  src="https://upload.wikimedia.org/wikipedia/commons/a/a5/Google_Calendar_icon_%282020%29.svg"
-                  alt="Google Calendar"
-                  className="w-5 h-5"
-                />
-                Interview Sync
-              </h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                Automatically syncing with client's Google Calendar (
-                {client.email})
-              </p>
-            </div>
-            <div className="flex items-center gap-2 text-sm text-green-400 bg-green-400/10 px-3 py-1.5 rounded-full border border-green-400/20">
-              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-              Connected
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <h3 className="text-xl font-bold text-white">
-              Upcoming Interviews (Synced)
-            </h3>
-
-            {/* Mock Interview Item */}
-            <Card className="bg-[#111] border-white/10">
-              <CardContent className="p-0">
-                <div className="flex flex-col md:flex-row items-center justify-between p-6 gap-4">
-                  <div className="flex items-center gap-4">
-                    <div className="h-12 w-12 rounded bg-green-500/10 flex items-center justify-center text-green-500">
-                      <CheckCircle2 className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-lg font-bold text-white">Google</h3>
-                        <Badge
-                          variant="outline"
-                          className="border-green-500/20 text-green-500 bg-green-500/10"
-                        >
-                          Prep Doc Complete
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-white/80">
-                        Senior Product Manager
-                      </p>
-                      <div className="text-xs text-muted-foreground flex items-center gap-3 mt-1">
-                        <span className="flex items-center gap-1">
-                          <Calendar className="w-3 h-3" /> Jan 5, 2025
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-3 h-3" /> 2:00 PM
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex gap-2 w-full md:w-auto">
-                    <Button className="flex-1 md:flex-none bg-white text-black hover:bg-white/90">
-                      <FileText className="w-4 h-4 mr-2" />
-                      Edit Prep Doc
-                    </Button>
-                  </div>
-                </div>
               </CardContent>
             </Card>
           </div>
