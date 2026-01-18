@@ -19,9 +19,12 @@ import {
   Gift,
   Target,
   Loader2,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { EmailDialog } from "@/components/admin/email-dialog";
+import { Link } from "wouter";
 import {
   fetchClientCosts,
   fetchAdminOverview,
@@ -45,6 +48,9 @@ export default function AdminDashboardPage() {
     ClientPerformance[]
   >([]);
   const [isClientPerfLoading, setIsClientPerfLoading] = useState(true);
+  const [expandedClients, setExpandedClients] = useState<Set<string>>(
+    new Set(),
+  );
 
   useEffect(() => {
     fetchClientCosts()
@@ -68,6 +74,18 @@ export default function AdminDashboardPage() {
     setIsEmailOpen(true);
   };
 
+  const toggleClientExpanded = (clientId: string) => {
+    setExpandedClients((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(clientId)) {
+        newSet.delete(clientId);
+      } else {
+        newSet.add(clientId);
+      }
+      return newSet;
+    });
+  };
+
   // Calculate total costs across all clients
   const totalCosts = clientCosts.reduce((acc, c) => acc + c.total_cost, 0);
   const totalPending = clientCosts.reduce(
@@ -81,6 +99,13 @@ export default function AdminDashboardPage() {
   const activeReviewers = overview?.summary.activeReviewers || 0;
   const totalAppliers = overview?.summary.totalAppliers || 0;
   const appliers = overview?.appliers || [];
+
+  // Helper to get cost data for a client
+  const getCostForClient = (clientId: string): ClientCost | undefined => {
+    return clientCosts.find((c) => c.client_id === clientId);
+  };
+
+  const isLoading = isClientPerfLoading || isCostsLoading;
 
   return (
     <div className="space-y-8">
@@ -146,6 +171,27 @@ export default function AdminDashboardPage() {
             </div>
           </CardContent>
         </Card>
+
+        <Card className="bg-[#111] border-white/10">
+          <CardContent className="p-6 flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">
+                Total Client Spend
+              </p>
+              <div className="text-2xl font-bold text-white mt-1">
+                ${totalCosts.toFixed(0)}
+              </div>
+              {totalPending > 0 && (
+                <p className="text-xs text-yellow-500 mt-1">
+                  ${totalPending.toFixed(0)} pending
+                </p>
+              )}
+            </div>
+            <div className="h-10 w-10 rounded-full bg-green-500/10 flex items-center justify-center text-green-500">
+              <DollarSign className="w-5 h-5" />
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Team Performance Grid */}
@@ -188,96 +234,43 @@ export default function AdminDashboardPage() {
                         />
                       </div>
                       <div>
-                        <div className="flex items-center gap-2">
-                          <CardTitle className="text-base font-medium text-white">
-                            {user.name}
-                          </CardTitle>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 text-muted-foreground hover:text-white hover:bg-white/10"
-                            onClick={() => handleEmailClick(user)}
-                            data-testid={`email-${user.id}`}
-                          >
-                            <Mail className="w-3.5 h-3.5" />
-                          </Button>
-                        </div>
+                        <h3 className="font-bold text-white">{user.name}</h3>
                         <p className="text-xs text-muted-foreground">
-                          {user.status} • {user.lastActive}
+                          {user.status}
                         </p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className="text-2xl font-bold text-white">
-                        {user.dailyApps}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        apps today
-                      </div>
-                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleEmailClick(user)}
+                    >
+                      <Mail className="w-4 h-4 text-muted-foreground hover:text-white" />
+                    </Button>
                   </CardHeader>
-                  <CardContent className="space-y-4 pt-4">
-                    {/* Daily Progress Bar */}
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-xs">
-                        <span className="text-muted-foreground">
-                          Daily Goal ({user.dailyGoal})
-                        </span>
-                        <span
-                          className={cn(
-                            "font-medium",
-                            user.dailyApps >= user.dailyGoal
-                              ? "text-green-500"
-                              : "text-white",
-                          )}
-                        >
-                          {Math.round((user.dailyApps / user.dailyGoal) * 100)}%
-                        </span>
-                      </div>
-                      <Progress
-                        value={Math.min(
-                          (user.dailyApps / user.dailyGoal) * 100,
-                          100,
-                        )}
-                        className="h-2 bg-white/5"
-                        indicatorClassName={cn(
-                          user.dailyApps >= user.dailyGoal
-                            ? "bg-green-500"
-                            : "bg-primary",
-                        )}
-                      />
-                    </div>
-
-                    {/* Weekly Progress Bar */}
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-xs">
-                        <span className="text-muted-foreground">
-                          Weekly Goal ({user.weeklyGoal})
-                        </span>
-                        <span className="text-white font-medium">
-                          {Math.round(
-                            (user.weeklyApps / user.weeklyGoal) * 100,
-                          )}
-                          %
-                        </span>
-                      </div>
-                      <Progress
-                        value={Math.min(
-                          (user.weeklyApps / user.weeklyGoal) * 100,
-                          100,
-                        )}
-                        className="h-1.5 bg-white/5"
-                        indicatorClassName="bg-blue-500"
-                      />
-                    </div>
-
-                    {/* KPIs */}
-                    <div className="grid grid-cols-2 gap-2 pt-2">
-                      <div className="bg-white/5 rounded p-2 text-center">
-                        <div className="text-xs text-muted-foreground mb-1">
-                          Interview Rate
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-3 gap-2 text-center">
+                      <div className="bg-white/5 rounded-lg p-2">
+                        <div className="text-xs text-muted-foreground">
+                          Today
                         </div>
-                        <div className="font-bold font-mono text-white">
+                        <div className="font-bold text-white">
+                          {user.dailyApps}
+                        </div>
+                      </div>
+                      <div className="bg-white/5 rounded-lg p-2">
+                        <div className="text-xs text-muted-foreground">
+                          Week
+                        </div>
+                        <div className="font-bold text-white">
+                          {user.weeklyApps}
+                        </div>
+                      </div>
+                      <div className="bg-white/5 rounded-lg p-2">
+                        <div className="text-xs text-muted-foreground">
+                          Int Rate
+                        </div>
+                        <div className="font-bold text-white">
                           {user.interviewRate}%
                         </div>
                       </div>
@@ -290,16 +283,20 @@ export default function AdminDashboardPage() {
         )}
       </div>
 
-      {/* Client Performance Section */}
+      {/* Combined Client Performance & Cost Tracking */}
       <div>
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold text-white">Client Performance</h2>
-          <Button variant="outline" size="sm">
-            View All Clients
-          </Button>
+          <h2 className="text-xl font-bold text-white">
+            Client Performance & Costs
+          </h2>
+          <Link href="/admin/clients">
+            <Button variant="outline" size="sm">
+              View All Clients
+            </Button>
+          </Link>
         </div>
 
-        {isClientPerfLoading ? (
+        {isLoading ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
           </div>
@@ -309,201 +306,189 @@ export default function AdminDashboardPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {clientPerformance.map((client) => (
-              <Card
-                key={client.id}
-                className="bg-[#111] border-white/10 hover:border-white/20 transition-colors group"
-                data-testid={`client-card-${client.id}`}
-              >
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-4">
-                      <div className="relative">
-                        <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold border border-white/10">
-                          {client.name
-                            .split(" ")
-                            .map((n) => n[0])
-                            .join("")}
-                        </div>
-                        <span
-                          className={cn(
-                            "absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-[#111]",
-                            client.status === "active"
-                              ? "bg-green-500"
-                              : client.status === "placed"
-                                ? "bg-blue-500"
-                                : "bg-yellow-500",
-                          )}
-                        />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h3 className="text-lg font-bold text-white">
-                            {client.name}
-                          </h3>
-                          <span className="text-xs text-muted-foreground bg-white/5 px-1.5 py-0.5 rounded border border-white/10">
-                            Started {client.startDate}
-                          </span>
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          Last activity {client.lastActivity}
-                        </p>
-                      </div>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <TrendingUp className="w-4 h-4 text-muted-foreground hover:text-white" />
-                    </Button>
-                  </div>
+            {clientPerformance.map((client) => {
+              const costData = getCostForClient(client.id);
+              const isExpanded = expandedClients.has(client.id);
 
-                  <div className="grid grid-cols-4 gap-4">
-                    <div className="bg-white/5 rounded-lg p-3 text-center border border-white/5 group-hover:border-white/10 transition-colors">
-                      <div className="flex items-center justify-center gap-1.5 mb-1 text-muted-foreground">
-                        <Briefcase className="w-3.5 h-3.5" />
-                        <span className="text-xs font-medium">Applied</span>
-                      </div>
-                      <div className="text-xl font-bold text-white">
-                        {client.totalApps}
-                      </div>
-                    </div>
-                    <div className="bg-white/5 rounded-lg p-3 text-center border border-white/5 group-hover:border-white/10 transition-colors">
-                      <div className="flex items-center justify-center gap-1.5 mb-1 text-muted-foreground">
-                        <Calendar className="w-3.5 h-3.5" />
-                        <span className="text-xs font-medium">Interviews</span>
-                      </div>
-                      <div className="text-xl font-bold text-white">
-                        {client.interviews}
-                      </div>
-                    </div>
-                    <div className="bg-white/5 rounded-lg p-3 text-center border border-white/5 group-hover:border-white/10 transition-colors">
-                      <div className="flex items-center justify-center gap-1.5 mb-1 text-muted-foreground">
-                        <CheckCircle className="w-3.5 h-3.5" />
-                        <span className="text-xs font-medium">Offers</span>
-                      </div>
-                      <div className="text-xl font-bold text-green-400">
-                        {client.offers}
-                      </div>
-                    </div>
-                    <div className="bg-white/5 rounded-lg p-3 text-center border border-white/5 group-hover:border-white/10 transition-colors">
-                      <div className="flex items-center justify-center gap-1.5 mb-1 text-muted-foreground">
-                        <DollarSign className="w-3.5 h-3.5" />
-                        <span className="text-xs font-medium">Spend</span>
-                      </div>
-                      <div className="text-xl font-bold text-white">
-                        ${client.spend.toLocaleString()}
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Client Cost Tracking */}
-      <div>
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold text-white">Client Cost Tracking</h2>
-          <div className="flex items-center gap-4 text-sm">
-            <span className="text-muted-foreground">
-              Total:{" "}
-              <span className="text-white font-bold">
-                ${totalCosts.toFixed(2)}
-              </span>
-            </span>
-            <span className="text-muted-foreground">
-              Pending:{" "}
-              <span className="text-warning font-bold">
-                ${totalPending.toFixed(2)}
-              </span>
-            </span>
-          </div>
-        </div>
-
-        {isCostsLoading ? (
-          <div className="text-center py-8 text-muted-foreground">
-            Loading cost data...
-          </div>
-        ) : clientCosts.length === 0 ? (
-          <Card className="bg-[#111] border-white/10">
-            <CardContent className="py-8 text-center text-muted-foreground">
-              No cost data available yet. Earnings will appear here when bonuses
-              are awarded.
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {clientCosts
-              .filter((c) => c.total_cost > 0)
-              .map((cost) => (
+              return (
                 <Card
-                  key={cost.client_id}
-                  className="bg-[#111] border-white/10 hover:border-white/20 transition-colors"
+                  key={client.id}
+                  className="bg-[#111] border-white/10 hover:border-white/20 transition-colors group"
+                  data-testid={`client-card-${client.id}`}
                 >
                   <CardContent className="p-6">
+                    {/* Client Header */}
                     <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-bold text-white">
-                        {cost.client_name}
-                      </h3>
-                      <div className="text-2xl font-bold text-primary">
-                        ${cost.total_cost.toFixed(2)}
+                      <div className="flex items-center gap-4">
+                        <div className="relative">
+                          <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold border border-white/10">
+                            {client.name
+                              .split(" ")
+                              .map((n) => n[0])
+                              .join("")}
+                          </div>
+                          <span
+                            className={cn(
+                              "absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-[#111]",
+                              client.status === "active"
+                                ? "bg-green-500"
+                                : client.status === "placed"
+                                  ? "bg-blue-500"
+                                  : "bg-yellow-500",
+                            )}
+                          />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-lg font-bold text-white">
+                              {client.name}
+                            </h3>
+                            <span className="text-xs text-muted-foreground bg-white/5 px-1.5 py-0.5 rounded border border-white/10">
+                              Started {client.startDate}
+                            </span>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            Last activity {client.lastActivity}
+                          </p>
+                        </div>
+                      </div>
+                      {costData && costData.total_cost > 0 && (
+                        <div className="text-right">
+                          <div className="text-2xl font-bold text-primary">
+                            ${costData.total_cost.toFixed(0)}
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            total spend
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Performance Stats */}
+                    <div className="grid grid-cols-4 gap-3 mb-4">
+                      <div className="bg-white/5 rounded-lg p-3 text-center border border-white/5 group-hover:border-white/10 transition-colors">
+                        <div className="flex items-center justify-center gap-1.5 mb-1 text-muted-foreground">
+                          <Briefcase className="w-3.5 h-3.5" />
+                          <span className="text-xs font-medium">Applied</span>
+                        </div>
+                        <div className="text-xl font-bold text-white">
+                          {client.totalApps}
+                        </div>
+                      </div>
+                      <div className="bg-white/5 rounded-lg p-3 text-center border border-white/5 group-hover:border-white/10 transition-colors">
+                        <div className="flex items-center justify-center gap-1.5 mb-1 text-muted-foreground">
+                          <Calendar className="w-3.5 h-3.5" />
+                          <span className="text-xs font-medium">
+                            Interviews
+                          </span>
+                        </div>
+                        <div className="text-xl font-bold text-white">
+                          {client.interviews}
+                        </div>
+                      </div>
+                      <div className="bg-white/5 rounded-lg p-3 text-center border border-white/5 group-hover:border-white/10 transition-colors">
+                        <div className="flex items-center justify-center gap-1.5 mb-1 text-muted-foreground">
+                          <CheckCircle className="w-3.5 h-3.5" />
+                          <span className="text-xs font-medium">Offers</span>
+                        </div>
+                        <div className="text-xl font-bold text-green-400">
+                          {client.offers}
+                        </div>
+                      </div>
+                      <div className="bg-white/5 rounded-lg p-3 text-center border border-white/5 group-hover:border-white/10 transition-colors">
+                        <div className="flex items-center justify-center gap-1.5 mb-1 text-muted-foreground">
+                          <DollarSign className="w-3.5 h-3.5" />
+                          <span className="text-xs font-medium">Spend</span>
+                        </div>
+                        <div className="text-xl font-bold text-white">
+                          ${client.spend.toLocaleString()}
+                        </div>
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-3 mb-4">
-                      <div className="bg-white/5 rounded-lg p-3 text-center border border-white/5">
-                        <div className="flex items-center justify-center gap-1.5 mb-1 text-muted-foreground">
-                          <Target className="w-3.5 h-3.5" />
-                          <span className="text-xs">100 App Bonus</span>
-                        </div>
-                        <div className="text-lg font-bold text-white">
-                          $
-                          {cost.earnings_breakdown.application_milestone.toFixed(
-                            2,
+                    {/* Expandable Cost Breakdown */}
+                    {costData && costData.total_cost > 0 && (
+                      <>
+                        <button
+                          onClick={() => toggleClientExpanded(client.id)}
+                          className="w-full flex items-center justify-center gap-2 text-xs text-muted-foreground hover:text-white py-2 border-t border-white/5 transition-colors"
+                        >
+                          {isExpanded ? (
+                            <>
+                              Hide cost breakdown{" "}
+                              <ChevronUp className="w-3 h-3" />
+                            </>
+                          ) : (
+                            <>
+                              View cost breakdown{" "}
+                              <ChevronDown className="w-3 h-3" />
+                            </>
                           )}
-                        </div>
-                      </div>
-                      <div className="bg-white/5 rounded-lg p-3 text-center border border-white/5">
-                        <div className="flex items-center justify-center gap-1.5 mb-1 text-muted-foreground">
-                          <Award className="w-3.5 h-3.5" />
-                          <span className="text-xs">Interviews</span>
-                        </div>
-                        <div className="text-lg font-bold text-white">
-                          ${cost.earnings_breakdown.interview_bonus.toFixed(2)}
-                        </div>
-                      </div>
-                      <div className="bg-white/5 rounded-lg p-3 text-center border border-white/5">
-                        <div className="flex items-center justify-center gap-1.5 mb-1 text-muted-foreground">
-                          <Gift className="w-3.5 h-3.5" />
-                          <span className="text-xs">Placements</span>
-                        </div>
-                        <div className="text-lg font-bold text-success">
-                          ${cost.earnings_breakdown.placement_bonus.toFixed(2)}
-                        </div>
-                      </div>
-                    </div>
+                        </button>
 
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">
-                        Paid:{" "}
-                        <span className="text-success">
-                          ${cost.paid_amount.toFixed(2)}
-                        </span>
-                      </span>
-                      <span className="text-muted-foreground">
-                        Pending:{" "}
-                        <span className="text-warning">
-                          ${cost.pending_amount.toFixed(2)}
-                        </span>
-                      </span>
-                    </div>
+                        {isExpanded && (
+                          <div className="pt-4 space-y-4 animate-in slide-in-from-top-2 duration-200">
+                            <div className="grid grid-cols-3 gap-3">
+                              <div className="bg-white/5 rounded-lg p-3 text-center border border-white/5">
+                                <div className="flex items-center justify-center gap-1.5 mb-1 text-muted-foreground">
+                                  <Target className="w-3.5 h-3.5" />
+                                  <span className="text-xs">100 App Bonus</span>
+                                </div>
+                                <div className="text-lg font-bold text-white">
+                                  $
+                                  {costData.earnings_breakdown.application_milestone.toFixed(
+                                    0,
+                                  )}
+                                </div>
+                              </div>
+                              <div className="bg-white/5 rounded-lg p-3 text-center border border-white/5">
+                                <div className="flex items-center justify-center gap-1.5 mb-1 text-muted-foreground">
+                                  <Award className="w-3.5 h-3.5" />
+                                  <span className="text-xs">Interviews</span>
+                                </div>
+                                <div className="text-lg font-bold text-white">
+                                  $
+                                  {costData.earnings_breakdown.interview_bonus.toFixed(
+                                    0,
+                                  )}
+                                </div>
+                              </div>
+                              <div className="bg-white/5 rounded-lg p-3 text-center border border-white/5">
+                                <div className="flex items-center justify-center gap-1.5 mb-1 text-muted-foreground">
+                                  <Gift className="w-3.5 h-3.5" />
+                                  <span className="text-xs">Placements</span>
+                                </div>
+                                <div className="text-lg font-bold text-green-400">
+                                  $
+                                  {costData.earnings_breakdown.placement_bonus.toFixed(
+                                    0,
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="flex justify-between text-sm px-1">
+                              <span className="text-muted-foreground">
+                                Paid:{" "}
+                                <span className="text-green-400">
+                                  ${costData.paid_amount.toFixed(0)}
+                                </span>
+                              </span>
+                              <span className="text-muted-foreground">
+                                Pending:{" "}
+                                <span className="text-yellow-400">
+                                  ${costData.pending_amount.toFixed(0)}
+                                </span>
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    )}
                   </CardContent>
                 </Card>
-              ))}
+              );
+            })}
           </div>
         )}
       </div>
