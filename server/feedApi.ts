@@ -297,9 +297,10 @@ export function toDisplayJobs(
       // Get the first job_data_point (or empty object if none)
       const jobData = job.job_data_points?.[0] || ({} as JobDataPoint);
 
-      // Find match strength for this client
-      const aiFilter = job.wilsons_ai_filter_by_user?.find(
-        (f) => f.user_id === (clientId || job.client_id),
+      // Find match strength from inside job_data_points
+      // wilsons_ai_filter_by_user is nested inside each job_data_point
+      const aiFilter = (jobData as any).wilsons_ai_filter_by_user?.find(
+        (f: any) => f.user_id === clientId || !clientId,
       );
       const matchStrength = aiFilter?.match_strength || null;
 
@@ -315,7 +316,7 @@ export function toDisplayJobs(
         salary_max: null,
         job_type: null,
         remote: null,
-        source: null,
+        source: jobData.source || null,
         client_id: job.client_id || "",
         applier_id: job.applier_id || "",
         match_strength: matchStrength,
