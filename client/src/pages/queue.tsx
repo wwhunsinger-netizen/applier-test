@@ -83,6 +83,7 @@ export default function QueuePage() {
   const [gptAnswer, setGptAnswer] = useState("");
   const [gptLoading, setGptLoading] = useState(false);
   const [gptError, setGptError] = useState("");
+  const [activeJob, setActiveJob] = useState<FeedJob | null>(null);
 
   const handleAskClientGPT = async () => {
     if (!gptQuestion.trim() || !currentUser?.id) return;
@@ -98,6 +99,8 @@ export default function QueuePage() {
         body: JSON.stringify({
           applier_id: currentUser.id,
           question: gptQuestion.trim(),
+          job_title: activeJob?.job_title,
+          company_name: activeJob?.company_name,
         }),
       });
 
@@ -210,6 +213,9 @@ export default function QueuePage() {
     (job: FeedJob) => {
       const jobId = String(job.job_id);
       const state = jobStates[jobId];
+
+      // Set this as the active job for ClientGPT context
+      setActiveJob(job);
 
       // If already reviewing or applied, just open URL
       if (state?.status === "reviewing" || state?.status === "applied") {
@@ -463,10 +469,17 @@ export default function QueuePage() {
             className="fixed top-20 right-4 w-96 bg-card border border-border rounded-lg shadow-lg z-50"
           >
             <div className="flex items-center justify-between p-3 border-b border-border bg-muted/30 rounded-t-lg">
-              <span className="font-medium text-sm flex items-center gap-2">
-                <MessageSquare className="w-4 h-4 text-primary" />
-                Ask about the client
-              </span>
+              <div className="flex-1">
+                <span className="font-medium text-sm flex items-center gap-2">
+                  <MessageSquare className="w-4 h-4 text-primary" />
+                  ClientGPT
+                </span>
+                {activeJob && (
+                  <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                    {activeJob.job_title} @ {activeJob.company_name}
+                  </p>
+                )}
+              </div>
               <Button
                 variant="ghost"
                 size="icon"
