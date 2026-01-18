@@ -24,6 +24,7 @@ import { useUser } from "@/lib/userContext";
 import { apiFetch } from "@/lib/api";
 import type { Application } from "@shared/schema";
 import { format } from "date-fns";
+import { any } from "zod";
 
 export default function ClientInterviewsPage() {
   const { currentUser } = useUser();
@@ -78,12 +79,12 @@ export default function ClientInterviewsPage() {
       `;
 
       const opt = {
-        margin: [10, 10, 10, 10],
+        margin: 10,
         filename: `Interview_Prep_${app.company_name.replace(/[^a-zA-Z0-9]/g, "_")}.pdf`,
         image: { type: "jpeg", quality: 0.98 },
         html2canvas: { scale: 2, useCORS: true },
         jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-      };
+      } as any;
 
       await html2pdf().set(opt).from(container).save();
     } catch (error) {
