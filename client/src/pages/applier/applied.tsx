@@ -4,12 +4,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Building,
   Clock,
@@ -19,6 +18,11 @@ import {
   Linkedin,
   MessageSquare,
   Loader2,
+  ChevronDown,
+  Mail,
+  UserPlus,
+  Send,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { fetchApplications, apiFetch } from "@/lib/api";
@@ -64,7 +68,7 @@ export default function AppliedPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           followup_method: method,
-          followed_up: method !== "none",
+          followed_up: true, // Always true - any selection marks it as processed
         }),
       });
 
@@ -79,15 +83,19 @@ export default function AppliedPage() {
             ? ({
                 ...app,
                 followup_method: method,
-                followed_up: method !== "none",
+                followed_up: true,
               } as Application)
             : app,
         ),
       );
 
-      if (method !== "none") {
-        toast.success("Follow-up recorded!");
-      }
+      const methodLabels: Record<string, string> = {
+        inmail: "InMail",
+        li_connection: "LI Connection",
+        email: "Email",
+        none: "No follow-up",
+      };
+      toast.success(`Marked as: ${methodLabels[method] || method}`);
     } catch (error) {
       toast.error("Failed to update follow-up status");
       console.error(error);
@@ -145,7 +153,6 @@ export default function AppliedPage() {
     const jobUrl = app.job_url;
     const isLinkedIn = isLinkedInUrl(jobUrl);
     const isUpdating = updatingIds.has(app.id);
-    const currentMethod = (app as any).followup_method || "none";
 
     return (
       <Card
@@ -215,33 +222,57 @@ export default function AppliedPage() {
                     </Button>
                   )}
 
-                  {/* Follow-up Dropdown */}
-                  <Select
-                    value={currentMethod}
-                    onValueChange={(value) =>
-                      handleFollowupChange(app.id, value)
-                    }
-                    disabled={isUpdating}
-                  >
-                    <SelectTrigger
-                      className="w-[140px]"
-                      data-testid={`select-followup-${app.id}`}
-                    >
-                      {isUpdating ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <SelectValue placeholder="Follow-up" />
-                      )}
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">No follow-up</SelectItem>
-                      <SelectItem value="inmail">InMail</SelectItem>
-                      <SelectItem value="li_connection">
+                  {/* Follow-up Dropdown Button */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        size="sm"
+                        disabled={isUpdating}
+                        className="bg-primary hover:bg-primary/90"
+                        data-testid={`button-followup-${app.id}`}
+                      >
+                        {isUpdating ? (
+                          <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                        ) : (
+                          <MessageSquare className="w-4 h-4 mr-2" />
+                        )}
+                        Follow-up
+                        <ChevronDown className="w-4 h-4 ml-2" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onClick={() => handleFollowupChange(app.id, "inmail")}
+                        className="cursor-pointer"
+                      >
+                        <Send className="w-4 h-4 mr-2" />
+                        InMail
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() =>
+                          handleFollowupChange(app.id, "li_connection")
+                        }
+                        className="cursor-pointer"
+                      >
+                        <UserPlus className="w-4 h-4 mr-2" />
                         LI Connection
-                      </SelectItem>
-                      <SelectItem value="email">Email</SelectItem>
-                    </SelectContent>
-                  </Select>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => handleFollowupChange(app.id, "email")}
+                        className="cursor-pointer"
+                      >
+                        <Mail className="w-4 h-4 mr-2" />
+                        Email
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => handleFollowupChange(app.id, "none")}
+                        className="cursor-pointer text-muted-foreground"
+                      >
+                        <X className="w-4 h-4 mr-2" />
+                        No follow-up
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </>
               ) : (
                 <>
@@ -304,11 +335,11 @@ export default function AppliedPage() {
             <Card className="border-dashed">
               <CardContent className="p-12 text-center">
                 <div className="text-muted-foreground space-y-2">
-                  <MessageSquare className="w-12 h-12 mx-auto opacity-30" />
-                  <h3 className="text-lg font-medium">No follow-ups needed</h3>
+                  <CheckCircle className="w-12 h-12 mx-auto opacity-30" />
+                  <h3 className="text-lg font-medium">All caught up!</h3>
                   <p className="text-sm">
-                    Jobs applied more than 2 days ago will appear here for
-                    follow-up.
+                    No follow-ups needed right now. Jobs applied more than 2
+                    days ago will appear here.
                   </p>
                 </div>
               </CardContent>

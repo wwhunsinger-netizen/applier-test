@@ -28,6 +28,7 @@ import {
   Loader2,
   X,
   Target,
+  Sparkles,
 } from "lucide-react";
 import {
   fetchClients,
@@ -49,6 +50,7 @@ interface FeedJob {
   client_id: string;
   location?: string;
   posted_date?: string;
+  match_strength?: "strong" | "moderate" | "weak" | "none" | null;
 }
 
 interface JobCardState {
@@ -568,6 +570,7 @@ export default function QueuePage() {
             const isApplied = state.status === "applied";
             const isFlagged = state.status === "flagged";
             const isCompleted = isApplied || isFlagged;
+            const isStrongMatch = job.match_strength === "strong";
 
             return (
               <Card
@@ -577,9 +580,11 @@ export default function QueuePage() {
                     ? "border-l-green-500 bg-green-500/5"
                     : isFlagged
                       ? "border-l-yellow-500 bg-yellow-500/5"
-                      : hasStarted
-                        ? "border-l-blue-500"
-                        : "border-l-transparent hover:border-l-primary hover:shadow-md"
+                      : isStrongMatch
+                        ? "border-l-amber-400 bg-gradient-to-r from-amber-500/10 to-transparent border border-amber-400/30"
+                        : hasStarted
+                          ? "border-l-blue-500"
+                          : "border-l-transparent hover:border-l-primary hover:shadow-md"
                 }`}
                 data-testid={`card-job-${job.job_id}`}
               >
@@ -587,12 +592,17 @@ export default function QueuePage() {
                   <div className="flex flex-col md:flex-row gap-6">
                     <div className="flex-1 space-y-2">
                       <div>
-                        <h3
-                          className="text-xl font-bold font-heading"
-                          data-testid={`text-job-title-${job.job_id}`}
-                        >
-                          {job.job_title}
-                        </h3>
+                        <div className="flex items-center gap-2">
+                          <h3
+                            className={`text-xl font-bold font-heading ${isStrongMatch ? "text-amber-200" : ""}`}
+                            data-testid={`text-job-title-${job.job_id}`}
+                          >
+                            {job.job_title}
+                          </h3>
+                          {isStrongMatch && (
+                            <Sparkles className="w-5 h-5 text-amber-400 animate-pulse" />
+                          )}
+                        </div>
                         <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
                           <span className="flex items-center gap-1">
                             <Building className="w-3 h-3" /> {job.company_name}
@@ -605,6 +615,11 @@ export default function QueuePage() {
                                 })
                               : "Recently"}
                           </span>
+                          {isStrongMatch && (
+                            <span className="flex items-center gap-1 text-amber-400 font-medium">
+                              <Target className="w-3 h-3" /> Strong Match
+                            </span>
+                          )}
                         </div>
                       </div>
 

@@ -26,9 +26,18 @@ export interface JobDataPoint {
   company: string;
   company_logo: string;
   job_location: string;
+  source: string; // "LinkedIn", "Indeed", etc.
   source_url: string;
   apply_url: string;
   posted_day: string;
+}
+
+/**
+ * AI filter match strength per user
+ */
+export interface AIFilterMatch {
+  user_id: string;
+  match_strength: "strong" | "moderate" | "weak" | "none";
 }
 
 /**
@@ -38,6 +47,7 @@ export interface FeedJob {
   canonical_job_id: number;
   admin_note: string | null;
   job_data_points: JobDataPoint[];
+  wilsons_ai_filter_by_user?: AIFilterMatch[];
   client_id?: string;
   applier_id?: string;
 }
@@ -81,6 +91,7 @@ export interface DisplayJob {
   source: string | null;
   client_id: string;
   applier_id: string;
+  match_strength: "strong" | "moderate" | "weak" | "none" | null;
 }
 
 // ============================================================
@@ -275,29 +286,42 @@ export async function getAdminFlaggedJobs(
 /**
  * Convert FeedJob array to DisplayJob array for UI
  * Maps cofounder's nested structure to flat structure for queue.tsx
+ * Filters out "none" (hard skip) jobs
  */
-export function toDisplayJobs(feedJobs: FeedJob[]): DisplayJob[] {
-  return feedJobs.map((job) => {
-    // Get the first job_data_point (or empty object if none)
-    const jobData = job.job_data_points?.[0] || ({} as JobDataPoint);
+export function toDisplayJobs(
+  feedJobs: FeedJob[],
+  clientId?: string,
+): DisplayJob[] {
+  return feedJobs
+    .map((job) => {
+      // Get the first job_data_point (or empty object if none)
+      const jobData = job.job_data_points?.[0] || ({} as JobDataPoint);
 
-    return {
-      job_id: job.canonical_job_id,
-      job_title: jobData.title || "Unknown Title",
-      company_name: jobData.company || "Unknown Company",
-      job_url: jobData.apply_url || jobData.source_url || "",
-      location: jobData.job_location || null,
-      description: null,
-      posted_date: jobData.posted_day || null,
-      salary_min: null,
-      salary_max: null,
-      job_type: null,
-      remote: null,
-      source: null,
-      client_id: job.client_id || "",
-      applier_id: job.applier_id || "",
-    };
-  });
+      // Find match strength for this client
+      const aiFilter = job.wilsons_ai_filter_by_user?.find(
+        (f) => f.user_id === (clientId || job.client_id),
+      );
+      const matchStrength = aiFilter?.match_strength || null;
+
+      return {
+        job_id: job.canonical_job_id,
+        job_title: jobData.title || "Unknown Title",
+        company_name: jobData.company || "Unknown Company",
+        job_url: jobData.apply_url || jobData.source_url || "",
+        location: jobData.job_location || null,
+        description: null,
+        posted_date: jobData.posted_day || null,
+        salary_min: null,
+        salary_max: null,
+        job_type: null,
+        remote: null,
+        source: null,
+        client_id: job.client_id || "",
+        applier_id: job.applier_id || "",
+        match_strength: matchStrength,
+      };
+    })
+    .filter((job) => job.match_strength !== "none"); // Filter out hard skips
 }
 
 /**
