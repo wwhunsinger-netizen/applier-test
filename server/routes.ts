@@ -688,6 +688,16 @@ export async function registerRoutes(
       const feedJobs = await feedApi.getApplierQueue(applier_id as string);
       const jobs = feedApi.toDisplayJobs(feedJobs);
 
+      // Sort by posted_date (newest first)
+      jobs.sort((a, b) => {
+        if (!a.posted_date && !b.posted_date) return 0;
+        if (!a.posted_date) return 1;
+        if (!b.posted_date) return -1;
+        return (
+          new Date(b.posted_date).getTime() - new Date(a.posted_date).getTime()
+        );
+      });
+
       res.json(jobs);
     } catch (error) {
       console.error("[Queue] Error fetching queue jobs:", error);
