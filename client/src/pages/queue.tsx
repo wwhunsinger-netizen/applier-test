@@ -47,9 +47,11 @@ interface FeedJob {
   job_title: string;
   company_name: string;
   job_url: string;
+  linkedin_url?: string | null;
   client_id: string;
   location?: string;
   posted_date?: string;
+  source?: string | null;
   match_strength?: "strong" | "moderate" | "weak" | "none" | null;
 }
 
@@ -272,6 +274,8 @@ export default function QueuePage() {
             job_title: job.job_title,
             company_name: job.company_name,
             job_url: job.job_url,
+            linkedin_url: job.linkedin_url,
+            source: job.source,
           }),
         });
 

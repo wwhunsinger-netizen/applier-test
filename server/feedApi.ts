@@ -81,6 +81,7 @@ export interface DisplayJob {
   job_title: string;
   company_name: string;
   job_url: string;
+  linkedin_url: string | null;
   location: string | null;
   description: string | null;
   posted_date: string | null;
@@ -304,11 +305,16 @@ export function toDisplayJobs(
       );
       const matchStrength = aiFilter?.match_strength || null;
 
+      // Get LinkedIn URL if source is LinkedIn
+      const isLinkedIn = jobData.source?.toLowerCase() === "linkedin";
+      const linkedinUrl = isLinkedIn ? jobData.source_url : null;
+
       return {
         job_id: job.canonical_job_id,
         job_title: jobData.title || "Unknown Title",
         company_name: jobData.company || "Unknown Company",
         job_url: jobData.apply_url || jobData.source_url || "",
+        linkedin_url: linkedinUrl,
         location: jobData.job_location || null,
         description: null,
         posted_date: jobData.posted_day || null,

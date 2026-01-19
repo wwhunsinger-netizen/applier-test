@@ -706,6 +706,8 @@ export async function registerRoutes(
         company_name,
         job_url,
         client_id,
+        linkedin_url,
+        source,
       } = req.body;
 
       if (!applier_id || !job_id) {
@@ -733,6 +735,8 @@ export async function registerRoutes(
         job_title: job_title || "Unknown Position",
         company_name: company_name || "Unknown Company",
         job_url: job_url || "",
+        linkedin_url: linkedin_url || null,
+        source: source || null,
         applied_date: new Date().toISOString(),
         duration_seconds: duration_seconds || 0,
       });

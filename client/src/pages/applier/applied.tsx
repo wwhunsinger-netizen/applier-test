@@ -108,11 +108,6 @@ export default function AppliedPage() {
     }
   };
 
-  const isLinkedInUrl = (url: string | null | undefined): boolean => {
-    if (!url) return false;
-    return url.toLowerCase().includes("linkedin.com");
-  };
-
   if (isLoading) {
     return (
       <div className="p-8 text-center text-muted-foreground">
@@ -151,7 +146,7 @@ export default function AppliedPage() {
     const jobTitle = app.job_title || "Unknown Position";
     const companyName = app.company_name || "Unknown Company";
     const jobUrl = app.job_url;
-    const isLinkedIn = isLinkedInUrl(jobUrl);
+    const linkedinUrl = (app as any).linkedin_url;
     const isUpdating = updatingIds.has(app.id);
 
     return (
@@ -195,12 +190,12 @@ export default function AppliedPage() {
             <div className="flex items-center gap-3 flex-wrap">
               {showFollowUp ? (
                 <>
-                  {/* LinkedIn Button - only show if URL is LinkedIn */}
-                  {isLinkedIn && jobUrl && (
+                  {/* LinkedIn Button - only show if we have a LinkedIn URL */}
+                  {linkedinUrl && (
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => window.open(jobUrl, "_blank")}
+                      onClick={() => window.open(linkedinUrl, "_blank")}
                       className="border-blue-500/30 text-blue-500 hover:bg-blue-500/10"
                       data-testid={`button-linkedin-${app.id}`}
                     >
