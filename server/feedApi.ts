@@ -191,9 +191,9 @@ export async function setJobFlag(
         Authorization: `Bearer ${FEED_AUTH_TOKEN}`,
       },
       body: JSON.stringify({
-        p_applier_id: applierId,
-        p_job_id: jobId,
-        p_comment: comment,
+        applier: applierId,
+        job: jobId,
+        comment: comment,
       }),
     });
 
@@ -230,10 +230,10 @@ export async function setJobFlagResolved(
         Authorization: `Bearer ${FEED_AUTH_TOKEN}`,
       },
       body: JSON.stringify({
-        p_applier_id: applierId,
-        p_job_id: jobId,
-        p_resolved_by: resolvedBy,
-        p_resolution_note: resolutionNote,
+        applier: applierId,
+        job: jobId,
+        resolved_by: resolvedBy,
+        resolution_note: resolutionNote,
       }),
     });
 
@@ -264,7 +264,7 @@ export async function getAdminFlaggedJobs(
         Authorization: `Bearer ${FEED_AUTH_TOKEN}`,
       },
       body: JSON.stringify({
-        p_include_resolved: includeResolved,
+        include_resolved: includeResolved,
       }),
     });
 

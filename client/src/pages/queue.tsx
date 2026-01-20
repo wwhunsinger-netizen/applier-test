@@ -187,6 +187,36 @@ export default function QueuePage() {
     return null;
   };
 
+  // Download document with authentication
+  const downloadDocument = async (
+    type: "resume_improved" | "cover_letter_A" | "cover_letter_B",
+    fileName: string,
+  ) => {
+    const url = getDocumentUrl(type);
+    if (!url) {
+      toast.error(`No ${fileName} uploaded for this client`);
+      return;
+    }
+
+    try {
+      const res = await apiFetch(url);
+      if (!res.ok) throw new Error("Download failed");
+
+      const blob = await res.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = downloadUrl;
+      a.download = `${assignedClient?.first_name}_${assignedClient?.last_name}_${fileName}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(downloadUrl);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error("Download error:", error);
+      toast.error("Failed to download document");
+    }
+  };
+
   // Timer effect - runs every second for jobs with active timers
   useEffect(() => {
     const interval = setInterval(() => {
@@ -277,6 +307,7 @@ export default function QueuePage() {
             job_url: job.job_url,
             linkedin_url: job.linkedin_url,
             source: job.source,
+            optimized_resume_url: job.optimized_resume_url,
           }),
         });
 
@@ -396,16 +427,9 @@ export default function QueuePage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => {
-                const url = getDocumentUrl("cover_letter_A");
-                if (url) {
-                  window.open(url, "_blank");
-                } else {
-                  toast.error(
-                    "No Narrative cover letter uploaded for this client",
-                  );
-                }
-              }}
+              onClick={() =>
+                downloadDocument("cover_letter_A", "Narrative_Cover_Letter")
+              }
               data-testid="button-download-cover-letter-narrative"
             >
               <FileText className="w-4 h-4 mr-2" />
@@ -414,16 +438,9 @@ export default function QueuePage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => {
-                const url = getDocumentUrl("cover_letter_B");
-                if (url) {
-                  window.open(url, "_blank");
-                } else {
-                  toast.error(
-                    "No Exact Match cover letter uploaded for this client",
-                  );
-                }
-              }}
+              onClick={() =>
+                downloadDocument("cover_letter_B", "Exact_Match_Cover_Letter")
+              }
               data-testid="button-download-cover-letter-exact-match"
             >
               <FileText className="w-4 h-4 mr-2" />

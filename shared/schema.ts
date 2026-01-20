@@ -182,6 +182,8 @@ export interface Application {
   // LinkedIn and source tracking
   linkedin_url?: string | null;
   source?: string | null;
+  // Resume used for this application
+  optimized_resume_url?: string | null;
   // Follow-up tracking
   followed_up?: boolean;
   followup_method?: string | null;
@@ -364,6 +366,8 @@ export const insertApplicationSchema = z.object({
   // LinkedIn and source tracking
   linkedin_url: z.string().nullable().optional(),
   source: z.string().nullable().optional(),
+  // Resume used for this application
+  optimized_resume_url: z.string().nullable().optional(),
 });
 
 export const insertInterviewSchema = z.object({

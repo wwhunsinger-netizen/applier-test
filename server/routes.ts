@@ -722,6 +722,7 @@ export async function registerRoutes(
         client_id,
         linkedin_url,
         source,
+        optimized_resume_url,
       } = req.body;
 
       // Debug logging
@@ -768,6 +769,7 @@ export async function registerRoutes(
         job_url: job_url || "",
         linkedin_url: linkedin_url || null,
         source: source || null,
+        optimized_resume_url: optimized_resume_url || null,
         applied_date: new Date().toISOString(),
         duration_seconds: duration_seconds || 0,
       });
