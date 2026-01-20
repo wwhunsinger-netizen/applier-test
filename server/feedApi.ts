@@ -263,9 +263,7 @@ export async function getAdminFlaggedJobs(
         "Content-Type": "application/json",
         Authorization: `Bearer ${FEED_AUTH_TOKEN}`,
       },
-      body: JSON.stringify({
-        include_resolved: includeResolved,
-      }),
+      body: JSON.stringify({}),
     });
 
     if (!response.ok) {
