@@ -868,8 +868,30 @@ export async function registerRoutes(
     isSupabaseAuthenticated,
     async (req, res) => {
       try {
-        const flaggedJobs = await getAdminFlaggedJobs();
-        res.json(flaggedJobs);
+        const includeResolved = req.query.include_resolved === "true";
+        const flaggedJobs = await getAdminFlaggedJobs(includeResolved);
+
+        // Transform cofounder's format to our frontend format
+        const transformed = flaggedJobs.map((flag: any) => {
+          const jobData = flag.job_data_points?.[0] || {};
+          return {
+            job_id: flag.canonical_job_id,
+            applier_id: flag.applier_id,
+            client_id: null, // Not provided by cofounder API
+            flagged_at: flag.flagged_created_at,
+            comment: flag.comment,
+            resolved: flag.status === "resolved",
+            resolved_at: flag.resolved_at,
+            resolved_by: null, // Not provided by cofounder API
+            resolution_note: flag.resolution_note,
+            // Denormalized job data for display
+            job_title: jobData.title || "Unknown Title",
+            company_name: jobData.company || "Unknown Company",
+            job_url: jobData.apply_url || jobData.source_url || "",
+          };
+        });
+
+        res.json(transformed);
       } catch (error) {
         console.error("Error fetching flagged jobs:", error);
         res.status(500).json({ error: "Failed to fetch flagged jobs" });
