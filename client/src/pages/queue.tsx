@@ -190,13 +190,14 @@ export default function QueuePage() {
   // Download document with authentication
   const downloadDocument = async (
     type: "resume_improved" | "cover_letter_A" | "cover_letter_B",
-    fileName: string,
   ) => {
-    const url = getDocumentUrl(type);
-    if (!url) {
-      toast.error(`No ${fileName} uploaded for this client`);
+    const doc = clientDocuments.find((d) => d.document_type === type);
+    if (!doc) {
+      toast.error(`No document uploaded for this client`);
       return;
     }
+
+    const url = `/api/clients/${assignedClient?.id}/documents/${doc.document_type}/download`;
 
     try {
       const res = await apiFetch(url);
@@ -206,7 +207,7 @@ export default function QueuePage() {
       const downloadUrl = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = downloadUrl;
-      a.download = `${assignedClient?.first_name}_${assignedClient?.last_name}_${fileName}.pdf`;
+      a.download = doc.file_name; // Use original filename
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(downloadUrl);
@@ -427,9 +428,7 @@ export default function QueuePage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() =>
-                downloadDocument("cover_letter_A", "Narrative_Cover_Letter")
-              }
+              onClick={() => downloadDocument("cover_letter_A")}
               data-testid="button-download-cover-letter-narrative"
             >
               <FileText className="w-4 h-4 mr-2" />
@@ -438,9 +437,7 @@ export default function QueuePage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() =>
-                downloadDocument("cover_letter_B", "Exact_Match_Cover_Letter")
-              }
+              onClick={() => downloadDocument("cover_letter_B")}
               data-testid="button-download-cover-letter-exact-match"
             >
               <FileText className="w-4 h-4 mr-2" />
