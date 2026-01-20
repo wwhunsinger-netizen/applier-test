@@ -726,13 +726,22 @@ export async function registerRoutes(
           .json({ error: "applier_id and job_id are required" });
       }
 
-      // 1. Mark applied in cofounder's system
-      await setApplicationStatus(
-        applier_id,
-        job_id,
-        1, // status 1 = applied
-        duration_seconds || 0,
-      );
+      // 1. Mark applied in cofounder's system (non-blocking - don't fail if this errors)
+      try {
+        await setApplicationStatus(
+          applier_id,
+          job_id,
+          1, // status 1 = applied
+          duration_seconds || 0,
+        );
+        console.log(`[FeedAPI] Marked job ${job_id} as applied`);
+      } catch (feedError) {
+        console.error(
+          "[FeedAPI] Error marking applied (continuing anyway):",
+          feedError,
+        );
+        // Don't fail the whole request - still create local record
+      }
 
       // 2. Create local application record (for earnings, interviews, QA)
       const application = await storage.createApplication({
