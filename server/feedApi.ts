@@ -82,6 +82,7 @@ export interface DisplayJob {
   company_name: string;
   job_url: string;
   linkedin_url: string | null;
+  optimized_resume_url: string | null;
   location: string | null;
   description: string | null;
   posted_date: string | null;
@@ -298,12 +299,13 @@ export function toDisplayJobs(
       // Get the first job_data_point (or empty object if none)
       const jobData = job.job_data_points?.[0] || ({} as JobDataPoint);
 
-      // Find match strength from inside job_data_points
-      // wilsons_ai_filter_by_user is nested inside each job_data_point
-      const aiFilter = (jobData as any).wilsons_ai_filter_by_user?.find(
+      // Find match strength and resume from data_by_user
+      const dataByUser = (jobData as any).data_by_user || [];
+      const userMatch = dataByUser.find(
         (f: any) => f.user_id === clientId || !clientId,
       );
-      const matchStrength = aiFilter?.match_strength || null;
+      const matchStrength = userMatch?.match_strength || null;
+      const optimizedResumeUrl = userMatch?.optimized_resume_pdf || null;
 
       // Get LinkedIn URL if source is LinkedIn
       const isLinkedIn = jobData.source?.toLowerCase() === "linkedin";
@@ -315,6 +317,7 @@ export function toDisplayJobs(
         company_name: jobData.company || "Unknown Company",
         job_url: jobData.apply_url || jobData.source_url || "",
         linkedin_url: linkedinUrl,
+        optimized_resume_url: optimizedResumeUrl,
         location: jobData.job_location || null,
         description: null,
         posted_date: jobData.posted_day || null,

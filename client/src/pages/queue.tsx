@@ -48,6 +48,7 @@ interface FeedJob {
   company_name: string;
   job_url: string;
   linkedin_url?: string | null;
+  optimized_resume_url?: string | null;
   client_id: string;
   location?: string;
   posted_date?: string;
@@ -638,6 +639,24 @@ export default function QueuePage() {
                         <div className="flex items-center gap-2 text-yellow-600 text-sm font-medium">
                           <Flag className="w-4 h-4" />
                           Flagged for review
+                        </div>
+                      )}
+
+                      {/* Tailored Resume Download */}
+                      {job.optimized_resume_url && (
+                        <div className="mt-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              window.open(job.optimized_resume_url!, "_blank")
+                            }
+                            className="border-primary/30 text-primary hover:bg-primary/10"
+                            data-testid={`button-resume-${job.job_id}`}
+                          >
+                            <Download className="w-4 h-4 mr-2" />
+                            Tailored Resume
+                          </Button>
                         </div>
                       )}
                     </div>
