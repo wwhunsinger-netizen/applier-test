@@ -179,6 +179,12 @@ export interface Application {
   job_title: string;
   company_name: string;
   job_url: string;
+  // LinkedIn and source tracking
+  linkedin_url?: string | null;
+  source?: string | null;
+  // Follow-up tracking
+  followed_up?: boolean;
+  followup_method?: string | null;
   // Other optional fields
   status_updated_at?: string;
   email_verification_needed?: boolean;
@@ -355,6 +361,9 @@ export const insertApplicationSchema = z.object({
   job_title: z.string(),
   company_name: z.string(),
   job_url: z.string(),
+  // LinkedIn and source tracking
+  linkedin_url: z.string().nullable().optional(),
+  source: z.string().nullable().optional(),
 });
 
 export const insertInterviewSchema = z.object({
