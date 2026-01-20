@@ -686,7 +686,11 @@ export async function registerRoutes(
       }
 
       const feedJobs = await feedApi.getApplierQueue(applier_id as string);
-      const jobs = feedApi.toDisplayJobs(feedJobs);
+      const jobs = feedApi.toDisplayJobs(
+        feedJobs,
+        undefined,
+        applier_id as string,
+      );
 
       // Sort by posted_date (newest first)
       jobs.sort((a, b) => {
@@ -719,6 +723,14 @@ export async function registerRoutes(
         linkedin_url,
         source,
       } = req.body;
+
+      // Debug logging
+      console.log("[Apply] Received:", {
+        applier_id,
+        job_id,
+        client_id,
+        job_title,
+      });
 
       if (!applier_id || !job_id) {
         return res
@@ -764,7 +776,7 @@ export async function registerRoutes(
       try {
         await storage.createApplierEarning({
           applier_id,
-          client_id,
+          client_id: client_id || undefined,
           earnings_type: "base_pay",
           amount: 0.28,
           earned_date: new Date().toISOString().split("T")[0],

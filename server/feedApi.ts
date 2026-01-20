@@ -91,8 +91,8 @@ export interface DisplayJob {
   job_type: string | null;
   remote: boolean | null;
   source: string | null;
-  client_id: string;
-  applier_id: string;
+  client_id: string | null;
+  applier_id: string | null;
   match_strength: "strong" | "moderate" | "weak" | "none" | null;
 }
 
@@ -293,6 +293,7 @@ export async function getAdminFlaggedJobs(
 export function toDisplayJobs(
   feedJobs: FeedJob[],
   clientId?: string,
+  applierId?: string,
 ): DisplayJob[] {
   return feedJobs
     .map((job) => {
@@ -306,6 +307,9 @@ export function toDisplayJobs(
       );
       const matchStrength = userMatch?.match_strength || null;
       const optimizedResumeUrl = userMatch?.optimized_resume_pdf || null;
+
+      // Get client_id from user_id in data_by_user (this is whose job queue it is)
+      const derivedClientId = userMatch?.user_id || clientId || null;
 
       // Get LinkedIn URL if source is LinkedIn
       const isLinkedIn = jobData.source?.toLowerCase() === "linkedin";
@@ -326,8 +330,8 @@ export function toDisplayJobs(
         job_type: null,
         remote: null,
         source: jobData.source || null,
-        client_id: job.client_id || "",
-        applier_id: job.applier_id || "",
+        client_id: derivedClientId,
+        applier_id: applierId || null,
         match_strength: matchStrength,
       };
     })
