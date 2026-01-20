@@ -151,10 +151,10 @@ export async function setApplicationStatus(
         Authorization: `Bearer ${FEED_AUTH_TOKEN}`,
       },
       body: JSON.stringify({
-        p_applier_id: applierId,
-        p_job_id: jobId,
-        p_status: status,
-        p_duration_seconds: durationSeconds,
+        applier: applierId,
+        job: jobId,
+        status: status,
+        duration_seconds: durationSeconds,
       }),
     });
 

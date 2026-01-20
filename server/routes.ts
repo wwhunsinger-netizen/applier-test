@@ -817,7 +817,13 @@ export async function registerRoutes(
       res.json({ success: true, application });
     } catch (error) {
       console.error("Error applying to job:", error);
-      res.status(500).json({ error: "Failed to apply to job" });
+      console.error(
+        "Error details:",
+        JSON.stringify(error, Object.getOwnPropertyNames(error)),
+      );
+      res
+        .status(500)
+        .json({ error: "Failed to apply to job", details: String(error) });
     }
   });
 
