@@ -397,6 +397,42 @@ export default function QueuePage() {
               variant="outline"
               size="sm"
               onClick={() => {
+                const url = getDocumentUrl("cover_letter_A");
+                if (url) {
+                  window.open(url, "_blank");
+                } else {
+                  toast.error(
+                    "No Narrative cover letter uploaded for this client",
+                  );
+                }
+              }}
+              data-testid="button-download-cover-letter-narrative"
+            >
+              <FileText className="w-4 h-4 mr-2" />
+              CL (Narrative)
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const url = getDocumentUrl("cover_letter_B");
+                if (url) {
+                  window.open(url, "_blank");
+                } else {
+                  toast.error(
+                    "No Exact Match cover letter uploaded for this client",
+                  );
+                }
+              }}
+              data-testid="button-download-cover-letter-exact-match"
+            >
+              <FileText className="w-4 h-4 mr-2" />
+              CL (Exact Match)
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
                 setShowClientGPT(!showClientGPT);
                 if (showClientGPT) {
                   setGptQuestion("");
@@ -589,8 +625,8 @@ export default function QueuePage() {
                         </div>
                       )}
 
-                      {/* Tailored Resume & Cover Letter Downloads */}
-                      <div className="mt-2 flex gap-2">
+                      {/* Tailored Resume & Cover Letter Indicator */}
+                      <div className="mt-2 flex items-center gap-3">
                         {job.optimized_resume_url && (
                           <Button
                             variant="outline"
@@ -605,31 +641,12 @@ export default function QueuePage() {
                             Resume
                           </Button>
                         )}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            // Strong match = Exact Match CL (cover_letter_B)
-                            // Moderate/Weak = Narrative CL (cover_letter_A)
-                            const clType =
-                              job.match_strength === "strong"
-                                ? "cover_letter_B"
-                                : "cover_letter_A";
-                            const url = getDocumentUrl(clType);
-                            if (url) {
-                              window.open(url, "_blank");
-                            } else {
-                              toast.error(
-                                "No cover letter uploaded for this client",
-                              );
-                            }
-                          }}
-                          className="border-primary/30 text-primary hover:bg-primary/10"
-                          data-testid={`button-cover-letter-${job.job_id}`}
-                        >
-                          <FileText className="w-4 h-4 mr-2" />
-                          Cover Letter
-                        </Button>
+                        <span className="text-sm text-muted-foreground flex items-center gap-1">
+                          <FileText className="w-4 h-4" />
+                          {job.match_strength === "strong"
+                            ? "Use Exact Match cover letter"
+                            : "Use Narrative cover letter"}
+                        </span>
                       </div>
                     </div>
 
