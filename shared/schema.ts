@@ -184,6 +184,8 @@ export interface Application {
   source?: string | null;
   // Resume used for this application
   optimized_resume_url?: string | null;
+  // Match strength from Feed API
+  match_strength?: "strong" | "moderate" | "weak" | "none" | null;
   // Follow-up tracking
   followed_up?: boolean;
   followup_method?: string | null;
@@ -368,6 +370,11 @@ export const insertApplicationSchema = z.object({
   source: z.string().nullable().optional(),
   // Resume used for this application
   optimized_resume_url: z.string().nullable().optional(),
+  // Match strength from Feed API
+  match_strength: z
+    .enum(["strong", "moderate", "weak", "none"])
+    .nullable()
+    .optional(),
 });
 
 export const insertInterviewSchema = z.object({

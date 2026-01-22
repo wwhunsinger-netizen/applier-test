@@ -34,6 +34,7 @@ import {
   X,
   Plus,
   Search,
+  Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { fetchApplications, apiFetch } from "@/lib/api";
@@ -272,11 +273,24 @@ export default function AppliedPage() {
     const linkedinUrl = (app as any).linkedin_url;
     const isUpdating = updatingIds.has(app.id);
     const isManualLinkedIn = (app as any).feed_job_id < 0;
+    const matchStrength = (app as any).match_strength;
+    const isStrongMatch = matchStrength === "strong";
+
+    // Determine card styling based on type
+    const getCardStyle = () => {
+      if (isManualLinkedIn) {
+        return "border-l-[#0077B5] bg-[#0077B5]/5";
+      }
+      if (isStrongMatch) {
+        return "border-l-amber-400 bg-gradient-to-r from-amber-500/10 to-transparent border border-amber-400/30";
+      }
+      return "border-l-green-500 bg-green-500/5";
+    };
 
     return (
       <Card
         key={app.id}
-        className={`border-l-4 ${isManualLinkedIn ? "border-l-[#0077B5] bg-[#0077B5]/5" : "border-l-green-500 bg-green-500/5"}`}
+        className={`border-l-4 ${getCardStyle()}`}
         data-testid={`card-application-${app.id}`}
       >
         <CardContent className="p-6">
@@ -285,13 +299,16 @@ export default function AppliedPage() {
               <div>
                 <div className="flex items-center gap-2">
                   <h3
-                    className="text-xl font-bold font-heading"
+                    className={`text-xl font-bold font-heading ${isStrongMatch ? "text-amber-200" : ""}`}
                     data-testid={`text-job-title-${app.id}`}
                   >
                     {jobTitle}
                   </h3>
                   {isManualLinkedIn && (
                     <Linkedin className="w-4 h-4 text-[#0077B5]" />
+                  )}
+                  {isStrongMatch && (
+                    <Sparkles className="w-5 h-5 text-amber-400 animate-pulse" />
                   )}
                 </div>
                 <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
@@ -311,10 +328,18 @@ export default function AppliedPage() {
               </div>
 
               <div
-                className={`flex items-center gap-2 text-sm font-medium ${isManualLinkedIn ? "text-[#0077B5]" : "text-green-600"}`}
+                className={`flex items-center gap-2 text-sm font-medium ${
+                  isManualLinkedIn
+                    ? "text-[#0077B5]"
+                    : isStrongMatch
+                      ? "text-amber-400"
+                      : "text-green-600"
+                }`}
               >
                 <CheckCircle className="w-4 h-4" />
-                Application Submitted
+                {isStrongMatch
+                  ? "Exact Match Applied"
+                  : "Application Submitted"}
               </div>
             </div>
 

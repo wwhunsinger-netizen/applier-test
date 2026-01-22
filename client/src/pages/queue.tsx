@@ -309,6 +309,7 @@ export default function QueuePage() {
             linkedin_url: job.linkedin_url,
             source: job.source,
             optimized_resume_url: job.optimized_resume_url,
+            match_strength: job.match_strength,
           }),
         });
 
