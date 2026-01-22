@@ -10,6 +10,15 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
   Building,
   Clock,
   CheckCircle,
@@ -23,11 +32,13 @@ import {
   UserPlus,
   Send,
   X,
+  Plus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { fetchApplications, apiFetch } from "@/lib/api";
 import { useUser } from "@/lib/userContext";
 import { toast } from "sonner";
+import confetti from "canvas-confetti";
 import type { Application } from "@shared/schema";
 
 export default function AppliedPage() {
@@ -36,8 +47,30 @@ export default function AppliedPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [updatingIds, setUpdatingIds] = useState<Set<string>>(new Set());
 
+  // Manual LinkedIn entry state
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [manualEntry, setManualEntry] = useState({
+    job_title: "",
+    company_name: "",
+    job_url: "",
+  });
+
+  // Get assigned client from applier's assignments
+  const [assignedClientId, setAssignedClientId] = useState<string | null>(null);
+
   useEffect(() => {
     if (!currentUser || currentUser.role !== "Applier") return;
+
+    // Fetch assigned client
+    apiFetch(`/api/appliers/${currentUser.id}`)
+      .then((res) => res.json())
+      .then((applier) => {
+        if (applier.assigned_client_ids?.length > 0) {
+          setAssignedClientId(applier.assigned_client_ids[0]);
+        }
+      })
+      .catch(console.error);
 
     setIsLoading(true);
 
@@ -80,22 +113,16 @@ export default function AppliedPage() {
       setApplications((prev) =>
         prev.map((app) =>
           app.id === appId
-            ? ({
-                ...app,
-                followup_method: method,
-                followed_up: true,
-              } as Application)
+            ? ({ ...app, followed_up: true, followup_method: method } as any)
             : app,
         ),
       );
 
-      const methodLabels: Record<string, string> = {
-        inmail: "InMail",
-        li_connection: "LI Connection",
-        email: "Email",
-        none: "No follow-up",
-      };
-      toast.success(`Marked as: ${methodLabels[method] || method}`);
+      toast.success(
+        method === "none"
+          ? "Marked as no follow-up needed"
+          : `Follow-up method: ${method}`,
+      );
     } catch (error) {
       toast.error("Failed to update follow-up status");
       console.error(error);
@@ -105,6 +132,71 @@ export default function AppliedPage() {
         newSet.delete(appId);
         return newSet;
       });
+    }
+  };
+
+  // Small confetti burst
+  const triggerConfetti = () => {
+    confetti({
+      particleCount: 50,
+      spread: 60,
+      origin: { y: 0.7 },
+      colors: ["#0077B5", "#00A0DC", "#ffffff"], // LinkedIn blue colors
+    });
+  };
+
+  const handleManualSubmit = async () => {
+    if (
+      !manualEntry.job_title.trim() ||
+      !manualEntry.company_name.trim() ||
+      !manualEntry.job_url.trim()
+    ) {
+      toast.error("Please fill in all fields");
+      return;
+    }
+
+    if (!assignedClientId) {
+      toast.error("No client assigned. Contact admin.");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const response = await apiFetch("/api/applications/manual-linkedin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          applier_id: currentUser?.id,
+          client_id: assignedClientId,
+          job_title: manualEntry.job_title.trim(),
+          company_name: manualEntry.company_name.trim(),
+          job_url: manualEntry.job_url.trim(),
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to add application");
+      }
+
+      const newApp = await response.json();
+
+      // Add to local state
+      setApplications((prev) => [newApp.application, ...prev]);
+
+      // Reset form and close modal
+      setManualEntry({ job_title: "", company_name: "", job_url: "" });
+      setShowAddModal(false);
+
+      // Trigger confetti
+      triggerConfetti();
+
+      toast.success("LinkedIn application added! +$0.28");
+    } catch (error) {
+      toast.error("Failed to add application");
+      console.error(error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -120,13 +212,22 @@ export default function AppliedPage() {
   if (applications.length === 0) {
     return (
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-white">
-            Applied Jobs
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Your completed applications
-          </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight text-white">
+              Applied Jobs
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              Your completed applications
+            </p>
+          </div>
+          <Button
+            onClick={() => setShowAddModal(true)}
+            className="bg-[#0077B5] hover:bg-[#006097] text-white"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Add LinkedIn App
+          </Button>
         </div>
 
         <Card className="border-dashed">
@@ -138,6 +239,16 @@ export default function AppliedPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Add LinkedIn Modal */}
+        <ManualLinkedInModal
+          open={showAddModal}
+          onOpenChange={setShowAddModal}
+          manualEntry={manualEntry}
+          setManualEntry={setManualEntry}
+          onSubmit={handleManualSubmit}
+          isSubmitting={isSubmitting}
+        />
       </div>
     );
   }
@@ -148,23 +259,29 @@ export default function AppliedPage() {
     const jobUrl = app.job_url;
     const linkedinUrl = (app as any).linkedin_url;
     const isUpdating = updatingIds.has(app.id);
+    const isManualLinkedIn = (app as any).feed_job_id < 0;
 
     return (
       <Card
         key={app.id}
-        className="border-l-4 border-l-green-500 bg-green-500/5"
+        className={`border-l-4 ${isManualLinkedIn ? "border-l-[#0077B5] bg-[#0077B5]/5" : "border-l-green-500 bg-green-500/5"}`}
         data-testid={`card-application-${app.id}`}
       >
         <CardContent className="p-6">
           <div className="flex flex-col md:flex-row gap-4 justify-between">
             <div className="flex-1 space-y-2">
               <div>
-                <h3
-                  className="text-xl font-bold font-heading"
-                  data-testid={`text-job-title-${app.id}`}
-                >
-                  {jobTitle}
-                </h3>
+                <div className="flex items-center gap-2">
+                  <h3
+                    className="text-xl font-bold font-heading"
+                    data-testid={`text-job-title-${app.id}`}
+                  >
+                    {jobTitle}
+                  </h3>
+                  {isManualLinkedIn && (
+                    <Linkedin className="w-4 h-4 text-[#0077B5]" />
+                  )}
+                </div>
                 <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
                   <span className="flex items-center gap-1">
                     <Building className="w-3 h-3" /> {companyName}
@@ -181,7 +298,9 @@ export default function AppliedPage() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 text-green-600 text-sm font-medium">
+              <div
+                className={`flex items-center gap-2 text-sm font-medium ${isManualLinkedIn ? "text-[#0077B5]" : "text-green-600"}`}
+              >
                 <CheckCircle className="w-4 h-4" />
                 Application Submitted
               </div>
@@ -217,17 +336,18 @@ export default function AppliedPage() {
                     </Button>
                   )}
 
-                  {/* Follow-up Dropdown Button */}
+                  {/* Follow-up Dropdown */}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button
+                        variant="default"
                         size="sm"
+                        className="bg-red-600 hover:bg-red-700"
                         disabled={isUpdating}
-                        className="bg-primary hover:bg-primary/90"
                         data-testid={`button-followup-${app.id}`}
                       >
                         {isUpdating ? (
-                          <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                         ) : (
                           <MessageSquare className="w-4 h-4 mr-2" />
                         )}
@@ -240,7 +360,7 @@ export default function AppliedPage() {
                         onClick={() => handleFollowupChange(app.id, "inmail")}
                         className="cursor-pointer"
                       >
-                        <Send className="w-4 h-4 mr-2" />
+                        <Mail className="w-4 h-4 mr-2" />
                         InMail
                       </DropdownMenuItem>
                       <DropdownMenuItem
@@ -256,7 +376,7 @@ export default function AppliedPage() {
                         onClick={() => handleFollowupChange(app.id, "email")}
                         className="cursor-pointer"
                       >
-                        <Mail className="w-4 h-4 mr-2" />
+                        <Send className="w-4 h-4 mr-2" />
                         Email
                       </DropdownMenuItem>
                       <DropdownMenuItem
@@ -273,7 +393,11 @@ export default function AppliedPage() {
                 <>
                   <Badge
                     variant="outline"
-                    className="bg-green-500/10 text-green-500 border-green-500/20"
+                    className={
+                      isManualLinkedIn
+                        ? "bg-[#0077B5]/10 text-[#0077B5] border-[#0077B5]/20"
+                        : "bg-green-500/10 text-green-500 border-green-500/20"
+                    }
                   >
                     {app.status}
                   </Badge>
@@ -300,14 +424,23 @@ export default function AppliedPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight text-white">
-          Applied Jobs
-        </h1>
-        <p className="text-muted-foreground mt-1">
-          {applications.length} application
-          {applications.length !== 1 ? "s" : ""} completed
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-white">
+            Applied Jobs
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            {applications.length} application
+            {applications.length !== 1 ? "s" : ""} completed
+          </p>
+        </div>
+        <Button
+          onClick={() => setShowAddModal(true)}
+          className="bg-[#0077B5] hover:bg-[#006097] text-white"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Add LinkedIn App
+        </Button>
       </div>
 
       <Tabs defaultValue="all" className="space-y-4">
@@ -344,6 +477,119 @@ export default function AppliedPage() {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Add LinkedIn Modal */}
+      <ManualLinkedInModal
+        open={showAddModal}
+        onOpenChange={setShowAddModal}
+        manualEntry={manualEntry}
+        setManualEntry={setManualEntry}
+        onSubmit={handleManualSubmit}
+        isSubmitting={isSubmitting}
+      />
     </div>
+  );
+}
+
+// Manual LinkedIn Entry Modal Component
+function ManualLinkedInModal({
+  open,
+  onOpenChange,
+  manualEntry,
+  setManualEntry,
+  onSubmit,
+  isSubmitting,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  manualEntry: { job_title: string; company_name: string; job_url: string };
+  setManualEntry: React.Dispatch<
+    React.SetStateAction<{
+      job_title: string;
+      company_name: string;
+      job_url: string;
+    }>
+  >;
+  onSubmit: () => void;
+  isSubmitting: boolean;
+}) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Linkedin className="w-5 h-5 text-[#0077B5]" />
+            Add LinkedIn Application
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label htmlFor="job_title">Job Title</Label>
+            <Input
+              id="job_title"
+              placeholder="e.g. Senior Data Engineer"
+              value={manualEntry.job_title}
+              onChange={(e) =>
+                setManualEntry((prev) => ({
+                  ...prev,
+                  job_title: e.target.value,
+                }))
+              }
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="company_name">Company Name</Label>
+            <Input
+              id="company_name"
+              placeholder="e.g. Google"
+              value={manualEntry.company_name}
+              onChange={(e) =>
+                setManualEntry((prev) => ({
+                  ...prev,
+                  company_name: e.target.value,
+                }))
+              }
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="job_url">LinkedIn Job URL</Label>
+            <Input
+              id="job_url"
+              placeholder="https://linkedin.com/jobs/view/..."
+              value={manualEntry.job_url}
+              onChange={(e) =>
+                setManualEntry((prev) => ({ ...prev, job_url: e.target.value }))
+              }
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={isSubmitting}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={onSubmit}
+            disabled={isSubmitting}
+            className="bg-[#0077B5] hover:bg-[#006097] text-white"
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Adding...
+              </>
+            ) : (
+              <>
+                <Plus className="w-4 h-4 mr-2" />
+                Add Application
+              </>
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

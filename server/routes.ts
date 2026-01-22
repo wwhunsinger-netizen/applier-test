@@ -321,6 +321,118 @@ export async function registerRoutes(
     }
   });
 
+  // Manual LinkedIn application entry (for appliers)
+  app.post(
+    "/api/applications/manual-linkedin",
+    isSupabaseAuthenticated,
+    async (req, res) => {
+      try {
+        const { applier_id, client_id, job_title, company_name, job_url } =
+          req.body;
+
+        if (
+          !applier_id ||
+          !client_id ||
+          !job_title ||
+          !company_name ||
+          !job_url
+        ) {
+          return res.status(400).json({
+            error:
+              "applier_id, client_id, job_title, company_name, and job_url are required",
+          });
+        }
+
+        // Create application with negative feed_job_id to indicate manual entry
+        const application = await storage.createApplication({
+          applier_id,
+          client_id,
+          job_id: null,
+          feed_job_id: -1, // Negative = manual LinkedIn entry
+          feed_source: "manual",
+          status: "applied",
+          job_title,
+          company_name,
+          job_url,
+          linkedin_url: job_url, // Same as job_url for LinkedIn entries
+          source: "LinkedIn",
+          optimized_resume_url: null, // No tailored resume for manual entries
+          applied_date: new Date().toISOString(),
+          duration_seconds: 0,
+        });
+
+        // Create base pay earning ($0.28)
+        try {
+          await storage.createApplierEarning({
+            applier_id,
+            client_id,
+            earnings_type: "base_pay",
+            amount: 0.28,
+            earned_date: new Date().toISOString().split("T")[0],
+            payment_status: "pending",
+            notes: `Manual LinkedIn: ${job_title} at ${company_name}`,
+          });
+          console.log(
+            `[Earnings] Base pay $0.28 for manual LinkedIn: ${company_name}`,
+          );
+        } catch (earningError) {
+          console.error(
+            "Error creating base pay for manual LinkedIn:",
+            earningError,
+          );
+          // Don't fail the application if earning fails
+        }
+
+        // Check for 100 application milestone bonus
+        try {
+          const today = new Date().toISOString().split("T")[0];
+          const applications =
+            await storage.getApplicationsByApplier(applier_id);
+          const todaysApps = applications.filter((a) => {
+            const appDate = new Date(a.applied_date || a.created_at || "")
+              .toISOString()
+              .split("T")[0];
+            return appDate === today;
+          });
+
+          if (todaysApps.length >= 100) {
+            const existingEarnings =
+              await storage.getApplierEarnings(applier_id);
+            const existingMilestoneToday = existingEarnings.find(
+              (e) =>
+                e.earnings_type === "application_milestone" &&
+                e.earned_date === today &&
+                e.application_count === 100,
+            );
+
+            if (!existingMilestoneToday && todaysApps.length === 100) {
+              await storage.createApplierEarning({
+                applier_id,
+                client_id,
+                earnings_type: "application_milestone",
+                amount: 25,
+                application_count: 100,
+                earned_date: today,
+                payment_status: "pending",
+                notes: `100 application milestone reached (manual LinkedIn: ${job_title})`,
+              });
+              console.log(
+                `[Earnings] 100 app milestone bonus $25 for applier ${applier_id}`,
+              );
+            }
+          }
+        } catch (bonusError) {
+          console.error("Error checking milestone bonus:", bonusError);
+        }
+
+        res.json({ success: true, application });
+      } catch (error) {
+        console.error("Error creating manual LinkedIn application:", error);
+        res.status(500).json({ error: "Failed to create application" });
+      }
+    },
+  );
+
   app.patch(
     "/api/applications/:id",
     isSupabaseAuthenticated,
@@ -869,10 +981,16 @@ export async function registerRoutes(
     async (req, res) => {
       try {
         const includeResolved = req.query.include_resolved === "true";
+        console.log(
+          "[Admin] Fetching flagged jobs, includeResolved:",
+          includeResolved,
+        );
+
         const flaggedJobs = await getAdminFlaggedJobs(includeResolved);
+        console.log("[Admin] Got flagged jobs:", flaggedJobs?.length || 0);
 
         // Transform cofounder's format to our frontend format
-        const transformed = flaggedJobs.map((flag: any) => {
+        const transformed = (flaggedJobs || []).map((flag: any) => {
           const jobData = flag.job_data_points?.[0] || {};
           return {
             job_id: flag.canonical_job_id,
@@ -891,10 +1009,17 @@ export async function registerRoutes(
           };
         });
 
+        console.log(
+          "[Admin] Transformed flagged jobs:",
+          transformed?.length || 0,
+        );
         res.json(transformed);
       } catch (error) {
         console.error("Error fetching flagged jobs:", error);
-        res.status(500).json({ error: "Failed to fetch flagged jobs" });
+        res.status(500).json({
+          error: "Failed to fetch flagged jobs",
+          details: String(error),
+        });
       }
     },
   );
