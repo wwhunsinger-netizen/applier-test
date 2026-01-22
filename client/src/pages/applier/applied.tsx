@@ -405,25 +405,70 @@ export default function AppliedPage() {
                 </div>
               </div>
 
-              <div
-                className={`flex items-center gap-2 text-sm font-medium ${
-                  isManualLinkedIn
-                    ? "text-[#0077B5]"
-                    : isStrongMatch
-                      ? "text-amber-400"
-                      : "text-green-600"
-                }`}
-              >
-                <CheckCircle className="w-4 h-4" />
-                {isStrongMatch
-                  ? "Exact Match Applied"
-                  : "Application Submitted"}
-              </div>
+              {/* Action buttons row - Interview/Rejected for All Applied, or status text for Follow-up */}
+              {showFollowUp ? (
+                <div
+                  className={`flex items-center gap-2 text-sm font-medium ${
+                    isManualLinkedIn
+                      ? "text-[#0077B5]"
+                      : isStrongMatch
+                        ? "text-amber-400"
+                        : "text-green-600"
+                  }`}
+                >
+                  <CheckCircle className="w-4 h-4" />
+                  {isStrongMatch
+                    ? "Exact Match Applied"
+                    : "Application Submitted"}
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  {/* Interview button - only show if not already Interview or Rejected */}
+                  {app.status?.toLowerCase() !== "interview" &&
+                    app.status?.toLowerCase() !== "rejected" && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleStatusChange(app.id, "Interview")}
+                        disabled={isUpdating}
+                        className="border-blue-500/30 text-blue-500 hover:bg-blue-500/10"
+                        data-testid={`button-interview-${app.id}`}
+                      >
+                        {isUpdating ? (
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        ) : (
+                          <CalendarCheck className="w-4 h-4 mr-2" />
+                        )}
+                        Interview
+                      </Button>
+                    )}
+
+                  {/* Rejected button - only show if not already Rejected */}
+                  {app.status?.toLowerCase() !== "rejected" &&
+                    app.status?.toLowerCase() !== "interview" && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleStatusChange(app.id, "Rejected")}
+                        disabled={isUpdating}
+                        className="border-red-500/30 text-red-500 hover:bg-red-500/10"
+                        data-testid={`button-rejected-${app.id}`}
+                      >
+                        {isUpdating ? (
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        ) : (
+                          <XCircle className="w-4 h-4 mr-2" />
+                        )}
+                        Rejected
+                      </Button>
+                    )}
+                </div>
+              )}
             </div>
 
-            {/* Center: Action Buttons */}
+            {/* Center: Action Buttons (Follow-up view only) */}
             <div className="flex items-center gap-2 flex-shrink-0">
-              {showFollowUp ? (
+              {showFollowUp && (
                 <>
                   {/* LinkedIn Button */}
                   {linkedinUrl && (
@@ -504,48 +549,6 @@ export default function AppliedPage() {
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
-                </>
-              ) : (
-                <>
-                  {/* Interview button - only show if not already Interview or Rejected */}
-                  {app.status?.toLowerCase() !== "interview" &&
-                    app.status?.toLowerCase() !== "rejected" && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleStatusChange(app.id, "Interview")}
-                        disabled={isUpdating}
-                        className="border-blue-500/30 text-blue-500 hover:bg-blue-500/10"
-                        data-testid={`button-interview-${app.id}`}
-                      >
-                        {isUpdating ? (
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        ) : (
-                          <CalendarCheck className="w-4 h-4 mr-2" />
-                        )}
-                        Interview
-                      </Button>
-                    )}
-
-                  {/* Rejected button - only show if not already Rejected */}
-                  {app.status?.toLowerCase() !== "rejected" &&
-                    app.status?.toLowerCase() !== "interview" && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleStatusChange(app.id, "Rejected")}
-                        disabled={isUpdating}
-                        className="border-red-500/30 text-red-500 hover:bg-red-500/10"
-                        data-testid={`button-rejected-${app.id}`}
-                      >
-                        {isUpdating ? (
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        ) : (
-                          <XCircle className="w-4 h-4 mr-2" />
-                        )}
-                        Rejected
-                      </Button>
-                    )}
                 </>
               )}
             </div>
