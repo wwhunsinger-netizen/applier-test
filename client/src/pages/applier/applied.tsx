@@ -425,46 +425,6 @@ export default function AppliedPage() {
             <div className="flex items-center gap-2 flex-shrink-0">
               {showFollowUp ? (
                 <>
-                  {/* Interview button in follow-up view */}
-                  {app.status?.toLowerCase() !== "interview" &&
-                    app.status?.toLowerCase() !== "rejected" && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleStatusChange(app.id, "Interview")}
-                        disabled={isUpdating}
-                        className="border-blue-500/30 text-blue-500 hover:bg-blue-500/10"
-                        data-testid={`button-interview-followup-${app.id}`}
-                      >
-                        {isUpdating ? (
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        ) : (
-                          <CalendarCheck className="w-4 h-4 mr-2" />
-                        )}
-                        Interview
-                      </Button>
-                    )}
-
-                  {/* Rejected button in follow-up view */}
-                  {app.status?.toLowerCase() !== "rejected" &&
-                    app.status?.toLowerCase() !== "interview" && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleStatusChange(app.id, "Rejected")}
-                        disabled={isUpdating}
-                        className="border-red-500/30 text-red-500 hover:bg-red-500/10"
-                        data-testid={`button-rejected-followup-${app.id}`}
-                      >
-                        {isUpdating ? (
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        ) : (
-                          <XCircle className="w-4 h-4 mr-2" />
-                        )}
-                        Rejected
-                      </Button>
-                    )}
-
                   {/* LinkedIn Button */}
                   {linkedinUrl && (
                     <Button
@@ -476,6 +436,19 @@ export default function AppliedPage() {
                     >
                       <Linkedin className="w-4 h-4 mr-2" />
                       LinkedIn
+                    </Button>
+                  )}
+
+                  {/* Job Post Button */}
+                  {jobUrl && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => window.open(jobUrl, "_blank")}
+                      data-testid={`button-view-job-followup-${app.id}`}
+                    >
+                      <ExternalLink className="w-4 h-4 mr-2" />
+                      Job Post
                     </Button>
                   )}
 
@@ -577,33 +550,37 @@ export default function AppliedPage() {
               )}
             </div>
 
-            {/* Right: Status Badge + View Job */}
+            {/* Right: Status Badge + View Job (only in All Applied view) */}
             <div className="flex items-center gap-3 flex-shrink-0">
-              <Badge
-                variant="outline"
-                className={
-                  app.status?.toLowerCase() === "interview"
-                    ? "bg-blue-500/10 text-blue-500 border-blue-500/20"
-                    : app.status?.toLowerCase() === "rejected"
-                      ? "bg-red-500/10 text-red-500 border-red-500/20"
-                      : isManualLinkedIn
-                        ? "bg-[#0077B5]/10 text-[#0077B5] border-[#0077B5]/20"
-                        : "bg-green-500/10 text-green-500 border-green-500/20"
-                }
-              >
-                {app.status}
-              </Badge>
+              {!showFollowUp && (
+                <>
+                  <Badge
+                    variant="outline"
+                    className={
+                      app.status?.toLowerCase() === "interview"
+                        ? "bg-blue-500/10 text-blue-500 border-blue-500/20"
+                        : app.status?.toLowerCase() === "rejected"
+                          ? "bg-red-500/10 text-red-500 border-red-500/20"
+                          : isManualLinkedIn
+                            ? "bg-[#0077B5]/10 text-[#0077B5] border-[#0077B5]/20"
+                            : "bg-green-500/10 text-green-500 border-green-500/20"
+                    }
+                  >
+                    {app.status}
+                  </Badge>
 
-              {jobUrl && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => window.open(jobUrl, "_blank")}
-                  data-testid={`button-view-job-${app.id}`}
-                >
-                  <ExternalLink className="w-4 h-4 mr-2" />
-                  {showFollowUp ? "Job Post" : "View Job"}
-                </Button>
+                  {jobUrl && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => window.open(jobUrl, "_blank")}
+                      data-testid={`button-view-job-${app.id}`}
+                    >
+                      <ExternalLink className="w-4 h-4 mr-2" />
+                      View Job
+                    </Button>
+                  )}
+                </>
               )}
             </div>
           </div>
