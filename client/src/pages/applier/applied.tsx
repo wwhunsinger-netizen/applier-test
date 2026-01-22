@@ -33,6 +33,7 @@ import {
   Send,
   X,
   Plus,
+  Search,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { fetchApplications, apiFetch } from "@/lib/api";
@@ -46,6 +47,7 @@ export default function AppliedPage() {
   const [applications, setApplications] = useState<Application[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [updatingIds, setUpdatingIds] = useState<Set<string>>(new Set());
+  const [search, setSearch] = useState("");
 
   // Manual LinkedIn entry state
   const [showAddModal, setShowAddModal] = useState(false);
@@ -82,8 +84,18 @@ export default function AppliedPage() {
       .finally(() => setIsLoading(false));
   }, [currentUser]);
 
+  // Filter applications by search
+  const filteredApplications = applications.filter((app) => {
+    if (!search.trim()) return true;
+    const searchLower = search.toLowerCase();
+    return (
+      app.company_name?.toLowerCase().includes(searchLower) ||
+      app.job_title?.toLowerCase().includes(searchLower)
+    );
+  });
+
   // Filter for follow-up jobs (applied more than 2 days ago, not yet followed up)
-  const followUpJobs = applications.filter((app) => {
+  const followUpJobs = filteredApplications.filter((app) => {
     const appliedDate = (app as any).created_at
       ? new Date((app as any).created_at)
       : null;
@@ -443,10 +455,23 @@ export default function AppliedPage() {
         </Button>
       </div>
 
+      {/* Search */}
+      <div className="relative w-full md:w-64">
+        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+        <Input
+          type="search"
+          placeholder="Search company or role..."
+          className="pl-9 bg-[#111] border-white/10"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          data-testid="input-search-applications"
+        />
+      </div>
+
       <Tabs defaultValue="all" className="space-y-4">
         <TabsList className="bg-[#111] border border-white/10">
           <TabsTrigger value="all">
-            All Applied ({applications.length})
+            All Applied ({filteredApplications.length})
           </TabsTrigger>
           <TabsTrigger value="followup">
             <MessageSquare className="w-4 h-4 mr-2" />
@@ -455,7 +480,19 @@ export default function AppliedPage() {
         </TabsList>
 
         <TabsContent value="all" className="space-y-4">
-          {applications.map((app) => renderJobCard(app, false))}
+          {filteredApplications.length === 0 ? (
+            <Card className="border-dashed">
+              <CardContent className="p-12 text-center">
+                <div className="text-muted-foreground space-y-2">
+                  <Search className="w-12 h-12 mx-auto opacity-30" />
+                  <h3 className="text-lg font-medium">No results found</h3>
+                  <p className="text-sm">Try a different search term.</p>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            filteredApplications.map((app) => renderJobCard(app, false))
+          )}
         </TabsContent>
 
         <TabsContent value="followup" className="space-y-4">
