@@ -429,6 +429,15 @@ export default function QueuePage() {
             <Button
               variant="outline"
               size="sm"
+              onClick={() => downloadDocument("resume_improved")}
+              data-testid="button-download-resume"
+            >
+              <FileText className="w-4 h-4 mr-2" />
+              Resume
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => downloadDocument("cover_letter_A")}
               data-testid="button-download-cover-letter-narrative"
             >
