@@ -35,6 +35,8 @@ import {
   Plus,
   Search,
   Sparkles,
+  CalendarCheck,
+  XCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { fetchApplications, apiFetch } from "@/lib/api";
@@ -85,17 +87,28 @@ export default function AppliedPage() {
       .finally(() => setIsLoading(false));
   }, [currentUser]);
 
-  // Filter applications by search
-  const filteredApplications = applications.filter((app) => {
-    if (!search.trim()) return true;
-    const searchLower = search.toLowerCase();
-    return (
-      app.company_name?.toLowerCase().includes(searchLower) ||
-      app.job_title?.toLowerCase().includes(searchLower)
-    );
-  });
+  // Filter applications by search and sort newest first
+  const filteredApplications = applications
+    .filter((app) => {
+      if (!search.trim()) return true;
+      const searchLower = search.toLowerCase();
+      return (
+        app.company_name?.toLowerCase().includes(searchLower) ||
+        app.job_title?.toLowerCase().includes(searchLower)
+      );
+    })
+    .sort((a, b) => {
+      const dateA = new Date(
+        a.applied_date || (a as any).created_at || 0,
+      ).getTime();
+      const dateB = new Date(
+        b.applied_date || (b as any).created_at || 0,
+      ).getTime();
+      return dateB - dateA; // Newest first
+    });
 
   // Filter for follow-up jobs (applied more than 2 days ago, not yet followed up)
+  // Already sorted since filteredApplications is sorted
   const followUpJobs = filteredApplications.filter((app) => {
     const appliedDate = (app as any).created_at
       ? new Date((app as any).created_at)
@@ -146,6 +159,70 @@ export default function AppliedPage() {
         return newSet;
       });
     }
+  };
+
+  // Handle status change (Interview/Rejected)
+  const handleStatusChange = async (appId: string, status: string) => {
+    setUpdatingIds((prev) => new Set(prev).add(appId));
+
+    try {
+      const response = await apiFetch(`/api/applications/${appId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update");
+      }
+
+      // Update local state
+      setApplications((prev) =>
+        prev.map((app) => (app.id === appId ? { ...app, status } : app)),
+      );
+
+      if (status === "Interview") {
+        triggerInterviewConfetti();
+        toast.success("🎉 Interview! Great work!");
+      } else if (status === "Rejected") {
+        toast.info("Application marked as rejected");
+      }
+    } catch (error) {
+      toast.error("Failed to update status");
+      console.error(error);
+    } finally {
+      setUpdatingIds((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(appId);
+        return newSet;
+      });
+    }
+  };
+
+  // Interview confetti - celebratory burst
+  const triggerInterviewConfetti = () => {
+    // First burst
+    confetti({
+      particleCount: 100,
+      spread: 70,
+      origin: { y: 0.6 },
+      colors: ["#22c55e", "#16a34a", "#4ade80", "#ffffff", "#fbbf24"], // Green and gold
+    });
+    // Second burst after slight delay
+    setTimeout(() => {
+      confetti({
+        particleCount: 50,
+        spread: 100,
+        origin: { y: 0.7, x: 0.3 },
+        colors: ["#22c55e", "#16a34a", "#4ade80"],
+      });
+      confetti({
+        particleCount: 50,
+        spread: 100,
+        origin: { y: 0.7, x: 0.7 },
+        colors: ["#22c55e", "#16a34a", "#4ade80"],
+      });
+    }, 150);
   };
 
   // Small confetti burst
@@ -425,15 +502,59 @@ export default function AppliedPage() {
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
+
+                  {/* Interview button in follow-up view */}
+                  {app.status?.toLowerCase() !== "interview" &&
+                    app.status?.toLowerCase() !== "rejected" && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleStatusChange(app.id, "Interview")}
+                        disabled={isUpdating}
+                        className="border-blue-500/30 text-blue-500 hover:bg-blue-500/10"
+                        data-testid={`button-interview-followup-${app.id}`}
+                      >
+                        {isUpdating ? (
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        ) : (
+                          <CalendarCheck className="w-4 h-4 mr-2" />
+                        )}
+                        Interview
+                      </Button>
+                    )}
+
+                  {/* Rejected button in follow-up view */}
+                  {app.status?.toLowerCase() !== "rejected" &&
+                    app.status?.toLowerCase() !== "interview" && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleStatusChange(app.id, "Rejected")}
+                        disabled={isUpdating}
+                        className="border-red-500/30 text-red-500 hover:bg-red-500/10"
+                        data-testid={`button-rejected-followup-${app.id}`}
+                      >
+                        {isUpdating ? (
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        ) : (
+                          <XCircle className="w-4 h-4 mr-2" />
+                        )}
+                        Rejected
+                      </Button>
+                    )}
                 </>
               ) : (
                 <>
                   <Badge
                     variant="outline"
                     className={
-                      isManualLinkedIn
-                        ? "bg-[#0077B5]/10 text-[#0077B5] border-[#0077B5]/20"
-                        : "bg-green-500/10 text-green-500 border-green-500/20"
+                      app.status?.toLowerCase() === "interview"
+                        ? "bg-blue-500/10 text-blue-500 border-blue-500/20"
+                        : app.status?.toLowerCase() === "rejected"
+                          ? "bg-red-500/10 text-red-500 border-red-500/20"
+                          : isManualLinkedIn
+                            ? "bg-[#0077B5]/10 text-[#0077B5] border-[#0077B5]/20"
+                            : "bg-green-500/10 text-green-500 border-green-500/20"
                     }
                   >
                     {app.status}
@@ -450,6 +571,46 @@ export default function AppliedPage() {
                       View Job
                     </Button>
                   )}
+
+                  {/* Interview button - only show if not already Interview or Rejected */}
+                  {app.status?.toLowerCase() !== "interview" &&
+                    app.status?.toLowerCase() !== "rejected" && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleStatusChange(app.id, "Interview")}
+                        disabled={isUpdating}
+                        className="border-blue-500/30 text-blue-500 hover:bg-blue-500/10"
+                        data-testid={`button-interview-${app.id}`}
+                      >
+                        {isUpdating ? (
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        ) : (
+                          <CalendarCheck className="w-4 h-4 mr-2" />
+                        )}
+                        Interview
+                      </Button>
+                    )}
+
+                  {/* Rejected button - only show if not already Rejected */}
+                  {app.status?.toLowerCase() !== "rejected" &&
+                    app.status?.toLowerCase() !== "interview" && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleStatusChange(app.id, "Rejected")}
+                        disabled={isUpdating}
+                        className="border-red-500/30 text-red-500 hover:bg-red-500/10"
+                        data-testid={`button-rejected-${app.id}`}
+                      >
+                        {isUpdating ? (
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        ) : (
+                          <XCircle className="w-4 h-4 mr-2" />
+                        )}
+                        Rejected
+                      </Button>
+                    )}
                 </>
               )}
             </div>
