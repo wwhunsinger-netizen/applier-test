@@ -436,7 +436,7 @@ export default function AppliedPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-start justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-white">
             Applied Jobs
@@ -446,26 +446,27 @@ export default function AppliedPage() {
             {applications.length !== 1 ? "s" : ""} completed
           </p>
         </div>
-        <Button
-          onClick={() => setShowAddModal(true)}
-          className="bg-[#0077B5] hover:bg-[#006097] text-white"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Add LinkedIn App
-        </Button>
-      </div>
-
-      {/* Search */}
-      <div className="relative w-full md:w-64">
-        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-        <Input
-          type="search"
-          placeholder="Search company or role..."
-          className="pl-9 bg-[#111] border-white/10"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          data-testid="input-search-applications"
-        />
+        <div className="flex flex-col items-end gap-3">
+          <Button
+            onClick={() => setShowAddModal(true)}
+            className="bg-[#0077B5] hover:bg-[#006097] text-white"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Add LinkedIn App
+          </Button>
+          {/* Search */}
+          <div className="relative w-64">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Search company or role..."
+              className="pl-9 bg-[#111] border-white/10"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              data-testid="input-search-applications"
+            />
+          </div>
+        </div>
       </div>
 
       <Tabs defaultValue="all" className="space-y-4">
