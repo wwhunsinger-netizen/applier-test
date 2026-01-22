@@ -371,7 +371,8 @@ export default function AppliedPage() {
         data-testid={`card-application-${app.id}`}
       >
         <CardContent className="p-6">
-          <div className="flex flex-col md:flex-row gap-4 justify-between">
+          <div className="flex flex-col md:flex-row gap-4 md:items-center">
+            {/* Left: Job Info */}
             <div className="flex-1 space-y-2">
               <div>
                 <div className="flex items-center gap-2">
@@ -420,7 +421,8 @@ export default function AppliedPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-3 flex-wrap w-full">
+            {/* Center: Action Buttons */}
+            <div className="flex items-center gap-2 flex-shrink-0">
               {showFollowUp ? (
                 <>
                   {/* Interview button in follow-up view */}
@@ -463,7 +465,7 @@ export default function AppliedPage() {
                       </Button>
                     )}
 
-                  {/* LinkedIn Button - only show if we have a LinkedIn URL */}
+                  {/* LinkedIn Button */}
                   {linkedinUrl && (
                     <Button
                       variant="outline"
@@ -529,38 +531,9 @@ export default function AppliedPage() {
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
-
-                  {/* Job Post Button - pushed to the right */}
-                  {jobUrl && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => window.open(jobUrl, "_blank")}
-                      className="ml-auto"
-                      data-testid={`button-view-job-${app.id}`}
-                    >
-                      <ExternalLink className="w-4 h-4 mr-2" />
-                      Job Post
-                    </Button>
-                  )}
                 </>
               ) : (
                 <>
-                  <Badge
-                    variant="outline"
-                    className={
-                      app.status?.toLowerCase() === "interview"
-                        ? "bg-blue-500/10 text-blue-500 border-blue-500/20"
-                        : app.status?.toLowerCase() === "rejected"
-                          ? "bg-red-500/10 text-red-500 border-red-500/20"
-                          : isManualLinkedIn
-                            ? "bg-[#0077B5]/10 text-[#0077B5] border-[#0077B5]/20"
-                            : "bg-green-500/10 text-green-500 border-green-500/20"
-                    }
-                  >
-                    {app.status}
-                  </Badge>
-
                   {/* Interview button - only show if not already Interview or Rejected */}
                   {app.status?.toLowerCase() !== "interview" &&
                     app.status?.toLowerCase() !== "rejected" && (
@@ -600,20 +573,37 @@ export default function AppliedPage() {
                         Rejected
                       </Button>
                     )}
-
-                  {jobUrl && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => window.open(jobUrl, "_blank")}
-                      className="ml-auto"
-                      data-testid={`button-view-job-${app.id}`}
-                    >
-                      <ExternalLink className="w-4 h-4 mr-2" />
-                      View Job
-                    </Button>
-                  )}
                 </>
+              )}
+            </div>
+
+            {/* Right: Status Badge + View Job */}
+            <div className="flex items-center gap-3 flex-shrink-0">
+              <Badge
+                variant="outline"
+                className={
+                  app.status?.toLowerCase() === "interview"
+                    ? "bg-blue-500/10 text-blue-500 border-blue-500/20"
+                    : app.status?.toLowerCase() === "rejected"
+                      ? "bg-red-500/10 text-red-500 border-red-500/20"
+                      : isManualLinkedIn
+                        ? "bg-[#0077B5]/10 text-[#0077B5] border-[#0077B5]/20"
+                        : "bg-green-500/10 text-green-500 border-green-500/20"
+                }
+              >
+                {app.status}
+              </Badge>
+
+              {jobUrl && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => window.open(jobUrl, "_blank")}
+                  data-testid={`button-view-job-${app.id}`}
+                >
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                  {showFollowUp ? "Job Post" : "View Job"}
+                </Button>
               )}
             </div>
           </div>
