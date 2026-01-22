@@ -420,9 +420,49 @@ export default function AppliedPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-3 flex-wrap w-full">
               {showFollowUp ? (
                 <>
+                  {/* Interview button in follow-up view */}
+                  {app.status?.toLowerCase() !== "interview" &&
+                    app.status?.toLowerCase() !== "rejected" && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleStatusChange(app.id, "Interview")}
+                        disabled={isUpdating}
+                        className="border-blue-500/30 text-blue-500 hover:bg-blue-500/10"
+                        data-testid={`button-interview-followup-${app.id}`}
+                      >
+                        {isUpdating ? (
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        ) : (
+                          <CalendarCheck className="w-4 h-4 mr-2" />
+                        )}
+                        Interview
+                      </Button>
+                    )}
+
+                  {/* Rejected button in follow-up view */}
+                  {app.status?.toLowerCase() !== "rejected" &&
+                    app.status?.toLowerCase() !== "interview" && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleStatusChange(app.id, "Rejected")}
+                        disabled={isUpdating}
+                        className="border-red-500/30 text-red-500 hover:bg-red-500/10"
+                        data-testid={`button-rejected-followup-${app.id}`}
+                      >
+                        {isUpdating ? (
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        ) : (
+                          <XCircle className="w-4 h-4 mr-2" />
+                        )}
+                        Rejected
+                      </Button>
+                    )}
+
                   {/* LinkedIn Button - only show if we have a LinkedIn URL */}
                   {linkedinUrl && (
                     <Button
@@ -434,19 +474,6 @@ export default function AppliedPage() {
                     >
                       <Linkedin className="w-4 h-4 mr-2" />
                       LinkedIn
-                    </Button>
-                  )}
-
-                  {/* Job Post Button - always show */}
-                  {jobUrl && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => window.open(jobUrl, "_blank")}
-                      data-testid={`button-view-job-${app.id}`}
-                    >
-                      <ExternalLink className="w-4 h-4 mr-2" />
-                      Job Post
                     </Button>
                   )}
 
@@ -503,45 +530,19 @@ export default function AppliedPage() {
                     </DropdownMenuContent>
                   </DropdownMenu>
 
-                  {/* Interview button in follow-up view */}
-                  {app.status?.toLowerCase() !== "interview" &&
-                    app.status?.toLowerCase() !== "rejected" && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleStatusChange(app.id, "Interview")}
-                        disabled={isUpdating}
-                        className="border-blue-500/30 text-blue-500 hover:bg-blue-500/10"
-                        data-testid={`button-interview-followup-${app.id}`}
-                      >
-                        {isUpdating ? (
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        ) : (
-                          <CalendarCheck className="w-4 h-4 mr-2" />
-                        )}
-                        Interview
-                      </Button>
-                    )}
-
-                  {/* Rejected button in follow-up view */}
-                  {app.status?.toLowerCase() !== "rejected" &&
-                    app.status?.toLowerCase() !== "interview" && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleStatusChange(app.id, "Rejected")}
-                        disabled={isUpdating}
-                        className="border-red-500/30 text-red-500 hover:bg-red-500/10"
-                        data-testid={`button-rejected-followup-${app.id}`}
-                      >
-                        {isUpdating ? (
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        ) : (
-                          <XCircle className="w-4 h-4 mr-2" />
-                        )}
-                        Rejected
-                      </Button>
-                    )}
+                  {/* Job Post Button - pushed to the right */}
+                  {jobUrl && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => window.open(jobUrl, "_blank")}
+                      className="ml-auto"
+                      data-testid={`button-view-job-${app.id}`}
+                    >
+                      <ExternalLink className="w-4 h-4 mr-2" />
+                      Job Post
+                    </Button>
+                  )}
                 </>
               ) : (
                 <>
@@ -559,18 +560,6 @@ export default function AppliedPage() {
                   >
                     {app.status}
                   </Badge>
-
-                  {jobUrl && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => window.open(jobUrl, "_blank")}
-                      data-testid={`button-view-job-${app.id}`}
-                    >
-                      <ExternalLink className="w-4 h-4 mr-2" />
-                      View Job
-                    </Button>
-                  )}
 
                   {/* Interview button - only show if not already Interview or Rejected */}
                   {app.status?.toLowerCase() !== "interview" &&
@@ -611,6 +600,19 @@ export default function AppliedPage() {
                         Rejected
                       </Button>
                     )}
+
+                  {jobUrl && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => window.open(jobUrl, "_blank")}
+                      className="ml-auto"
+                      data-testid={`button-view-job-${app.id}`}
+                    >
+                      <ExternalLink className="w-4 h-4 mr-2" />
+                      View Job
+                    </Button>
+                  )}
                 </>
               )}
             </div>
