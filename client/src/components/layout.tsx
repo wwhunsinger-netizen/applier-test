@@ -18,11 +18,18 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useUser } from "@/lib/userContext";
+import { usePresence } from "@/hooks/usePresence";
 import logoUrl from "@assets/Jumpseat_(17)_1766203547189.png";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
   const { currentUser, logout } = useUser();
+
+  // Track applier presence via WebSocket
+  usePresence({
+    applierId: currentUser?.role === "Applier" ? currentUser.id : null,
+    enabled: currentUser?.role === "Applier",
+  });
 
   // Don't show layout on login page
   if (location === "/login") {
