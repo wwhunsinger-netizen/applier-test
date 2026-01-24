@@ -16,6 +16,13 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -37,13 +44,19 @@ import {
   Sparkles,
   CalendarCheck,
   XCircle,
+  User,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { fetchApplications, apiFetch } from "@/lib/api";
+import { fetchApplications, apiFetch, fetchClient } from "@/lib/api";
 import { useUser } from "@/lib/userContext";
 import { toast } from "sonner";
 import confetti from "canvas-confetti";
-import type { Application } from "@shared/schema";
+import type { Application, Client } from "@shared/schema";
+
+interface AssignedClient {
+  id: string;
+  name: string;
+}
 
 export default function AppliedPage() {
   const { currentUser } = useUser();
@@ -61,21 +74,49 @@ export default function AppliedPage() {
     job_url: "",
   });
 
-  // Get assigned client from applier's assignments
-  const [assignedClientId, setAssignedClientId] = useState<string | null>(null);
+  // Client selection state
+  const [assignedClients, setAssignedClients] = useState<AssignedClient[]>([]);
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  const [isLoadingClients, setIsLoadingClients] = useState(true);
 
   useEffect(() => {
     if (!currentUser || currentUser.role !== "Applier") return;
 
-    // Fetch assigned client
+    // Fetch assigned clients
+    setIsLoadingClients(true);
     apiFetch(`/api/appliers/${currentUser.id}`)
       .then((res) => res.json())
-      .then((applier) => {
+      .then(async (applier) => {
         if (applier.assigned_client_ids?.length > 0) {
-          setAssignedClientId(applier.assigned_client_ids[0]);
+          // Fetch details for each assigned client
+          const clientPromises = applier.assigned_client_ids.map(
+            async (clientId: string) => {
+              try {
+                const client = await fetchClient(clientId);
+                return {
+                  id: client.id,
+                  name: `${client.first_name} ${client.last_name}`.trim(),
+                };
+              } catch (error) {
+                console.error(`Failed to fetch client ${clientId}:`, error);
+                return null;
+              }
+            },
+          );
+
+          const clients = (await Promise.all(clientPromises)).filter(
+            (c): c is AssignedClient => c !== null,
+          );
+          setAssignedClients(clients);
+
+          // Auto-select first client
+          if (clients.length > 0) {
+            setSelectedClientId(clients[0].id);
+          }
         }
       })
-      .catch(console.error);
+      .catch(console.error)
+      .finally(() => setIsLoadingClients(false));
 
     setIsLoading(true);
 
@@ -86,6 +127,10 @@ export default function AppliedPage() {
       .catch(console.error)
       .finally(() => setIsLoading(false));
   }, [currentUser]);
+
+  // Get selected client name for display
+  const selectedClientName =
+    assignedClients.find((c) => c.id === selectedClientId)?.name || "No client";
 
   // Filter applications by search and sort newest first
   const filteredApplications = applications
@@ -245,8 +290,8 @@ export default function AppliedPage() {
       return;
     }
 
-    if (!assignedClientId) {
-      toast.error("No client assigned. Contact admin.");
+    if (!selectedClientId) {
+      toast.error("No client selected. Please select a client first.");
       return;
     }
 
@@ -258,7 +303,7 @@ export default function AppliedPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           applier_id: currentUser?.id,
-          client_id: assignedClientId,
+          client_id: selectedClientId,
           job_title: manualEntry.job_title.trim(),
           company_name: manualEntry.company_name.trim(),
           job_url: manualEntry.job_url.trim(),
@@ -311,13 +356,35 @@ export default function AppliedPage() {
               Your completed applications
             </p>
           </div>
-          <Button
-            onClick={() => setShowAddModal(true)}
-            className="bg-[#0077B5] hover:bg-[#006097] text-white"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Add LinkedIn App
-          </Button>
+          <div className="flex items-center gap-3">
+            {/* Client Selector - only show when 2+ clients */}
+            {assignedClients.length > 1 && (
+              <Select
+                value={selectedClientId || undefined}
+                onValueChange={setSelectedClientId}
+              >
+                <SelectTrigger className="w-[180px] bg-[#111] border-white/10">
+                  <User className="w-4 h-4 mr-2 text-muted-foreground" />
+                  <SelectValue placeholder="Select client" />
+                </SelectTrigger>
+                <SelectContent>
+                  {assignedClients.map((client) => (
+                    <SelectItem key={client.id} value={client.id}>
+                      {client.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+            <Button
+              onClick={() => setShowAddModal(true)}
+              className="bg-[#0077B5] hover:bg-[#006097] text-white"
+              disabled={!selectedClientId}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add LinkedIn App
+            </Button>
+          </div>
         </div>
 
         <Card className="border-dashed">
@@ -338,200 +405,136 @@ export default function AppliedPage() {
           setManualEntry={setManualEntry}
           onSubmit={handleManualSubmit}
           isSubmitting={isSubmitting}
+          selectedClientName={selectedClientName}
         />
       </div>
     );
   }
 
+  // Job card renderer (shared between tabs)
   const renderJobCard = (app: Application, showFollowUp: boolean) => {
-    const jobTitle = app.job_title || "Unknown Position";
-    const companyName = app.company_name || "Unknown Company";
-    const jobUrl = app.job_url;
-    const linkedinUrl = (app as any).linkedin_url;
+    const isManualLinkedIn = app.source === "linkedin_manual";
+    const jobUrl = app.linkedin_url || app.job_url;
     const isUpdating = updatingIds.has(app.id);
-    const isManualLinkedIn = (app as any).feed_job_id < 0;
-    const matchStrength = (app as any).match_strength;
-    const isStrongMatch = matchStrength === "strong";
-
-    // Determine card styling based on type
-    const getCardStyle = () => {
-      if (isManualLinkedIn) {
-        return "border-l-[#0077B5] bg-[#0077B5]/5";
-      }
-      if (isStrongMatch) {
-        return "border-l-amber-400 bg-gradient-to-r from-amber-500/10 to-transparent border border-amber-400/30";
-      }
-      return "border-l-green-500 bg-green-500/5";
-    };
 
     return (
       <Card
         key={app.id}
-        className={`border-l-4 ${getCardStyle()}`}
-        data-testid={`card-application-${app.id}`}
+        className={`border-white/10 ${isManualLinkedIn ? "border-l-2 border-l-[#0077B5]" : ""}`}
       >
-        <CardContent className="p-6">
-          <div className="flex flex-col md:flex-row gap-4 md:items-center">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between gap-4">
             {/* Left: Job Info */}
-            <div className="flex-1 space-y-2">
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3
-                    className={`text-xl font-bold font-heading ${isStrongMatch ? "text-amber-200" : ""}`}
-                    data-testid={`text-job-title-${app.id}`}
-                  >
-                    {jobTitle}
-                  </h3>
-                  {isManualLinkedIn && (
-                    <Linkedin className="w-4 h-4 text-[#0077B5]" />
-                  )}
-                  {isStrongMatch && (
-                    <Sparkles className="w-5 h-5 text-amber-400 animate-pulse" />
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              <div className="flex-shrink-0">
+                <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center">
+                  {isManualLinkedIn ? (
+                    <Linkedin className="w-5 h-5 text-[#0077B5]" />
+                  ) : (
+                    <Briefcase className="w-5 h-5 text-muted-foreground" />
                   )}
                 </div>
-                <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
-                  <span className="flex items-center gap-1">
-                    <Building className="w-3 h-3" /> {companyName}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Clock className="w-3 h-3" />
-                    Applied{" "}
+              </div>
+              <div className="min-w-0 flex-1">
+                <h3 className="font-medium text-white truncate">
+                  {app.job_title}
+                </h3>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Building className="w-3 h-3" />
+                  <span className="truncate">{app.company_name}</span>
+                  <span>•</span>
+                  <Clock className="w-3 h-3" />
+                  <span>
                     {(app as any).created_at
                       ? formatDistanceToNow(new Date((app as any).created_at), {
                           addSuffix: true,
                         })
-                      : "recently"}
+                      : "Recently"}
                   </span>
                 </div>
               </div>
-
-              {/* Action buttons row - Interview/Rejected for All Applied, or status text for Follow-up */}
-              {showFollowUp ? (
-                <div
-                  className={`flex items-center gap-2 text-sm font-medium ${
-                    isManualLinkedIn
-                      ? "text-[#0077B5]"
-                      : isStrongMatch
-                        ? "text-amber-400"
-                        : "text-green-600"
-                  }`}
-                >
-                  <CheckCircle className="w-4 h-4" />
-                  {isStrongMatch
-                    ? "Exact Match Applied"
-                    : "Application Submitted"}
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  {/* Interview button - only show if not already Interview or Rejected */}
-                  {app.status?.toLowerCase() !== "interview" &&
-                    app.status?.toLowerCase() !== "rejected" && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleStatusChange(app.id, "Interview")}
-                        disabled={isUpdating}
-                        className="border-blue-500/30 text-blue-500 hover:bg-blue-500/10"
-                        data-testid={`button-interview-${app.id}`}
-                      >
-                        {isUpdating ? (
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        ) : (
-                          <CalendarCheck className="w-4 h-4 mr-2" />
-                        )}
-                        Interview
-                      </Button>
-                    )}
-
-                  {/* Rejected button - only show if not already Rejected */}
-                  {app.status?.toLowerCase() !== "rejected" &&
-                    app.status?.toLowerCase() !== "interview" && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleStatusChange(app.id, "Rejected")}
-                        disabled={isUpdating}
-                        className="border-red-500/30 text-red-500 hover:bg-red-500/10"
-                        data-testid={`button-rejected-${app.id}`}
-                      >
-                        {isUpdating ? (
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        ) : (
-                          <XCircle className="w-4 h-4 mr-2" />
-                        )}
-                        Rejected
-                      </Button>
-                    )}
-                </div>
-              )}
             </div>
 
-            {/* Center: Action Buttons (Follow-up view only) */}
+            {/* Middle: Status Actions (only in Follow-up view) */}
             <div className="flex items-center gap-2 flex-shrink-0">
               {showFollowUp && (
                 <>
-                  {/* LinkedIn Button */}
-                  {linkedinUrl && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => window.open(linkedinUrl, "_blank")}
-                      className="border-blue-500/30 text-blue-500 hover:bg-blue-500/10"
-                      data-testid={`button-linkedin-${app.id}`}
-                    >
-                      <Linkedin className="w-4 h-4 mr-2" />
-                      LinkedIn
-                    </Button>
-                  )}
-
-                  {/* Job Post Button */}
-                  {jobUrl && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => window.open(jobUrl, "_blank")}
-                      data-testid={`button-view-job-followup-${app.id}`}
-                    >
-                      <ExternalLink className="w-4 h-4 mr-2" />
-                      Job Post
-                    </Button>
-                  )}
-
-                  {/* Follow-up Dropdown */}
+                  {/* Status buttons for marking Interview/Rejected */}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button
-                        variant="default"
+                        variant="outline"
                         size="sm"
-                        className="bg-red-600 hover:bg-red-700"
+                        className="gap-1"
                         disabled={isUpdating}
-                        data-testid={`button-followup-${app.id}`}
                       >
                         {isUpdating ? (
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          <Loader2 className="w-4 h-4 animate-spin" />
                         ) : (
-                          <MessageSquare className="w-4 h-4 mr-2" />
+                          <>
+                            <Sparkles className="w-4 h-4" />
+                            Status
+                            <ChevronDown className="w-3 h-3" />
+                          </>
                         )}
-                        Follow-up
-                        <ChevronDown className="w-4 h-4 ml-2" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem
-                        onClick={() => handleFollowupChange(app.id, "inmail")}
-                        className="cursor-pointer"
+                        onClick={() => handleStatusChange(app.id, "Interview")}
+                        className="cursor-pointer text-green-500"
                       >
-                        <Mail className="w-4 h-4 mr-2" />
-                        InMail
+                        <CalendarCheck className="w-4 h-4 mr-2" />
+                        Got Interview!
                       </DropdownMenuItem>
                       <DropdownMenuItem
+                        onClick={() => handleStatusChange(app.id, "Rejected")}
+                        className="cursor-pointer text-red-500"
+                      >
+                        <XCircle className="w-4 h-4 mr-2" />
+                        Rejected
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+
+                  {/* Follow-up method dropdown */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-1"
+                        disabled={isUpdating}
+                      >
+                        {isUpdating ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <>
+                            <MessageSquare className="w-4 h-4" />
+                            Follow-up
+                            <ChevronDown className="w-3 h-3" />
+                          </>
+                        )}
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
                         onClick={() =>
-                          handleFollowupChange(app.id, "li_connection")
+                          handleFollowupChange(app.id, "linkedin_connect")
                         }
                         className="cursor-pointer"
                       >
                         <UserPlus className="w-4 h-4 mr-2" />
-                        LI Connection
+                        LinkedIn Connect
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() =>
+                          handleFollowupChange(app.id, "linkedin_message")
+                        }
+                        className="cursor-pointer"
+                      >
+                        <Linkedin className="w-4 h-4 mr-2" />
+                        LinkedIn Message
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => handleFollowupChange(app.id, "email")}
@@ -604,13 +607,46 @@ export default function AppliedPage() {
             {applications.length !== 1 ? "s" : ""} completed
           </p>
         </div>
-        <Button
-          onClick={() => setShowAddModal(true)}
-          className="bg-[#0077B5] hover:bg-[#006097] text-white"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Add LinkedIn App
-        </Button>
+        <div className="flex items-center gap-3">
+          {/* Client Selector - only show when 2+ clients */}
+          {assignedClients.length > 1 && (
+            <Select
+              value={selectedClientId || undefined}
+              onValueChange={setSelectedClientId}
+            >
+              <SelectTrigger className="w-[180px] bg-[#111] border-white/10">
+                <User className="w-4 h-4 mr-2 text-muted-foreground" />
+                <SelectValue placeholder="Select client" />
+              </SelectTrigger>
+              <SelectContent>
+                {assignedClients.map((client) => (
+                  <SelectItem key={client.id} value={client.id}>
+                    {client.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+          {isLoadingClients && assignedClients.length === 0 && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Loading clients...
+            </div>
+          )}
+          {!isLoadingClients && assignedClients.length === 0 && (
+            <div className="text-sm text-muted-foreground">
+              No clients assigned
+            </div>
+          )}
+          <Button
+            onClick={() => setShowAddModal(true)}
+            className="bg-[#0077B5] hover:bg-[#006097] text-white"
+            disabled={!selectedClientId}
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Add LinkedIn App
+          </Button>
+        </div>
       </div>
 
       <Tabs defaultValue="all" className="space-y-4">
@@ -683,6 +719,7 @@ export default function AppliedPage() {
         setManualEntry={setManualEntry}
         onSubmit={handleManualSubmit}
         isSubmitting={isSubmitting}
+        selectedClientName={selectedClientName}
       />
     </div>
   );
@@ -696,6 +733,7 @@ function ManualLinkedInModal({
   setManualEntry,
   onSubmit,
   isSubmitting,
+  selectedClientName,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -709,6 +747,7 @@ function ManualLinkedInModal({
   >;
   onSubmit: () => void;
   isSubmitting: boolean;
+  selectedClientName: string;
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -720,6 +759,13 @@ function ManualLinkedInModal({
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-4">
+          {/* Show selected client */}
+          <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-white/5 border border-white/10">
+            <User className="w-4 h-4 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">Client:</span>
+            <span className="text-sm font-medium">{selectedClientName}</span>
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="job_title">Job Title</Label>
             <Input
