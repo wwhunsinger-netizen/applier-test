@@ -30,7 +30,7 @@ export default function ClientInterviewsPage() {
   const [expandedAppId, setExpandedAppId] = useState<string | null>(null);
   const [prepDocModalOpen, setPrepDocModalOpen] = useState(false);
   const [selectedApp, setSelectedApp] = useState<Application | null>(null);
-  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [generatingPdfId, setGeneratingPdfId] = useState<string | null>(null);
   const pdfContentRef = useRef<HTMLDivElement>(null);
 
   // Fetch applications with interview status for this client
@@ -98,7 +98,7 @@ export default function ClientInterviewsPage() {
 
   // Generate and download PDF
   const downloadPdf = async (app: Application) => {
-    setIsGeneratingPdf(true);
+    setGeneratingPdfId(app.id);
 
     try {
       // Dynamically import html2pdf
@@ -110,10 +110,12 @@ export default function ClientInterviewsPage() {
       );
 
       // Create a temporary container with styled content (dark mode with red accents)
-      // Using full viewport height and proper background coverage
       const container = document.createElement("div");
+      container.style.position = "absolute";
+      container.style.left = "-9999px";
+      container.style.top = "0";
       container.innerHTML = `
-        <div style="font-family: 'Helvetica', 'Arial', sans-serif; padding: 40px; color: #e5e5e5; background-color: #0a0a0a; min-height: 100vh; width: 100%;">
+        <div style="font-family: 'Helvetica', 'Arial', sans-serif; padding: 40px; color: #e5e5e5; background-color: #0a0a0a; width: 210mm;">
           <div style="border-bottom: 3px solid #ef4444; padding-bottom: 20px; margin-bottom: 30px;">
             <h1 style="margin: 0 0 8px 0; font-size: 28px; color: #ffffff;">Interview Prep</h1>
             <h2 style="margin: 0 0 4px 0; font-size: 20px; color: #ef4444; font-weight: 600;">${app.company_name}</h2>
@@ -126,6 +128,9 @@ export default function ClientInterviewsPage() {
         </div>
       `;
 
+      // Append to body temporarily to get accurate height
+      document.body.appendChild(container);
+
       const opt = {
         margin: 0,
         filename: `Interview_Prep_${app.company_name.replace(/[^a-zA-Z0-9]/g, "_")}.pdf`,
@@ -134,22 +139,25 @@ export default function ClientInterviewsPage() {
           scale: 2,
           useCORS: true,
           backgroundColor: "#0a0a0a",
-          windowHeight: document.body.scrollHeight,
-          height: document.body.scrollHeight,
+          logging: false,
+          letterRendering: true,
         },
         jsPDF: {
           unit: "mm",
           format: "a4",
           orientation: "portrait",
-          compress: true,
         },
+        pagebreak: { mode: ["avoid-all", "css", "legacy"] },
       } as any;
 
       await html2pdf().set(opt).from(container).save();
+
+      // Remove temporary container
+      document.body.removeChild(container);
     } catch (error) {
       console.error("Error generating PDF:", error);
     } finally {
-      setIsGeneratingPdf(false);
+      setGeneratingPdfId(null);
     }
   };
 
@@ -243,10 +251,10 @@ export default function ClientInterviewsPage() {
                     {(app as any).prep_doc && (
                       <Button
                         onClick={() => downloadPdf(app)}
-                        disabled={isGeneratingPdf}
+                        disabled={generatingPdfId === app.id}
                         className="gap-2"
                       >
-                        {isGeneratingPdf ? (
+                        {generatingPdfId === app.id ? (
                           <Loader2 className="w-4 h-4 animate-spin" />
                         ) : (
                           <Download className="w-4 h-4" />
@@ -298,10 +306,10 @@ export default function ClientInterviewsPage() {
                         variant="outline"
                         size="sm"
                         onClick={() => downloadPdf(app)}
-                        disabled={isGeneratingPdf}
+                        disabled={generatingPdfId === app.id}
                         className="gap-2"
                       >
-                        {isGeneratingPdf ? (
+                        {generatingPdfId === app.id ? (
                           <Loader2 className="w-4 h-4 animate-spin" />
                         ) : (
                           <Download className="w-4 h-4" />
@@ -348,10 +356,12 @@ export default function ClientInterviewsPage() {
             <Button
               variant="outline"
               onClick={() => selectedApp && downloadPdf(selectedApp)}
-              disabled={isGeneratingPdf}
+              disabled={
+                selectedApp ? generatingPdfId === selectedApp.id : false
+              }
               className="gap-2"
             >
-              {isGeneratingPdf ? (
+              {selectedApp && generatingPdfId === selectedApp.id ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
                 <Download className="w-4 h-4" />
