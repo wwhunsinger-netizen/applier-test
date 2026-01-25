@@ -455,138 +455,133 @@ export default function AppliedPage() {
               </div>
             </div>
 
-            {/* Middle: Status Actions (only in Follow-up view) */}
+            {/* Right: Actions */}
             <div className="flex items-center gap-2 flex-shrink-0">
-              {showFollowUp && (
-                <>
-                  {/* Status buttons for marking Interview/Rejected */}
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="gap-1"
-                        disabled={isUpdating}
-                      >
-                        {isUpdating ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <>
-                            <Sparkles className="w-4 h-4" />
-                            Status
-                            <ChevronDown className="w-3 h-3" />
-                          </>
-                        )}
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem
-                        onClick={() => handleStatusChange(app.id, "Interview")}
-                        className="cursor-pointer text-green-500"
-                      >
-                        <CalendarCheck className="w-4 h-4 mr-2" />
-                        Got Interview!
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => handleStatusChange(app.id, "Rejected")}
-                        className="cursor-pointer text-red-500"
-                      >
-                        <XCircle className="w-4 h-4 mr-2" />
-                        Rejected
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+              {/* Status Badge */}
+              <Badge
+                variant="outline"
+                className={
+                  app.status?.toLowerCase() === "interview"
+                    ? "bg-blue-500/10 text-blue-500 border-blue-500/20"
+                    : app.status?.toLowerCase() === "rejected"
+                      ? "bg-red-500/10 text-red-500 border-red-500/20"
+                      : isManualLinkedIn
+                        ? "bg-[#0077B5]/10 text-[#0077B5] border-[#0077B5]/20"
+                        : "bg-green-500/10 text-green-500 border-green-500/20"
+                }
+              >
+                {app.status}
+              </Badge>
 
-                  {/* Follow-up method dropdown */}
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="gap-1"
-                        disabled={isUpdating}
-                      >
-                        {isUpdating ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <>
-                            <MessageSquare className="w-4 h-4" />
-                            Follow-up
-                            <ChevronDown className="w-3 h-3" />
-                          </>
-                        )}
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem
-                        onClick={() =>
-                          handleFollowupChange(app.id, "linkedin_connect")
-                        }
-                        className="cursor-pointer"
-                      >
-                        <UserPlus className="w-4 h-4 mr-2" />
-                        LinkedIn Connect
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() =>
-                          handleFollowupChange(app.id, "linkedin_message")
-                        }
-                        className="cursor-pointer"
-                      >
-                        <Linkedin className="w-4 h-4 mr-2" />
-                        LinkedIn Message
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => handleFollowupChange(app.id, "email")}
-                        className="cursor-pointer"
-                      >
-                        <Send className="w-4 h-4 mr-2" />
-                        Email
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => handleFollowupChange(app.id, "none")}
-                        className="cursor-pointer text-muted-foreground"
-                      >
-                        <X className="w-4 h-4 mr-2" />
-                        No follow-up
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </>
-              )}
-            </div>
-
-            {/* Right: Status Badge + View Job (only in All Applied view) */}
-            <div className="flex items-center gap-3 flex-shrink-0">
+              {/* Status change dropdown - only in All Applied view */}
               {!showFollowUp && (
-                <>
-                  <Badge
-                    variant="outline"
-                    className={
-                      app.status?.toLowerCase() === "interview"
-                        ? "bg-blue-500/10 text-blue-500 border-blue-500/20"
-                        : app.status?.toLowerCase() === "rejected"
-                          ? "bg-red-500/10 text-red-500 border-red-500/20"
-                          : isManualLinkedIn
-                            ? "bg-[#0077B5]/10 text-[#0077B5] border-[#0077B5]/20"
-                            : "bg-green-500/10 text-green-500 border-green-500/20"
-                    }
-                  >
-                    {app.status}
-                  </Badge>
-
-                  {jobUrl && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => window.open(jobUrl, "_blank")}
-                      data-testid={`button-view-job-${app.id}`}
+                      className="gap-1"
+                      disabled={isUpdating}
                     >
-                      <ExternalLink className="w-4 h-4 mr-2" />
-                      View Job
+                      {isUpdating ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <>
+                          <Sparkles className="w-4 h-4" />
+                          Status
+                          <ChevronDown className="w-3 h-3" />
+                        </>
+                      )}
                     </Button>
-                  )}
-                </>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                      onClick={() => handleStatusChange(app.id, "Interview")}
+                      className="cursor-pointer text-green-500"
+                    >
+                      <CalendarCheck className="w-4 h-4 mr-2" />
+                      Got Interview!
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => handleStatusChange(app.id, "Rejected")}
+                      className="cursor-pointer text-red-500"
+                    >
+                      <XCircle className="w-4 h-4 mr-2" />
+                      Rejected
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+
+              {/* Follow-up dropdown - only in Follow-up view */}
+              {showFollowUp && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-1"
+                      disabled={isUpdating}
+                    >
+                      {isUpdating ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <>
+                          <MessageSquare className="w-4 h-4" />
+                          Follow-up
+                          <ChevronDown className="w-3 h-3" />
+                        </>
+                      )}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                      onClick={() =>
+                        handleFollowupChange(app.id, "linkedin_connect")
+                      }
+                      className="cursor-pointer"
+                    >
+                      <UserPlus className="w-4 h-4 mr-2" />
+                      LinkedIn Connect
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() =>
+                        handleFollowupChange(app.id, "linkedin_message")
+                      }
+                      className="cursor-pointer"
+                    >
+                      <Linkedin className="w-4 h-4 mr-2" />
+                      LinkedIn Message
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => handleFollowupChange(app.id, "email")}
+                      className="cursor-pointer"
+                    >
+                      <Send className="w-4 h-4 mr-2" />
+                      Email
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => handleFollowupChange(app.id, "none")}
+                      className="cursor-pointer text-muted-foreground"
+                    >
+                      <X className="w-4 h-4 mr-2" />
+                      No follow-up
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+
+              {/* View Job button - available in both views */}
+              {jobUrl && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => window.open(jobUrl, "_blank")}
+                  data-testid={`button-view-job-${app.id}`}
+                >
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                  View Job
+                </Button>
               )}
             </div>
           </div>
