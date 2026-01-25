@@ -466,12 +466,20 @@ export default function AppliedPage() {
                       ? "bg-blue-500/10 text-blue-500 border-blue-500/20"
                       : app.status?.toLowerCase() === "rejected"
                         ? "bg-red-500/10 text-red-500 border-red-500/20"
-                        : isManualLinkedIn
-                          ? "bg-[#0077B5]/10 text-[#0077B5] border-[#0077B5]/20"
-                          : "bg-green-500/10 text-green-500 border-green-500/20"
+                        : app.followed_up
+                          ? "bg-purple-500/10 text-purple-500 border-purple-500/20"
+                          : isManualLinkedIn
+                            ? "bg-[#0077B5]/10 text-[#0077B5] border-[#0077B5]/20"
+                            : "bg-green-500/10 text-green-500 border-green-500/20"
                   }
                 >
-                  {app.status}
+                  {app.status?.toLowerCase() === "interview"
+                    ? "Interview"
+                    : app.status?.toLowerCase() === "rejected"
+                      ? "Rejected"
+                      : app.followed_up
+                        ? "Followed Up"
+                        : app.status}
                 </Badge>
               )}
 
