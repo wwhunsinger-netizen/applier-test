@@ -457,21 +457,23 @@ export default function AppliedPage() {
 
             {/* Right: Actions */}
             <div className="flex items-center gap-2 flex-shrink-0">
-              {/* Status Badge */}
-              <Badge
-                variant="outline"
-                className={
-                  app.status?.toLowerCase() === "interview"
-                    ? "bg-blue-500/10 text-blue-500 border-blue-500/20"
-                    : app.status?.toLowerCase() === "rejected"
-                      ? "bg-red-500/10 text-red-500 border-red-500/20"
-                      : isManualLinkedIn
-                        ? "bg-[#0077B5]/10 text-[#0077B5] border-[#0077B5]/20"
-                        : "bg-green-500/10 text-green-500 border-green-500/20"
-                }
-              >
-                {app.status}
-              </Badge>
+              {/* Status Badge - only in All Applied view */}
+              {!showFollowUp && (
+                <Badge
+                  variant="outline"
+                  className={
+                    app.status?.toLowerCase() === "interview"
+                      ? "bg-blue-500/10 text-blue-500 border-blue-500/20"
+                      : app.status?.toLowerCase() === "rejected"
+                        ? "bg-red-500/10 text-red-500 border-red-500/20"
+                        : isManualLinkedIn
+                          ? "bg-[#0077B5]/10 text-[#0077B5] border-[#0077B5]/20"
+                          : "bg-green-500/10 text-green-500 border-green-500/20"
+                  }
+                >
+                  {app.status}
+                </Badge>
+              )}
 
               {/* Status change dropdown - only in All Applied view */}
               {!showFollowUp && (
@@ -513,6 +515,19 @@ export default function AppliedPage() {
                 </DropdownMenu>
               )}
 
+              {/* View Job button - available in both views */}
+              {jobUrl && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => window.open(jobUrl, "_blank")}
+                  data-testid={`button-view-job-${app.id}`}
+                >
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                  View Job
+                </Button>
+              )}
+
               {/* Follow-up dropdown - only in Follow-up view */}
               {showFollowUp && (
                 <DropdownMenu>
@@ -520,7 +535,7 @@ export default function AppliedPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="gap-1"
+                      className="gap-1 border-red-500/50 text-red-500 hover:bg-red-500/10"
                       disabled={isUpdating}
                     >
                       {isUpdating ? (
@@ -569,19 +584,6 @@ export default function AppliedPage() {
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-              )}
-
-              {/* View Job button - available in both views */}
-              {jobUrl && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => window.open(jobUrl, "_blank")}
-                  data-testid={`button-view-job-${app.id}`}
-                >
-                  <ExternalLink className="w-4 h-4 mr-2" />
-                  View Job
-                </Button>
               )}
             </div>
           </div>
