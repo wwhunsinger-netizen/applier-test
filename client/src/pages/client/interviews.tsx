@@ -110,9 +110,10 @@ export default function ClientInterviewsPage() {
       );
 
       // Create a temporary container with styled content (dark mode with red accents)
+      // Using full viewport height and proper background coverage
       const container = document.createElement("div");
       container.innerHTML = `
-        <div style="font-family: 'Helvetica', 'Arial', sans-serif; padding: 40px; color: #e5e5e5; background-color: #0a0a0a; max-width: 800px;">
+        <div style="font-family: 'Helvetica', 'Arial', sans-serif; padding: 40px; color: #e5e5e5; background-color: #0a0a0a; min-height: 100vh; width: 100%;">
           <div style="border-bottom: 3px solid #ef4444; padding-bottom: 20px; margin-bottom: 30px;">
             <h1 style="margin: 0 0 8px 0; font-size: 28px; color: #ffffff;">Interview Prep</h1>
             <h2 style="margin: 0 0 4px 0; font-size: 20px; color: #ef4444; font-weight: 600;">${app.company_name}</h2>
@@ -129,8 +130,19 @@ export default function ClientInterviewsPage() {
         margin: 0,
         filename: `Interview_Prep_${app.company_name.replace(/[^a-zA-Z0-9]/g, "_")}.pdf`,
         image: { type: "jpeg", quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, backgroundColor: "#0a0a0a" },
-        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          backgroundColor: "#0a0a0a",
+          windowHeight: document.body.scrollHeight,
+          height: document.body.scrollHeight,
+        },
+        jsPDF: {
+          unit: "mm",
+          format: "a4",
+          orientation: "portrait",
+          compress: true,
+        },
       } as any;
 
       await html2pdf().set(opt).from(container).save();
@@ -227,22 +239,9 @@ export default function ClientInterviewsPage() {
                       </Badge>
                     )}
 
-                    {/* View Prep Doc button */}
-                    {(app as any).prep_doc && (
-                      <Button
-                        onClick={() => openPrepDoc(app)}
-                        className="gap-2"
-                      >
-                        <FileText className="w-4 h-4" />
-                        View Prep Doc
-                      </Button>
-                    )}
-
                     {/* Download PDF button */}
                     {(app as any).prep_doc && (
                       <Button
-                        variant="outline"
-                        size="sm"
                         onClick={() => downloadPdf(app)}
                         disabled={isGeneratingPdf}
                         className="gap-2"
@@ -252,7 +251,7 @@ export default function ClientInterviewsPage() {
                         ) : (
                           <Download className="w-4 h-4" />
                         )}
-                        PDF
+                        Download Prep PDF
                       </Button>
                     )}
 
@@ -295,29 +294,20 @@ export default function ClientInterviewsPage() {
                       <h4 className="text-lg font-semibold text-white">
                         Interview Prep Document
                       </h4>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => downloadPdf(app)}
-                          disabled={isGeneratingPdf}
-                          className="gap-2"
-                        >
-                          {isGeneratingPdf ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <Download className="w-4 h-4" />
-                          )}
-                          Download PDF
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openPrepDoc(app)}
-                        >
-                          Open Full View
-                        </Button>
-                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => downloadPdf(app)}
+                        disabled={isGeneratingPdf}
+                        className="gap-2"
+                      >
+                        {isGeneratingPdf ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Download className="w-4 h-4" />
+                        )}
+                        Download PDF
+                      </Button>
                     </div>
                     <div className="bg-black/50 rounded-lg p-6 text-sm text-muted-foreground whitespace-pre-wrap max-h-96 overflow-y-auto prose prose-invert prose-sm max-w-none">
                       {(app as any).prep_doc}
