@@ -98,7 +98,9 @@ export default function ClientInterviewsPage() {
 
   // Generate and download PDF
   const downloadPdf = async (app: Application) => {
+    console.log("Starting PDF generation for app:", app.id, app.company_name);
     setGeneratingPdfId(app.id);
+    console.log("Set generatingPdfId to:", app.id);
 
     try {
       // Dynamically import html2pdf
@@ -157,6 +159,7 @@ export default function ClientInterviewsPage() {
     } catch (error) {
       console.error("Error generating PDF:", error);
     } finally {
+      console.log("Resetting generatingPdfId to null");
       setGeneratingPdfId(null);
     }
   };
@@ -250,7 +253,16 @@ export default function ClientInterviewsPage() {
                     {/* Download PDF button */}
                     {(app as any).prep_doc && (
                       <Button
-                        onClick={() => downloadPdf(app)}
+                        key={`download-${app.id}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          console.log(
+                            "Button clicked for app:",
+                            app.id,
+                            app.company_name,
+                          );
+                          downloadPdf(app);
+                        }}
                         disabled={generatingPdfId === app.id}
                         className="gap-2"
                       >
