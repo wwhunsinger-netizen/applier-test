@@ -2454,6 +2454,162 @@ export async function registerRoutes(
     },
   );
 
+  // ========================================
+  // WEEKLY REPORT DATA (JSON) - Simple approach that bypasses Vite issues
+  // ========================================
+  app.get(
+    "/api/admin/weekly-report-data",
+    isSupabaseAuthenticated,
+    async (req, res) => {
+      console.log("[Weekly Report Data] === START ===");
+      console.log("[Weekly Report Data] Query params:", req.query);
+
+      try {
+        const { start_date, end_date } = req.query;
+
+        if (!start_date || !end_date) {
+          console.log("[Weekly Report Data] Missing dates!");
+          return res
+            .status(400)
+            .json({ error: "start_date and end_date are required" });
+        }
+
+        const startDate = start_date as string;
+        const endDate = end_date as string;
+        console.log(
+          "[Weekly Report Data] Date range:",
+          startDate,
+          "to",
+          endDate,
+        );
+
+        // Get all appliers
+        const appliers = await storage.getAppliers();
+        console.log("[Weekly Report Data] Found appliers:", appliers.length);
+
+        // Get all applications, interviews
+        const allApplications = await storage.getApplications();
+        const allInterviews = await storage.getInterviews();
+        console.log(
+          "[Weekly Report Data] Total applications:",
+          allApplications.length,
+        );
+        console.log(
+          "[Weekly Report Data] Total interviews:",
+          allInterviews.length,
+        );
+
+        // Calculate Sunday 10PM EST for the start and end dates
+        const startDateTime = new Date(startDate);
+        startDateTime.setHours(22, 0, 0, 0); // 10PM
+
+        const endDateTime = new Date(endDate);
+        endDateTime.setHours(22, 0, 0, 0); // 10PM
+
+        // Build report data for each applier
+        const reportData = await Promise.all(
+          appliers.map(async (applier) => {
+            const applierName = `${applier.first_name} ${applier.last_name}`;
+
+            // Filter applications for this applier in the date range
+            const applierApps = allApplications.filter((app) => {
+              if (app.applier_id !== applier.id) return false;
+
+              const appDate = new Date(
+                app.applied_at || app.applied_date || app.created_at || "",
+              );
+              return appDate >= startDateTime && appDate < endDateTime;
+            });
+
+            const appsSent = applierApps.length;
+
+            // Count follow-ups done this week
+            const followUpsDone = applierApps.filter((app) => {
+              if (!app.followed_up_at) return false;
+              const followUpDate = new Date(app.followed_up_at);
+              return (
+                followUpDate >= startDateTime && followUpDate < endDateTime
+              );
+            }).length;
+
+            // Count interviews generated
+            const applierInterviews = allInterviews.filter((interview) => {
+              const interviewApp = allApplications.find(
+                (a) => a.id === interview.application_id,
+              );
+              if (!interviewApp || interviewApp.applier_id !== applier.id)
+                return false;
+
+              const interviewDate = new Date(interview.created_at || "");
+              return (
+                interviewDate >= startDateTime && interviewDate < endDateTime
+              );
+            });
+            const interviewsGenerated = applierInterviews.length;
+
+            // Count offers
+            const offersGenerated = applierInterviews.filter(
+              (i) => i.outcome?.toLowerCase() === "offer",
+            ).length;
+
+            // Get earnings for this applier in date range
+            const earnings = await storage.getApplierEarningsByDateRange(
+              applier.id,
+              startDate,
+              endDate,
+            );
+
+            // Calculate earnings breakdown
+            const basePay = earnings
+              .filter((e) => e.earnings_type === "base_pay")
+              .reduce((sum, e) => sum + Number(e.amount), 0);
+
+            const milestoneBonus = earnings
+              .filter((e) => e.earnings_type === "application_milestone")
+              .reduce((sum, e) => sum + Number(e.amount), 0);
+
+            const interviewBonus = earnings
+              .filter((e) => e.earnings_type === "interview_bonus")
+              .reduce((sum, e) => sum + Number(e.amount), 0);
+
+            const placementBonus = earnings
+              .filter((e) => e.earnings_type === "placement_bonus")
+              .reduce((sum, e) => sum + Number(e.amount), 0);
+
+            const totalEarnings =
+              basePay + milestoneBonus + interviewBonus + placementBonus;
+
+            return {
+              applierName,
+              appsSent,
+              followUpsDone,
+              interviewsGenerated,
+              offersGenerated,
+              basePay,
+              milestoneBonus,
+              interviewBonus,
+              placementBonus,
+              totalEarnings,
+            };
+          }),
+        );
+
+        console.log(
+          "[Weekly Report Data] Returning",
+          reportData.length,
+          "applier records",
+        );
+        res.json(reportData);
+      } catch (error) {
+        console.error("[Weekly Report Data] === ERROR ===");
+        console.error("[Weekly Report Data] Error:", error);
+        res
+          .status(500)
+          .json({ error: "Failed to generate weekly report data" });
+      }
+    },
+  );
+
   // Admin client performance - real client stats
   app.get(
     "/api/admin/client-performance",

@@ -250,7 +250,7 @@ export default function AdminAppliersPage() {
     setIsWeeklyReportOpen(true);
   };
 
-  // Download weekly report CSV
+  // Download weekly report CSV (generates CSV from JSON data in browser)
   const handleDownloadWeeklyReport = async () => {
     if (!reportStartDate || !reportEndDate) {
       toast({
@@ -263,18 +263,58 @@ export default function AdminAppliersPage() {
 
     setIsGeneratingReport(true);
     try {
+      // Fetch JSON data from backend
       const response = await fetch(
-        `/api/admin/weekly-report?start_date=${reportStartDate}&end_date=${reportEndDate}`,
+        `/api/admin/weekly-report-data?start_date=${reportStartDate}&end_date=${reportEndDate}`,
         {
           credentials: "include",
         },
       );
 
       if (!response.ok) {
-        throw new Error("Failed to generate report");
+        throw new Error("Failed to fetch report data");
       }
 
-      const blob = await response.blob();
+      const data = await response.json();
+      console.log("Received report data:", data);
+
+      // Generate CSV from JSON data
+      const headers = [
+        "Applier Name",
+        "Apps Sent",
+        "Follow-ups Done",
+        "Interviews Generated",
+        "Offers Generated",
+        "Base Pay ($0.28/app)",
+        "100-App Milestone Bonuses",
+        "Interview Bonuses ($50 each)",
+        "Placement Bonuses ($400 each)",
+        "Total Weekly Earnings",
+      ];
+
+      const csvRows = [
+        headers.join(","),
+        ...data.map((row: any) =>
+          [
+            `"${row.applierName}"`,
+            row.appsSent,
+            row.followUpsDone,
+            row.interviewsGenerated,
+            row.offersGenerated,
+            row.basePay.toFixed(2),
+            row.milestoneBonus.toFixed(2),
+            row.interviewBonus.toFixed(2),
+            row.placementBonus.toFixed(2),
+            row.totalEarnings.toFixed(2),
+          ].join(","),
+        ),
+      ];
+
+      const csv = csvRows.join("\n");
+      console.log("Generated CSV:", csv.substring(0, 200));
+
+      // Create and download the CSV file
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
