@@ -2266,6 +2266,10 @@ export async function registerRoutes(
     "/api/admin/weekly-report",
     isSupabaseAuthenticated,
     async (req, res) => {
+      console.log("[Weekly Report] Endpoint hit");
+      console.log("[Weekly Report] Query params:", req.query);
+      console.log("[Weekly Report] User:", req.user);
+
       try {
         const { start_date, end_date } = req.query;
 
