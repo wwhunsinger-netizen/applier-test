@@ -47,7 +47,9 @@ export default function AdminAppliersPage() {
   const [editLastName, setEditLastName] = useState("");
   const [editEmail, setEditEmail] = useState("");
   const [editIsActive, setEditIsActive] = useState(true);
-  const [editAssignedClientIds, setEditAssignedClientIds] = useState<string[]>([]);
+  const [editAssignedClientIds, setEditAssignedClientIds] = useState<string[]>(
+    [],
+  );
 
   const {
     data: appliers = [],
@@ -739,7 +741,7 @@ export default function AdminAppliersPage() {
                           ? "bg-green-500/10 text-green-400 border-green-500/20"
                           : client.status === "placed"
                             ? "bg-blue-500/10 text-blue-400 border-blue-500/20"
-                            : "bg-gray-500/10 text-gray-400 border-gray-500/20"
+                            : "bg-gray-500/10 text-gray-400 border-gray-500/20",
                       )}
                     >
                       {client.status}
