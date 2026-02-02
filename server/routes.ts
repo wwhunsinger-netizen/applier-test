@@ -2266,14 +2266,14 @@ export async function registerRoutes(
     "/api/admin/weekly-report",
     isSupabaseAuthenticated,
     async (req, res) => {
-      console.log("[Weekly Report] Endpoint hit");
+      console.log("[Weekly Report] === START ===");
       console.log("[Weekly Report] Query params:", req.query);
-      console.log("[Weekly Report] User:", req.user);
 
       try {
         const { start_date, end_date } = req.query;
 
         if (!start_date || !end_date) {
+          console.log("[Weekly Report] Missing dates!");
           return res
             .status(400)
             .json({ error: "start_date and end_date are required" });
@@ -2281,13 +2281,20 @@ export async function registerRoutes(
 
         const startDate = start_date as string;
         const endDate = end_date as string;
+        console.log("[Weekly Report] Date range:", startDate, "to", endDate);
 
         // Get all appliers
         const appliers = await storage.getAppliers();
+        console.log("[Weekly Report] Found appliers:", appliers.length);
 
         // Get all applications, interviews, and earnings in date range
         const allApplications = await storage.getApplications();
         const allInterviews = await storage.getInterviews();
+        console.log(
+          "[Weekly Report] Total applications:",
+          allApplications.length,
+        );
+        console.log("[Weekly Report] Total interviews:", allInterviews.length);
 
         // Calculate Sunday 10PM EST for the start and end dates
         const startDateTime = new Date(startDate);
@@ -2418,15 +2425,30 @@ export async function registerRoutes(
 
         const csv = csvRows.join("\n");
 
+        console.log("[Weekly Report] Generated CSV length:", csv.length);
+        console.log(
+          "[Weekly Report] CSV preview (first 200 chars):",
+          csv.substring(0, 200),
+        );
+        console.log("[Weekly Report] Report data rows:", reportData.length);
+
         // Set headers for CSV download
         res.setHeader("Content-Type", "text/csv");
         res.setHeader(
           "Content-Disposition",
           `attachment; filename="weekly-report-${startDate}-to-${endDate}.csv"`,
         );
+
+        console.log("[Weekly Report] Sending CSV response...");
         res.send(csv);
+        console.log("[Weekly Report] === END (SUCCESS) ===");
       } catch (error) {
-        console.error("Error generating weekly report:", error);
+        console.error("[Weekly Report] === ERROR ===");
+        console.error("[Weekly Report] Error generating weekly report:", error);
+        console.error(
+          "[Weekly Report] Error stack:",
+          error instanceof Error ? error.stack : "No stack",
+        );
         res.status(500).json({ error: "Failed to generate weekly report" });
       }
     },
