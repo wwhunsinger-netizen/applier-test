@@ -2456,6 +2456,132 @@ export async function registerRoutes(
     }
   });
 
+  // ========================================
+  // ADMIN APPLIER TIMEFRAME STATS - USES SAME DATE LOGIC AS OVERVIEW
+  // ========================================
+  app.get(
+    "/api/admin/applier-timeframe-stats",
+    isSupabaseAuthenticated,
+    async (req, res) => {
+      try {
+        const { timeframe } = req.query;
+
+        if (
+          !timeframe ||
+          !["this_week", "last_week", "last_month"].includes(
+            timeframe as string,
+          )
+        ) {
+          return res.status(400).json({ error: "Invalid timeframe parameter" });
+        }
+
+        // COPY EXACT DATE LOGIC from /api/admin/overview
+        const now = new Date();
+        const dayOfWeek = now.getDay();
+        const startOfWeek = new Date(now);
+        startOfWeek.setDate(
+          now.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1),
+        ); // Monday
+        startOfWeek.setHours(0, 0, 0, 0);
+
+        let startDate: Date;
+        let endDate: Date = new Date(); // Now
+
+        if (timeframe === "this_week") {
+          // Same as overview: from Monday 00:00
+          startDate = new Date(startOfWeek);
+        } else if (timeframe === "last_week") {
+          // Previous Monday to this Monday
+          endDate = new Date(startOfWeek);
+          startDate = new Date(startOfWeek);
+          startDate.setDate(startDate.getDate() - 7);
+        } else {
+          // Last month: 30 days ago
+          startDate = new Date(now);
+          startDate.setDate(startDate.getDate() - 30);
+          startDate.setHours(0, 0, 0, 0);
+        }
+
+        console.log("[Timeframe Stats]", {
+          timeframe,
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString(),
+        });
+
+        // Get all data
+        const appliers = await storage.getAppliers();
+        const allApplications = await storage.getApplications();
+        const allInterviews = await storage.getInterviews();
+
+        console.log(
+          "[Timeframe Stats] Total applications:",
+          allApplications.length,
+        );
+
+        // Calculate stats for each applier
+        const stats = await Promise.all(
+          appliers.map(async (applier) => {
+            // Filter applications in date range - SAME LOGIC AS OVERVIEW
+            const applierApps = allApplications.filter((app) => {
+              if (app.applier_id !== applier.id) return false;
+
+              // EXACT SAME as line 2360 in overview endpoint
+              const appDate = new Date(
+                app.applied_date || app.created_at || "",
+              );
+              return appDate >= startDate && appDate <= endDate;
+            });
+
+            // Get interviews for this applier's apps in date range
+            const applierInterviews = allInterviews.filter((interview) => {
+              const interviewApp = allApplications.find(
+                (a) => a.id === interview.application_id,
+              );
+              if (!interviewApp || interviewApp.applier_id !== applier.id) {
+                return false;
+              }
+
+              const interviewDate = new Date(interview.created_at || "");
+              return interviewDate >= startDate && interviewDate <= endDate;
+            });
+
+            // Count offers
+            const offers = applierInterviews.filter(
+              (i) => i.outcome?.toLowerCase() === "offer",
+            ).length;
+
+            return {
+              id: applier.id,
+              name: `${applier.first_name} ${applier.last_name}`,
+              email: applier.email,
+              status:
+                applier.status === "active"
+                  ? "Active"
+                  : applier.status === "idle"
+                    ? "Idle"
+                    : applier.status === "inactive"
+                      ? "Inactive"
+                      : "Offline",
+              appsSent: applierApps.length,
+              interviews: applierInterviews.length,
+              offers,
+            };
+          }),
+        );
+
+        // Sort by apps sent (descending)
+        stats.sort((a, b) => b.appsSent - a.appsSent);
+
+        console.log("[Timeframe Stats] Returning", stats.length, "appliers");
+
+        res.json(stats);
+      } catch (error) {
+        console.error("[Timeframe Stats] Error:", error);
+        res.status(500).json({ error: "Failed to fetch timeframe stats" });
+      }
+    },
+  );
+
   // Get earnings summary per client (for admin cost tracking)
   app.get(
     "/api/admin/client-costs",

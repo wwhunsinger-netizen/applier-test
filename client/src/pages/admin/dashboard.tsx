@@ -26,6 +26,13 @@ import { cn } from "@/lib/utils";
 import { EmailDialog } from "@/components/admin/email-dialog";
 import { Link } from "wouter";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   fetchClientCosts,
   fetchAdminOverview,
   fetchClientPerformance,
@@ -34,6 +41,18 @@ import {
   type AdminOverview,
   type ClientPerformance,
 } from "@/lib/api";
+
+type Timeframe = "this_week" | "last_week" | "last_month";
+
+interface ApplierTimeframeStats {
+  id: string;
+  name: string;
+  email: string;
+  status: string;
+  appsSent: number;
+  interviews: number;
+  offers: number;
+}
 
 export default function AdminDashboardPage() {
   const [selectedUser, setSelectedUser] = useState<ApplierPerformance | null>(
@@ -52,6 +71,13 @@ export default function AdminDashboardPage() {
     new Set(),
   );
 
+  // Timeframe state
+  const [timeframe, setTimeframe] = useState<Timeframe>("this_week");
+  const [timeframeStats, setTimeframeStats] = useState<ApplierTimeframeStats[]>(
+    [],
+  );
+  const [isTimeframeLoading, setIsTimeframeLoading] = useState(false);
+
   useEffect(() => {
     fetchClientCosts()
       .then(setClientCosts)
@@ -68,6 +94,29 @@ export default function AdminDashboardPage() {
       .catch(console.error)
       .finally(() => setIsClientPerfLoading(false));
   }, []);
+
+  // Fetch timeframe stats when timeframe changes
+  useEffect(() => {
+    const fetchTimeframeStats = async () => {
+      setIsTimeframeLoading(true);
+      try {
+        const response = await fetch(
+          `/api/admin/applier-timeframe-stats?timeframe=${timeframe}`,
+          { credentials: "include" },
+        );
+        if (!response.ok) throw new Error("Failed to fetch stats");
+        const data = await response.json();
+        setTimeframeStats(data);
+      } catch (error) {
+        console.error("Error fetching timeframe stats:", error);
+        setTimeframeStats([]);
+      } finally {
+        setIsTimeframeLoading(false);
+      }
+    };
+
+    fetchTimeframeStats();
+  }, [timeframe]);
 
   const handleEmailClick = (user: ApplierPerformance) => {
     setSelectedUser(user);
@@ -106,6 +155,17 @@ export default function AdminDashboardPage() {
   };
 
   const isLoading = isClientPerfLoading || isCostsLoading;
+
+  const getTimeframeLabel = (tf: Timeframe) => {
+    switch (tf) {
+      case "this_week":
+        return "This Week";
+      case "last_week":
+        return "Last Week";
+      case "last_month":
+        return "Last Month";
+    }
+  };
 
   return (
     <div className="space-y-8">
@@ -194,20 +254,51 @@ export default function AdminDashboardPage() {
         </Card>
       </div>
 
-      {/* Team Performance Grid */}
+      {/* Team Performance Grid with Timeframe Selector */}
       <div>
-        <h2 className="text-xl font-bold text-white mb-4">Team Performance</h2>
-        {isOverviewLoading ? (
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-bold text-white">Team Performance</h2>
+          <Select
+            value={timeframe}
+            onValueChange={(value) => setTimeframe(value as Timeframe)}
+          >
+            <SelectTrigger className="w-[160px] bg-white/5 border-white/10">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="bg-[#111] border-white/10">
+              <SelectItem
+                value="this_week"
+                className="text-white hover:bg-white/5"
+              >
+                This Week
+              </SelectItem>
+              <SelectItem
+                value="last_week"
+                className="text-white hover:bg-white/5"
+              >
+                Last Week
+              </SelectItem>
+              <SelectItem
+                value="last_month"
+                className="text-white hover:bg-white/5"
+              >
+                Last Month
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {isTimeframeLoading ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
           </div>
-        ) : appliers.length === 0 ? (
+        ) : timeframeStats.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
-            No appliers found. Add team members to get started.
+            No data found for {getTimeframeLabel(timeframe).toLowerCase()}.
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {appliers.map((user) => (
+            {timeframeStats.map((user) => (
               <HoverCardWrapper key={user.id}>
                 <Card
                   className="bg-[#111] border-white/10 overflow-hidden"
@@ -240,38 +331,31 @@ export default function AdminDashboardPage() {
                         </p>
                       </div>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleEmailClick(user)}
-                    >
-                      <Mail className="w-4 h-4 text-muted-foreground hover:text-white" />
-                    </Button>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="grid grid-cols-3 gap-2 text-center">
                       <div className="bg-white/5 rounded-lg p-2">
                         <div className="text-xs text-muted-foreground">
-                          Today
+                          Apps
                         </div>
                         <div className="font-bold text-white">
-                          {user.dailyApps}
+                          {user.appsSent}
                         </div>
                       </div>
                       <div className="bg-white/5 rounded-lg p-2">
                         <div className="text-xs text-muted-foreground">
-                          Week
+                          Interviews
                         </div>
                         <div className="font-bold text-white">
-                          {user.weeklyApps}
+                          {user.interviews}
                         </div>
                       </div>
                       <div className="bg-white/5 rounded-lg p-2">
                         <div className="text-xs text-muted-foreground">
-                          Int Rate
+                          Offers
                         </div>
                         <div className="font-bold text-white">
-                          {user.interviewRate}%
+                          {user.offers}
                         </div>
                       </div>
                     </div>
@@ -348,142 +432,90 @@ export default function AdminDashboardPage() {
                             </span>
                           </div>
                           <p className="text-xs text-muted-foreground mt-0.5">
-                            Last activity {client.lastActivity}
+                            {client.lastActivity}
                           </p>
                         </div>
                       </div>
-                      {costData && costData.total_cost > 0 && (
-                        <div className="text-right">
-                          <div className="text-2xl font-bold text-primary">
-                            ${costData.total_cost.toFixed(0)}
-                          </div>
-                          <p className="text-xs text-muted-foreground">
-                            total spend
-                          </p>
-                        </div>
-                      )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => toggleClientExpanded(client.id)}
+                      >
+                        {isExpanded ? (
+                          <ChevronUp className="w-4 h-4" />
+                        ) : (
+                          <ChevronDown className="w-4 h-4" />
+                        )}
+                      </Button>
                     </div>
 
-                    {/* Performance Stats */}
-                    <div className="grid grid-cols-4 gap-3 mb-4">
-                      <div className="bg-white/5 rounded-lg p-3 text-center border border-white/5 group-hover:border-white/10 transition-colors">
-                        <div className="flex items-center justify-center gap-1.5 mb-1 text-muted-foreground">
-                          <Briefcase className="w-3.5 h-3.5" />
-                          <span className="text-xs font-medium">Applied</span>
-                        </div>
-                        <div className="text-xl font-bold text-white">
+                    {/* Quick Stats */}
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-white">
                           {client.totalApps}
                         </div>
-                      </div>
-                      <div className="bg-white/5 rounded-lg p-3 text-center border border-white/5 group-hover:border-white/10 transition-colors">
-                        <div className="flex items-center justify-center gap-1.5 mb-1 text-muted-foreground">
-                          <Calendar className="w-3.5 h-3.5" />
-                          <span className="text-xs font-medium">
-                            Interviews
-                          </span>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          Total Apps
                         </div>
-                        <div className="text-xl font-bold text-white">
+                      </div>
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-blue-500">
                           {client.interviews}
                         </div>
-                      </div>
-                      <div className="bg-white/5 rounded-lg p-3 text-center border border-white/5 group-hover:border-white/10 transition-colors">
-                        <div className="flex items-center justify-center gap-1.5 mb-1 text-muted-foreground">
-                          <CheckCircle className="w-3.5 h-3.5" />
-                          <span className="text-xs font-medium">Offers</span>
-                        </div>
-                        <div className="text-xl font-bold text-green-400">
-                          {client.offers}
+                        <div className="text-xs text-muted-foreground mt-1">
+                          Interviews
                         </div>
                       </div>
-                      <div className="bg-white/5 rounded-lg p-3 text-center border border-white/5 group-hover:border-white/10 transition-colors">
-                        <div className="flex items-center justify-center gap-1.5 mb-1 text-muted-foreground">
-                          <DollarSign className="w-3.5 h-3.5" />
-                          <span className="text-xs font-medium">Spend</span>
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-green-500">
+                          {costData
+                            ? `$${costData.total_cost.toFixed(0)}`
+                            : "$0"}
                         </div>
-                        <div className="text-xl font-bold text-white">
-                          ${client.spend.toLocaleString()}
+                        <div className="text-xs text-muted-foreground mt-1">
+                          Total Cost
                         </div>
                       </div>
                     </div>
 
-                    {/* Expandable Cost Breakdown */}
-                    {costData && costData.total_cost > 0 && (
-                      <>
-                        <button
-                          onClick={() => toggleClientExpanded(client.id)}
-                          className="w-full flex items-center justify-center gap-2 text-xs text-muted-foreground hover:text-white py-2 border-t border-white/5 transition-colors"
-                        >
-                          {isExpanded ? (
-                            <>
-                              Hide cost breakdown{" "}
-                              <ChevronUp className="w-3 h-3" />
-                            </>
-                          ) : (
-                            <>
-                              View cost breakdown{" "}
-                              <ChevronDown className="w-3 h-3" />
-                            </>
-                          )}
-                        </button>
-
-                        {isExpanded && (
-                          <div className="pt-4 space-y-4 animate-in slide-in-from-top-2 duration-200">
-                            <div className="grid grid-cols-3 gap-3">
-                              <div className="bg-white/5 rounded-lg p-3 text-center border border-white/5">
-                                <div className="flex items-center justify-center gap-1.5 mb-1 text-muted-foreground">
-                                  <Target className="w-3.5 h-3.5" />
-                                  <span className="text-xs">100 App Bonus</span>
-                                </div>
-                                <div className="text-lg font-bold text-white">
-                                  $
-                                  {costData.earnings_breakdown.application_milestone.toFixed(
-                                    0,
-                                  )}
-                                </div>
-                              </div>
-                              <div className="bg-white/5 rounded-lg p-3 text-center border border-white/5">
-                                <div className="flex items-center justify-center gap-1.5 mb-1 text-muted-foreground">
-                                  <Award className="w-3.5 h-3.5" />
-                                  <span className="text-xs">Interviews</span>
-                                </div>
-                                <div className="text-lg font-bold text-white">
-                                  $
-                                  {costData.earnings_breakdown.interview_bonus.toFixed(
-                                    0,
-                                  )}
-                                </div>
-                              </div>
-                              <div className="bg-white/5 rounded-lg p-3 text-center border border-white/5">
-                                <div className="flex items-center justify-center gap-1.5 mb-1 text-muted-foreground">
-                                  <Gift className="w-3.5 h-3.5" />
-                                  <span className="text-xs">Placements</span>
-                                </div>
-                                <div className="text-lg font-bold text-green-400">
-                                  $
-                                  {costData.earnings_breakdown.placement_bonus.toFixed(
-                                    0,
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-
-                            <div className="flex justify-between text-sm px-1">
-                              <span className="text-muted-foreground">
-                                Paid:{" "}
-                                <span className="text-green-400">
-                                  ${costData.paid_amount.toFixed(0)}
-                                </span>
+                    {/* Expanded Details */}
+                    {isExpanded && (
+                      <div className="mt-4 pt-4 border-t border-white/10 space-y-3">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-muted-foreground">
+                            Offers Received
+                          </span>
+                          <span className="text-sm font-medium text-white">
+                            {client.offers}
+                          </span>
+                        </div>
+                        {costData && (
+                          <>
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm text-muted-foreground">
+                                Cost Per App
                               </span>
-                              <span className="text-muted-foreground">
-                                Pending:{" "}
-                                <span className="text-yellow-400">
+                              <span className="text-sm font-medium text-white">
+                                $
+                                {(
+                                  costData.total_cost / client.totalApps || 0
+                                ).toFixed(2)}
+                              </span>
+                            </div>
+                            {costData.pending_amount > 0 && (
+                              <div className="flex justify-between items-center">
+                                <span className="text-sm text-muted-foreground">
+                                  Pending
+                                </span>
+                                <span className="text-sm font-medium text-yellow-500">
                                   ${costData.pending_amount.toFixed(0)}
                                 </span>
-                              </span>
-                            </div>
-                          </div>
+                              </div>
+                            )}
+                          </>
                         )}
-                      </>
+                      </div>
                     )}
                   </CardContent>
                 </Card>
@@ -493,11 +525,14 @@ export default function AdminDashboardPage() {
         )}
       </div>
 
-      <EmailDialog
-        isOpen={isEmailOpen}
-        onClose={() => setIsEmailOpen(false)}
-        recipient={selectedUser}
-      />
+      {/* Email Dialog */}
+      {selectedUser && (
+        <EmailDialog
+          isOpen={isEmailOpen}
+          onClose={() => setIsEmailOpen(false)}
+          recipient={selectedUser}
+        />
+      )}
     </div>
   );
 }
