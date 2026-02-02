@@ -446,6 +446,11 @@ export async function registerRoutes(
           return res.status(404).json({ error: "Application not found" });
         }
 
+        // If followed_up is being set to true and it wasn't true before, set the timestamp
+        if (updates.followed_up === true && currentApp.followed_up !== true) {
+          updates.followed_up_at = new Date().toISOString();
+        }
+
         const updated = await storage.updateApplication(req.params.id, updates);
         if (!updated) {
           return res
@@ -1613,13 +1618,30 @@ export async function registerRoutes(
           now.getDate() + 1,
         ).toISOString();
 
-        // Get start of week (Sunday)
-        const dayOfWeek = now.getDay();
-        const startOfWeek = new Date(
-          now.getFullYear(),
-          now.getMonth(),
-          now.getDate() - dayOfWeek,
-        ).toISOString();
+        // Get start of week (Sunday 10PM EST/EDT)
+        // EST is UTC-5, EDT is UTC-4, so we use America/New_York timezone
+        const nowEST = new Date(
+          now.toLocaleString("en-US", { timeZone: "America/New_York" }),
+        );
+
+        // Get day of week in EST
+        const dayOfWeek = nowEST.getDay();
+        const hourOfDay = nowEST.getHours();
+
+        // Calculate days back to last Sunday 10PM EST
+        let daysBack = dayOfWeek;
+        // If it's Sunday but before 10PM, go back to previous Sunday
+        if (dayOfWeek === 0 && hourOfDay < 22) {
+          daysBack = 7;
+        }
+
+        // Get last Sunday 10PM EST
+        const startOfWeekEST = new Date(nowEST);
+        startOfWeekEST.setDate(nowEST.getDate() - daysBack);
+        startOfWeekEST.setHours(22, 0, 0, 0);
+
+        // Convert back to ISO string for database queries
+        const startOfWeek = startOfWeekEST.toISOString();
 
         // Get all applications for this applier
         const allApps = await storage.getApplicationsByApplier(applierId);
@@ -2234,6 +2256,177 @@ export async function registerRoutes(
       res.status(400).json({ error: "Failed to update earning" });
     }
   });
+
+  // ========================================
+  // ADMIN WEEKLY REPORT
+  // ========================================
+
+  // Generate weekly report for all appliers (CSV export)
+  app.get(
+    "/api/admin/weekly-report",
+    isSupabaseAuthenticated,
+    async (req, res) => {
+      try {
+        const { start_date, end_date } = req.query;
+
+        if (!start_date || !end_date) {
+          return res
+            .status(400)
+            .json({ error: "start_date and end_date are required" });
+        }
+
+        const startDate = start_date as string;
+        const endDate = end_date as string;
+
+        // Get all appliers
+        const appliers = await storage.getAppliers();
+
+        // Get all applications, interviews, and earnings in date range
+        const allApplications = await storage.getApplications();
+        const allInterviews = await storage.getInterviews();
+
+        // Calculate Sunday 10PM EST for the start and end dates
+        const startDateTime = new Date(startDate);
+        startDateTime.setHours(22, 0, 0, 0); // 10PM
+
+        const endDateTime = new Date(endDate);
+        endDateTime.setHours(22, 0, 0, 0); // 10PM
+
+        // Build report data for each applier
+        const reportData = await Promise.all(
+          appliers.map(async (applier) => {
+            const applierName = `${applier.first_name} ${applier.last_name}`;
+
+            // Filter applications for this applier in the date range
+            const applierApps = allApplications.filter((app) => {
+              if (app.applier_id !== applier.id) return false;
+
+              const appDate = new Date(
+                app.applied_at || app.applied_date || app.created_at || "",
+              );
+              return appDate >= startDateTime && appDate < endDateTime;
+            });
+
+            const appsSent = applierApps.length;
+
+            // Count follow-ups done this week (where followed_up_at is in range)
+            const followUpsDone = applierApps.filter((app) => {
+              if (!app.followed_up_at) return false;
+              const followUpDate = new Date(app.followed_up_at);
+              return (
+                followUpDate >= startDateTime && followUpDate < endDateTime
+              );
+            }).length;
+
+            // Count interviews generated (interviews created in this date range)
+            const applierInterviews = allInterviews.filter((interview) => {
+              const interviewApp = allApplications.find(
+                (a) => a.id === interview.application_id,
+              );
+              if (!interviewApp || interviewApp.applier_id !== applier.id)
+                return false;
+
+              const interviewDate = new Date(interview.created_at || "");
+              return (
+                interviewDate >= startDateTime && interviewDate < endDateTime
+              );
+            });
+            const interviewsGenerated = applierInterviews.length;
+
+            // Count offers (interviews with outcome = 'offer')
+            const offersGenerated = applierInterviews.filter(
+              (i) => i.outcome?.toLowerCase() === "offer",
+            ).length;
+
+            // Get earnings for this applier in date range
+            const earnings = await storage.getApplierEarningsByDateRange(
+              applier.id,
+              startDate,
+              endDate,
+            );
+
+            // Calculate earnings breakdown
+            const basePay = earnings
+              .filter((e) => e.earnings_type === "base_pay")
+              .reduce((sum, e) => sum + Number(e.amount), 0);
+
+            const milestoneBonus = earnings
+              .filter((e) => e.earnings_type === "application_milestone")
+              .reduce((sum, e) => sum + Number(e.amount), 0);
+
+            const interviewBonus = earnings
+              .filter((e) => e.earnings_type === "interview_bonus")
+              .reduce((sum, e) => sum + Number(e.amount), 0);
+
+            const placementBonus = earnings
+              .filter((e) => e.earnings_type === "placement_bonus")
+              .reduce((sum, e) => sum + Number(e.amount), 0);
+
+            const totalEarnings =
+              basePay + milestoneBonus + interviewBonus + placementBonus;
+
+            return {
+              applierName,
+              appsSent,
+              followUpsDone,
+              interviewsGenerated,
+              offersGenerated,
+              basePay: basePay.toFixed(2),
+              milestoneBonus: milestoneBonus.toFixed(2),
+              interviewBonus: interviewBonus.toFixed(2),
+              placementBonus: placementBonus.toFixed(2),
+              totalEarnings: totalEarnings.toFixed(2),
+            };
+          }),
+        );
+
+        // Generate CSV
+        const headers = [
+          "Applier Name",
+          "Apps Sent",
+          "Follow-ups Done",
+          "Interviews Generated",
+          "Offers Generated",
+          "Base Pay ($0.28/app)",
+          "100-App Milestone Bonuses",
+          "Interview Bonuses ($50 each)",
+          "Placement Bonuses ($400 each)",
+          "Total Weekly Earnings",
+        ];
+
+        const csvRows = [
+          headers.join(","),
+          ...reportData.map((row) =>
+            [
+              `"${row.applierName}"`,
+              row.appsSent,
+              row.followUpsDone,
+              row.interviewsGenerated,
+              row.offersGenerated,
+              row.basePay,
+              row.milestoneBonus,
+              row.interviewBonus,
+              row.placementBonus,
+              row.totalEarnings,
+            ].join(","),
+          ),
+        ];
+
+        const csv = csvRows.join("\n");
+
+        // Set headers for CSV download
+        res.setHeader("Content-Type", "text/csv");
+        res.setHeader(
+          "Content-Disposition",
+          `attachment; filename="weekly-report-${startDate}-to-${endDate}.csv"`,
+        );
+        res.send(csv);
+      } catch (error) {
+        console.error("Error generating weekly report:", error);
+        res.status(500).json({ error: "Failed to generate weekly report" });
+      }
+    },
+  );
 
   // Admin client performance - real client stats
   app.get(

@@ -189,6 +189,7 @@ export interface Application {
   // Follow-up tracking
   followed_up?: boolean;
   followup_method?: string | null;
+  followed_up_at?: string | null; // Timestamp when follow-up status was changed to true
   // Other optional fields
   status_updated_at?: string;
   email_verification_needed?: boolean;
@@ -375,6 +376,10 @@ export const insertApplicationSchema = z.object({
     .enum(["strong", "moderate", "weak", "none"])
     .nullable()
     .optional(),
+  // Follow-up tracking
+  followed_up: z.boolean().optional(),
+  followup_method: z.string().nullable().optional(),
+  followed_up_at: z.string().nullable().optional(),
 });
 
 export const insertInterviewSchema = z.object({

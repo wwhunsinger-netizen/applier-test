@@ -30,6 +30,8 @@ import {
   Clock,
   Target,
   Pencil,
+  Download,
+  Calendar,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -40,6 +42,12 @@ export default function AdminAppliersPage() {
   const [searchTerm, setSearch] = useState("");
   const [isAddApplierOpen, setIsAddApplierOpen] = useState(false);
 
+  // Weekly report state
+  const [isWeeklyReportOpen, setIsWeeklyReportOpen] = useState(false);
+  const [reportStartDate, setReportStartDate] = useState("");
+  const [reportEndDate, setReportEndDate] = useState("");
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+
   // Edit modal state
   const [isEditApplierOpen, setIsEditApplierOpen] = useState(false);
   const [editingApplier, setEditingApplier] = useState<Applier | null>(null);
@@ -47,7 +55,9 @@ export default function AdminAppliersPage() {
   const [editLastName, setEditLastName] = useState("");
   const [editEmail, setEditEmail] = useState("");
   const [editIsActive, setEditIsActive] = useState(true);
-  const [editAssignedClientIds, setEditAssignedClientIds] = useState<string[]>([]);
+  const [editAssignedClientIds, setEditAssignedClientIds] = useState<string[]>(
+    [],
+  );
 
   const {
     data: appliers = [],
@@ -210,6 +220,88 @@ export default function AdminAppliersPage() {
     });
   };
 
+  // Helper to get last Sunday 10PM EST
+  const getLastSunday10PM = () => {
+    const now = new Date();
+    const dayOfWeek = now.getDay();
+    const hourOfDay = now.getHours();
+
+    // Calculate days back to last Sunday
+    let daysBack = dayOfWeek;
+    // If it's Sunday but before 10PM, go back to previous Sunday
+    if (dayOfWeek === 0 && hourOfDay < 22) {
+      daysBack = 7;
+    }
+
+    const lastSunday = new Date(now);
+    lastSunday.setDate(now.getDate() - daysBack);
+    lastSunday.setHours(22, 0, 0, 0);
+    return lastSunday;
+  };
+
+  // Open weekly report dialog with default dates
+  const openWeeklyReportDialog = () => {
+    const endDate = getLastSunday10PM();
+    const startDate = new Date(endDate);
+    startDate.setDate(endDate.getDate() - 7); // 7 days before
+
+    setReportStartDate(startDate.toISOString().split("T")[0]);
+    setReportEndDate(endDate.toISOString().split("T")[0]);
+    setIsWeeklyReportOpen(true);
+  };
+
+  // Download weekly report CSV
+  const handleDownloadWeeklyReport = async () => {
+    if (!reportStartDate || !reportEndDate) {
+      toast({
+        title: "Error",
+        description: "Please select both start and end dates",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsGeneratingReport(true);
+    try {
+      const response = await fetch(
+        `/api/admin/weekly-report?start_date=${reportStartDate}&end_date=${reportEndDate}`,
+        {
+          credentials: "include",
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to generate report");
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `weekly-report-${reportStartDate}-to-${reportEndDate}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast({
+        title: "Success",
+        description: "Weekly report downloaded successfully",
+      });
+
+      setIsWeeklyReportOpen(false);
+    } catch (error) {
+      console.error("Error downloading report:", error);
+      toast({
+        title: "Error",
+        description: "Failed to generate weekly report",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingReport(false);
+    }
+  };
+
   const getStatusStyles = (status: string) => {
     switch (status) {
       case "active":
@@ -246,13 +338,23 @@ export default function AdminAppliersPage() {
             Manage team members who review and apply to jobs.
           </p>
         </div>
-        <Button
-          onClick={() => setIsAddApplierOpen(true)}
-          className="bg-primary hover:bg-primary/90 text-white font-bold"
-          data-testid="button-add-applier"
-        >
-          <Plus className="w-4 h-4 mr-2" /> Add New Applier
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            onClick={openWeeklyReportDialog}
+            variant="outline"
+            className="border-white/10 hover:bg-white/5"
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Weekly Report
+          </Button>
+          <Button
+            onClick={() => setIsAddApplierOpen(true)}
+            className="bg-primary hover:bg-primary/90 text-white font-bold"
+            data-testid="button-add-applier"
+          >
+            <Plus className="w-4 h-4 mr-2" /> Add New Applier
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -739,7 +841,7 @@ export default function AdminAppliersPage() {
                           ? "bg-green-500/10 text-green-400 border-green-500/20"
                           : client.status === "placed"
                             ? "bg-blue-500/10 text-blue-400 border-blue-500/20"
-                            : "bg-gray-500/10 text-gray-400 border-gray-500/20"
+                            : "bg-gray-500/10 text-gray-400 border-gray-500/20",
                       )}
                     >
                       {client.status}
@@ -777,6 +879,97 @@ export default function AdminAppliersPage() {
                 </>
               ) : (
                 "Save Changes"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Weekly Report Dialog */}
+      <Dialog open={isWeeklyReportOpen} onOpenChange={setIsWeeklyReportOpen}>
+        <DialogContent className="bg-[#0a0a0a] border-white/10 text-white sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-primary" />
+              Generate Weekly Report
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <p className="text-sm text-muted-foreground">
+              Generate a CSV report with application metrics, follow-ups,
+              interviews, and earnings for all appliers during the selected
+              week.
+            </p>
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="reportStartDate">
+                  Week Start (Sunday 10PM EST)
+                </Label>
+                <Input
+                  id="reportStartDate"
+                  type="date"
+                  value={reportStartDate}
+                  onChange={(e) => setReportStartDate(e.target.value)}
+                  className="bg-white/5 border-white/10"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="reportEndDate">
+                  Week End (Following Sunday 10PM EST)
+                </Label>
+                <Input
+                  id="reportEndDate"
+                  type="date"
+                  value={reportEndDate}
+                  onChange={(e) => setReportEndDate(e.target.value)}
+                  className="bg-white/5 border-white/10"
+                />
+              </div>
+
+              <div className="bg-white/5 rounded-lg p-3 border border-white/10">
+                <p className="text-xs text-muted-foreground">
+                  <strong className="text-white">Report includes:</strong>
+                  <br />• Apps sent per applier
+                  <br />• Follow-ups completed
+                  <br />• Interviews & offers generated
+                  <br />• Base pay ($0.28/app)
+                  <br />• Milestone bonuses ($25 at 100 apps)
+                  <br />• Interview bonuses ($50 each)
+                  <br />• Placement bonuses ($400 each)
+                  <br />• Total weekly earnings
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsWeeklyReportOpen(false)}
+              className="border-white/10 hover:bg-white/5"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleDownloadWeeklyReport}
+              className="bg-primary hover:bg-primary/90"
+              disabled={
+                isGeneratingReport || !reportStartDate || !reportEndDate
+              }
+            >
+              {isGeneratingReport ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Download className="w-4 h-4 mr-2" />
+                  Download CSV
+                </>
               )}
             </Button>
           </DialogFooter>
