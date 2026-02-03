@@ -2349,7 +2349,9 @@ export async function registerRoutes(
 
           // Today's apps
           const todayApps = applierApps.filter((a) => {
-            const appDate = new Date(a.applied_date || a.created_at || "")
+            const appDate = new Date(
+              a.applied_at || a.applied_date || a.created_at || "",
+            )
               .toISOString()
               .split("T")[0];
             return appDate === today;
@@ -2357,7 +2359,9 @@ export async function registerRoutes(
 
           // This week's apps
           const weekApps = applierApps.filter((a) => {
-            const appDate = new Date(a.applied_date || a.created_at || "");
+            const appDate = new Date(
+              a.applied_at || a.applied_date || a.created_at || "",
+            );
             return appDate >= startOfWeek;
           });
 
@@ -2525,9 +2529,9 @@ export async function registerRoutes(
             const applierApps = allApplications.filter((app) => {
               if (app.applier_id !== applier.id) return false;
 
-              // EXACT SAME as line 2360 in overview endpoint
+              // FIXED: Use applied_at (NOT NULL) as primary field, then applied_date, then created_at
               const appDate = new Date(
-                app.applied_date || app.created_at || "",
+                app.applied_at || app.applied_date || app.created_at || "",
               );
               return appDate >= startDate && appDate <= endDate;
             });
