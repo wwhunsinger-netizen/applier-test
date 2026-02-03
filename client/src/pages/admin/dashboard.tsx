@@ -41,6 +41,7 @@ import {
   type AdminOverview,
   type ClientPerformance,
 } from "@/lib/api";
+import { supabase } from "@/lib/supabase";
 
 type Timeframe = "this_week" | "last_week" | "last_month";
 
@@ -100,9 +101,22 @@ export default function AdminDashboardPage() {
     const fetchTimeframeStats = async () => {
       setIsTimeframeLoading(true);
       try {
+        // Import needed: add 'apiFetch' to the import from @/lib/api at the top
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        const token = session?.access_token;
+
         const response = await fetch(
           `/api/admin/applier-timeframe-stats?timeframe=${timeframe}`,
-          { credentials: "include" },
+          {
+            credentials: "include",
+            headers: token
+              ? {
+                  Authorization: `Bearer ${token}`,
+                }
+              : {},
+          },
         );
         if (!response.ok) throw new Error("Failed to fetch stats");
         const data = await response.json();
