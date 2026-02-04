@@ -129,7 +129,11 @@ export async function registerRoutes(
       // Now create the client record - rollback auth user if this fails
       let client;
       try {
-        client = await storage.createClient(validatedData);
+        // IMPORTANT: Set client.id to match auth user ID for RLS policies
+        client = await storage.createClient({
+          ...validatedData,
+          id: authData.user.id,
+        });
       } catch (dbError) {
         // Rollback: delete the Supabase auth user since DB insert failed
         console.error(
@@ -290,17 +294,40 @@ export async function registerRoutes(
     try {
       const { client_id, applier_id } = req.query;
 
+      console.log("[GET /api/applications] Query params:", {
+        client_id,
+        applier_id,
+      });
+
       let applications;
       if (client_id) {
+        console.log(
+          "[GET /api/applications] Fetching by client_id:",
+          client_id,
+        );
         applications = await storage.getApplicationsByClient(
           client_id as string,
         );
+        console.log(
+          `[GET /api/applications] Found ${applications.length} applications for client ${client_id}`,
+        );
       } else if (applier_id) {
+        console.log(
+          "[GET /api/applications] Fetching by applier_id:",
+          applier_id,
+        );
         applications = await storage.getApplicationsByApplier(
           applier_id as string,
         );
+        console.log(
+          `[GET /api/applications] Found ${applications.length} applications for applier ${applier_id}`,
+        );
       } else {
+        console.log("[GET /api/applications] Fetching all applications");
         applications = await storage.getApplications();
+        console.log(
+          `[GET /api/applications] Found ${applications.length} total applications`,
+        );
       }
 
       res.json(applications);
@@ -1175,7 +1202,11 @@ export async function registerRoutes(
       // Now create the applier record - rollback auth user if this fails
       let applier;
       try {
-        applier = await storage.createApplier(validatedData);
+        // IMPORTANT: Set applier.id to match auth user ID for RLS policies
+        applier = await storage.createApplier({
+          ...validatedData,
+          id: authData.user.id,
+        });
       } catch (dbError) {
         // Rollback: delete the Supabase auth user since DB insert failed
         console.error(
@@ -2802,6 +2833,190 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Resume tailor error:", error);
       res.status(500).json({ error: "Failed to generate suggestions" });
+    }
+  });
+
+  // ========================================
+  // Job Filter Endpoint
+  // ========================================
+  app.post("/api/job-filter", isSupabaseAuthenticated, async (req, res) => {
+    try {
+      const { job_description, client_id } = req.body;
+
+      if (!job_description || !client_id) {
+        return res
+          .status(400)
+          .json({ error: "Missing job_description or client_id" });
+      }
+
+      // Fetch client data
+      const client = await storage.getClient(client_id);
+      if (!client) {
+        return res.status(404).json({ error: "Client not found" });
+      }
+
+      // Fetch client documents (resume)
+      const documents = await storage.getClientDocuments(client_id);
+      const resumeDoc = documents.find(
+        (doc) => doc.document_type === "Resume" && doc.status === "approved",
+      );
+
+      if (!resumeDoc || !resumeDoc.document_url) {
+        return res
+          .status(404)
+          .json({ error: "No approved resume found for client" });
+      }
+
+      // Fetch resume text
+      const resumeResponse = await fetch(resumeDoc.document_url);
+      const resumeText = await resumeResponse.text();
+
+      // Fetch client criteria
+      const criteriaDoc = documents.find(
+        (doc) =>
+          doc.document_type === "JobCriteria" && doc.status === "approved",
+      );
+
+      let criteria: any = {};
+      if (criteriaDoc && criteriaDoc.document_url) {
+        const criteriaResponse = await fetch(criteriaDoc.document_url);
+        const criteriaText = await criteriaResponse.text();
+        try {
+          criteria = JSON.parse(criteriaText);
+        } catch {
+          criteria = {
+            target_job_titles: "Data Engineer",
+            required_skills: "",
+            nice_to_have_skills: "",
+            years_of_experience: "5+",
+            seniority_level: "Mid to Senior",
+            exclude_keywords: "",
+          };
+        }
+      }
+
+      // Build filter prompt
+      const filterPrompt = `You are a job screening filter for a reverse recruiting service. You review job descriptions against candidate profiles to identify OBVIOUS mismatches that would waste everyone's time.
+
+Your job is to filter garbage, not make close calls. When in doubt, say CONTINUE. The next stage will do deeper analysis.
+
+IMPORTANT: If the JD is in a non-English language, mentally translate it first, then evaluate.
+IMPORTANT: Always provide a reason for your decision, even for CONTINUE.
+
+<client_criteria>
+Target Job Titles: ${criteria.target_job_titles || "Data Engineer"}
+Required Skills: ${criteria.required_skills || ""}
+Nice-to-Have Skills: ${criteria.nice_to_have_skills || ""}
+Years of Experience: ${criteria.years_of_experience || "5+"}
+Seniority Levels: ${criteria.seniority_level || "Mid to Senior"}
+Exclude Keywords: ${criteria.exclude_keywords || ""}
+Work Arrangement: Remote required (occasional/light travel is OK)
+</client_criteria>
+
+<resume>
+${resumeText}
+</resume>
+
+<hard_skip_criteria>
+Return HARD_SKIP only when there is an OBVIOUS, OBJECTIVE mismatch.
+
+1. EXCLUDE KEYWORD MATCH - If JD contains any exclude keywords → HARD_SKIP
+2. NOT REMOTE - On-site only or hybrid-required → HARD_SKIP
+3. COMPLETELY DIFFERENT PROFESSION
+4. HARD REQUIREMENTS THEY CANNOT MEET (clearances, licenses, certifications)
+5. EXPERIENCE MISMATCH (7+ year gap → HARD_SKIP. 2-4 year gap → CONTINUE)
+6. FUNDAMENTALLY DIFFERENT JOB FUNCTION
+7. SPECIALIST ROLE VS GENERALIST EXPERIENCE
+8. DOMAIN EXPERIENCE AS HARD REQUIREMENT
+
+CRITICAL: DEFAULT TO CONTINUE. Only HARD_SKIP for OBVIOUS mismatches.
+</hard_skip_criteria>
+
+<decision_framework>
+1. Exclude keywords? → HARD_SKIP
+2. Remote or remote-eligible? → If on-site only, HARD_SKIP
+3. Same FIELD? → If different profession, HARD_SKIP
+4. Unmeetable requirement? → HARD_SKIP
+5. Experience gap 7+ years? → HARD_SKIP
+6. CORE work different? → HARD_SKIP
+7. Could hiring manager consider this? → If clearly NO, HARD_SKIP
+
+If no HARD_SKIP triggers → CONTINUE
+</decision_framework>
+
+<output_format>
+Return ONLY valid JSON:
+{
+  "decision": "HARD_SKIP" or "CONTINUE",
+  "match_strength": "strong" | "moderate" | "weak" | "none",
+  "company": "extracted company name",
+  "job_title": "extracted job title",
+  "reason": "1-2 sentences explaining the decision",
+  "skip_category": "exclude_keyword | not_remote | profession | clearance | license | certification | experience | seniority | function | specialist | domain | none"
+}
+
+MATCH STRENGTH (only for CONTINUE decisions):
+- "strong": 80%+ match, target title, core skills align
+- "moderate": 60-80% match, related title, most skills present
+- "weak": 40-60% match, adjacent role, some transferable skills
+- "none": Use for HARD_SKIP decisions
+</output_format>
+
+<job_description>
+${job_description}
+</job_description>`;
+
+      const apiKey = process.env.ANTHROPIC_API_KEY;
+      if (!apiKey) {
+        return res.status(500).json({ error: "API key not configured" });
+      }
+
+      const response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": apiKey,
+          "anthropic-version": "2023-06-01",
+        },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 1024,
+          messages: [
+            {
+              role: "user",
+              content: filterPrompt,
+            },
+          ],
+        }),
+      });
+
+      const data = await response.json();
+      const resultText = data.content?.[0]?.text || "{}";
+
+      // Parse JSON response
+      let filterResult;
+      try {
+        // Extract JSON from markdown code blocks if present
+        const jsonMatch =
+          resultText.match(/```json\s*([\s\S]*?)\s*```/) ||
+          resultText.match(/\{[\s\S]*\}/);
+        const jsonStr = jsonMatch ? jsonMatch[1] || jsonMatch[0] : resultText;
+        filterResult = JSON.parse(jsonStr);
+      } catch {
+        filterResult = {
+          decision: "CONTINUE",
+          match_strength: "moderate",
+          company: "Unknown",
+          job_title: "Unknown",
+          reason: "Could not parse filter result",
+          skip_category: "none",
+        };
+      }
+
+      res.json(filterResult);
+    } catch (error) {
+      console.error("Job filter error:", error);
+      res.status(500).json({ error: "Failed to filter job" });
     }
   });
 

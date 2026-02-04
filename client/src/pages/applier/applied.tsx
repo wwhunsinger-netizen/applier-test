@@ -79,10 +79,13 @@ export default function AppliedPage() {
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [isLoadingClients, setIsLoadingClients] = useState(true);
 
+  // Fetch assigned clients (runs once on mount)
   useEffect(() => {
     if (!currentUser || currentUser.role !== "Applier") return;
 
-    // Fetch assigned clients
+    // Only fetch clients if we haven't loaded them yet
+    if (assignedClients.length > 0) return;
+
     setIsLoadingClients(true);
     apiFetch(`/api/appliers/${currentUser.id}`)
       .then((res) => res.json())
@@ -109,24 +112,34 @@ export default function AppliedPage() {
           );
           setAssignedClients(clients);
 
-          // Auto-select first client
-          if (clients.length > 0) {
+          // Auto-select first client ONLY if no client is currently selected
+          if (clients.length > 0 && !selectedClientId) {
             setSelectedClientId(clients[0].id);
           }
         }
       })
       .catch(console.error)
       .finally(() => setIsLoadingClients(false));
+  }, [currentUser, selectedClientId, assignedClients.length]); // Check all relevant state
+
+  // Fetch applications when selected client changes
+  useEffect(() => {
+    if (!currentUser || currentUser.role !== "Applier") return;
 
     setIsLoading(true);
 
-    fetchApplications({ applier_id: currentUser.id })
+    // Fetch applications by client_id if a client is selected, otherwise by applier_id
+    const fetchParams = selectedClientId
+      ? { client_id: selectedClientId }
+      : { applier_id: currentUser.id };
+
+    fetchApplications(fetchParams)
       .then((apps) => {
         setApplications(apps);
       })
       .catch(console.error)
       .finally(() => setIsLoading(false));
-  }, [currentUser]);
+  }, [currentUser, selectedClientId]); // Runs when client selection changes
 
   // Get selected client name for display
   const selectedClientName =
@@ -153,8 +166,12 @@ export default function AppliedPage() {
     });
 
   // Filter for follow-up jobs (applied more than 2 days ago, not yet followed up)
+  // IMPORTANT: Only show applications sent by THIS applier (not other appliers on the same client)
   // Already sorted since filteredApplications is sorted
   const followUpJobs = filteredApplications.filter((app) => {
+    // Only show applications sent by current applier for follow-ups
+    if (!currentUser || app.applier_id !== currentUser.id) return false;
+
     const appliedDate = (app as any).created_at
       ? new Date((app as any).created_at)
       : null;
@@ -451,6 +468,18 @@ export default function AppliedPage() {
                         })
                       : "Recently"}
                   </span>
+                  {/* Show applier name if not sent by current user */}
+                  {(app as any).applier &&
+                    currentUser &&
+                    app.applier_id !== currentUser.id && (
+                      <>
+                        <span>•</span>
+                        <span className="text-blue-400 flex items-center gap-1">
+                          <User className="w-3 h-3" />
+                          {(app as any).applier.first_name}
+                        </span>
+                      </>
+                    )}
                 </div>
               </div>
             </div>

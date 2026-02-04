@@ -236,7 +236,17 @@ export class SupabaseStorage implements IStorage {
   async getApplicationsByClient(clientId: string): Promise<Application[]> {
     const { data, error } = await supabase
       .from("applications")
-      .select("*")
+      .select(
+        `
+        *,
+        applier:appliers!applier_id (
+          id,
+          first_name,
+          last_name,
+          email
+        )
+      `,
+      )
       .eq("client_id", clientId);
 
     if (error) throw error;
@@ -246,7 +256,17 @@ export class SupabaseStorage implements IStorage {
   async getApplicationsByApplier(applierId: string): Promise<Application[]> {
     const { data, error } = await supabase
       .from("applications")
-      .select("*")
+      .select(
+        `
+        *,
+        applier:appliers!applier_id (
+          id,
+          first_name,
+          last_name,
+          email
+        )
+      `,
+      )
       .eq("applier_id", applierId);
 
     if (error) throw error;
@@ -254,13 +274,13 @@ export class SupabaseStorage implements IStorage {
   }
   async getApplication(id: string): Promise<Application | null> {
     const { data, error } = await supabase
-      .from('applications')
-      .select('*')
-      .eq('id', id)
+      .from("applications")
+      .select("*")
+      .eq("id", id)
       .single();
 
     if (error) {
-      if (error.code === 'PGRST116') return null;
+      if (error.code === "PGRST116") return null;
       throw error;
     }
     return data;
