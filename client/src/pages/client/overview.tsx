@@ -1,5 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Send, Calendar, FileText, Loader2, ArrowRight } from "lucide-react";
+import { Calendar, FileText, Loader2, ArrowRight } from "lucide-react";
 import { useMemo } from "react";
 import { motion } from "framer-motion";
 import { useUser } from "@/lib/userContext";
@@ -61,13 +61,6 @@ export default function ClientOverviewPage() {
         <h1 className="text-4xl font-bold text-white">
           Welcome back, {firstName}!
         </h1>
-        <div className="flex items-center justify-center gap-2 text-muted-foreground">
-          <Send className="w-4 h-4" />
-          <span className="text-lg">
-            <span className="text-white font-bold">{stats.totalApps}</span>{" "}
-            applications sent
-          </span>
-        </div>
       </motion.div>
 
       {/* Two big buttons */}
