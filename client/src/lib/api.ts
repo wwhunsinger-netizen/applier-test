@@ -595,6 +595,37 @@ export async function fetchClientPerformance(): Promise<ClientPerformance[]> {
   if (!res.ok) throw new Error("Failed to fetch client performance");
   return res.json();
 }
+// Job Filter API
+export interface JobFilterResult {
+  decision: "HARD_SKIP" | "CONTINUE";
+  match_strength: "strong" | "moderate" | "weak" | "none";
+  company: string;
+  job_title: string;
+  reason: string;
+  skip_category: string;
+}
+
+export async function filterJobDescription(
+  clientId: string,
+  jobDescription: string,
+): Promise<JobFilterResult> {
+  const res = await apiFetch(`${API_BASE}/job-filter`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      client_id: clientId,
+      job_description: jobDescription,
+    }),
+  });
+  if (!res.ok) {
+    const error = await res
+      .json()
+      .catch(() => ({ error: "Failed to filter job" }));
+    throw new Error(error.error || "Failed to filter job");
+  }
+  return res.json();
+}
+
 // Resume Tailor API
 export interface ResumeTailorResponse {
   suggestions: string;

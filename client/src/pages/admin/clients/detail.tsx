@@ -91,6 +91,7 @@ export default function AdminClientDetailPage() {
   const [excludeKeywords, setExcludeKeywords] = useState<string[]>([]);
   const [yearsOfExperience, setYearsOfExperience] = useState<number>(0);
   const [seniorityLevels, setSeniorityLevels] = useState<string[]>([]);
+  const [minSalary, setMinSalary] = useState<number>(0);
   const [newTagInput, setNewTagInput] = useState<string>("");
   const [activeTagField, setActiveTagField] = useState<string | null>(null);
 
@@ -144,6 +145,7 @@ export default function AdminClientDetailPage() {
       setExcludeKeywords(client.exclude_keywords || []);
       setYearsOfExperience(client.years_of_experience || 0);
       setSeniorityLevels(client.seniority_levels || []);
+      setMinSalary(client.min_salary || 0);
     }
   }, [client]);
 
@@ -256,7 +258,8 @@ export default function AdminClientDetailPage() {
       !arraysEqual(client.nice_to_have_skills, niceToHaveSkills) ||
       !arraysEqual(client.exclude_keywords, excludeKeywords) ||
       (client.years_of_experience || 0) !== yearsOfExperience ||
-      !arraysEqual(client.seniority_levels, seniorityLevels)
+      !arraysEqual(client.seniority_levels, seniorityLevels) ||
+      (client.min_salary || 0) !== minSalary
     );
   };
 
@@ -270,6 +273,7 @@ export default function AdminClientDetailPage() {
         exclude_keywords: excludeKeywords,
         years_of_experience: yearsOfExperience,
         seniority_levels: seniorityLevels,
+        min_salary: minSalary || undefined,
       },
       {
         onSuccess: () => {
@@ -796,8 +800,8 @@ export default function AdminClientDetailPage() {
                 </div>
               </div>
 
-              {/* Experience & Seniority */}
-              <div className="grid md:grid-cols-3 gap-4">
+              {/* Experience, Salary & Seniority */}
+              <div className="grid md:grid-cols-4 gap-4">
                 <div className="space-y-2">
                   <Label className="text-sm font-medium text-white">
                     Years of Experience
@@ -811,6 +815,25 @@ export default function AdminClientDetailPage() {
                     }
                     className="bg-white/5 border-white/10"
                   />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-white">
+                    Minimum Salary
+                  </Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">$</span>
+                    <Input
+                      type="number"
+                      min="0"
+                      step="5000"
+                      value={minSalary || ""}
+                      placeholder="0"
+                      onChange={(e) =>
+                        setMinSalary(parseInt(e.target.value) || 0)
+                      }
+                      className="bg-white/5 border-white/10 pl-7"
+                    />
+                  </div>
                 </div>
                 <div className="space-y-2 md:col-span-2">
                   <Label className="text-sm font-medium text-white">

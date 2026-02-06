@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { formatDistanceToNow, differenceInDays } from "date-fns";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -45,9 +45,15 @@ import {
   CalendarCheck,
   XCircle,
   User,
+  Filter,
+  CheckCircle2,
+  XOctagon,
 } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { fetchApplications, apiFetch, fetchClient } from "@/lib/api";
+import { fetchApplications, apiFetch, fetchClient, filterJobDescription } from "@/lib/api";
+import type { JobFilterResult } from "@/lib/api";
 import { useUser } from "@/lib/userContext";
 import { toast } from "sonner";
 import confetti from "canvas-confetti";
@@ -73,6 +79,12 @@ export default function AppliedPage() {
     company_name: "",
     job_url: "",
   });
+
+  // Job filter modal state
+  const [showFilterModal, setShowFilterModal] = useState(false);
+  const [filterJD, setFilterJD] = useState("");
+  const [isFiltering, setIsFiltering] = useState(false);
+  const [filterResult, setFilterResult] = useState<JobFilterResult | null>(null);
 
   // Client selection state
   const [assignedClients, setAssignedClients] = useState<AssignedClient[]>([]);
@@ -297,6 +309,31 @@ export default function AppliedPage() {
     });
   };
 
+  const handleFilterSubmit = async () => {
+    if (!filterJD.trim()) {
+      toast.error("Please paste a job description");
+      return;
+    }
+
+    if (!selectedClientId) {
+      toast.error("No client selected");
+      return;
+    }
+
+    setIsFiltering(true);
+    setFilterResult(null);
+
+    try {
+      const result = await filterJobDescription(selectedClientId, filterJD.trim());
+      setFilterResult(result);
+    } catch (error) {
+      toast.error("Failed to filter job description");
+      console.error(error);
+    } finally {
+      setIsFiltering(false);
+    }
+  };
+
   const handleManualSubmit = async () => {
     if (
       !manualEntry.job_title.trim() ||
@@ -394,6 +431,18 @@ export default function AppliedPage() {
               </Select>
             )}
             <Button
+              variant="outline"
+              onClick={() => {
+                setFilterResult(null);
+                setFilterJD("");
+                setShowFilterModal(true);
+              }}
+              disabled={!selectedClientId}
+            >
+              <Filter className="w-4 h-4 mr-2" />
+              Filter JD
+            </Button>
+            <Button
               onClick={() => setShowAddModal(true)}
               className="bg-[#0077B5] hover:bg-[#006097] text-white"
               disabled={!selectedClientId}
@@ -423,6 +472,24 @@ export default function AppliedPage() {
           onSubmit={handleManualSubmit}
           isSubmitting={isSubmitting}
           selectedClientName={selectedClientName}
+        />
+
+        {/* Filter JD Modal */}
+        <FilterJDModal
+          open={showFilterModal}
+          onOpenChange={setShowFilterModal}
+          jobDescription={filterJD}
+          setJobDescription={setFilterJD}
+          onSubmit={handleFilterSubmit}
+          onClear={() => setFilterResult(null)}
+          isFiltering={isFiltering}
+          filterResult={filterResult}
+          selectedClientName={selectedClientName}
+          onAddJob={(jobTitle, companyName) => {
+            setManualEntry({ job_title: jobTitle, company_name: companyName, job_url: "" });
+            setShowFilterModal(false);
+            setShowAddModal(true);
+          }}
         />
       </div>
     );
@@ -673,6 +740,18 @@ export default function AppliedPage() {
             </div>
           )}
           <Button
+            variant="outline"
+            onClick={() => {
+              setFilterResult(null);
+              setFilterJD("");
+              setShowFilterModal(true);
+            }}
+            disabled={!selectedClientId}
+          >
+            <Filter className="w-4 h-4 mr-2" />
+            Filter JD
+          </Button>
+          <Button
             onClick={() => setShowAddModal(true)}
             className="bg-[#0077B5] hover:bg-[#006097] text-white"
             disabled={!selectedClientId}
@@ -753,6 +832,18 @@ export default function AppliedPage() {
         setManualEntry={setManualEntry}
         onSubmit={handleManualSubmit}
         isSubmitting={isSubmitting}
+        selectedClientName={selectedClientName}
+      />
+
+      {/* Filter JD Modal */}
+      <FilterJDModal
+        open={showFilterModal}
+        onOpenChange={setShowFilterModal}
+        jobDescription={filterJD}
+        setJobDescription={setFilterJD}
+        onSubmit={handleFilterSubmit}
+        isFiltering={isFiltering}
+        filterResult={filterResult}
         selectedClientName={selectedClientName}
       />
     </div>
@@ -862,6 +953,226 @@ function ManualLinkedInModal({
               <>
                 <Plus className="w-4 h-4 mr-2" />
                 Add Application
+              </>
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// Filter JD Modal Component
+function FilterJDModal({
+  open,
+  onOpenChange,
+  jobDescription,
+  setJobDescription,
+  onSubmit,
+  onClear,
+  isFiltering,
+  filterResult,
+  selectedClientName,
+  onAddJob,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  jobDescription: string;
+  setJobDescription: (value: string) => void;
+  onSubmit: () => void;
+  onClear: () => void;
+  isFiltering: boolean;
+  filterResult: JobFilterResult | null;
+  selectedClientName: string;
+  onAddJob: (jobTitle: string, companyName: string) => void;
+}) {
+  const isApply = filterResult?.decision === "CONTINUE";
+  const [progress, setProgress] = useState(0);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Animate progress bar over ~4s when filtering
+  const ESTIMATED_MS = 4000;
+  useEffect(() => {
+    if (isFiltering) {
+      setProgress(0);
+      const startTime = Date.now();
+      intervalRef.current = setInterval(() => {
+        const elapsed = Date.now() - startTime;
+        // Ease out — fast at start, slows near 90%
+        const raw = elapsed / ESTIMATED_MS;
+        const eased = Math.min(raw < 1 ? raw * 90 : 90 + (1 - Math.exp(-(raw - 1) * 2)) * 8, 98);
+        setProgress(eased);
+      }, 50);
+    } else {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (filterResult) {
+        setProgress(100);
+        // Reset after animation completes
+        const t = setTimeout(() => setProgress(0), 500);
+        return () => clearTimeout(t);
+      } else {
+        setProgress(0);
+      }
+    }
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [isFiltering, filterResult]);
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Filter className="w-5 h-5 text-red-400" />
+            Filter Job Description
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-4">
+          {/* Client + Clear */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-white/5 border border-white/10">
+              <User className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Client:</span>
+              <span className="text-sm font-medium">{selectedClientName}</span>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setJobDescription("");
+                onClear();
+              }}
+              disabled={isFiltering || !jobDescription.trim()}
+              className="border-red-500/50 text-red-500 hover:bg-red-500/10"
+            >
+              Clear
+            </Button>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="filter_jd">Job Description</Label>
+            <Textarea
+              id="filter_jd"
+              placeholder="Paste the full job description here..."
+              value={jobDescription}
+              onChange={(e) => setJobDescription(e.target.value)}
+              className="min-h-[200px] bg-[#111] border-white/10"
+              disabled={isFiltering}
+            />
+          </div>
+
+          {/* Progress Bar */}
+          {isFiltering && (
+            <div className="space-y-2">
+              <Progress
+                value={progress}
+                className="h-2 bg-white/10"
+                indicatorClassName="bg-red-500"
+              />
+              <p className="text-xs text-muted-foreground text-center">
+                Analyzing job description...
+              </p>
+            </div>
+          )}
+
+          {/* Filter Result */}
+          {filterResult && (
+            <div
+              className={`rounded-lg border p-4 ${
+                isApply
+                  ? "bg-green-500/10 border-green-500/30"
+                  : "bg-red-500/10 border-red-500/30"
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  {isApply ? (
+                    <CheckCircle2 className="w-5 h-5 text-green-500" />
+                  ) : (
+                    <XOctagon className="w-5 h-5 text-red-500" />
+                  )}
+                  <span
+                    className={`font-semibold ${
+                      isApply ? "text-green-500" : "text-red-500"
+                    }`}
+                  >
+                    {isApply ? "Apply" : "Skip"}
+                  </span>
+                  {filterResult.match_strength !== "none" && (
+                    <Badge
+                      variant="outline"
+                      className={
+                        filterResult.match_strength === "strong"
+                          ? "bg-green-500/10 text-green-400 border-green-500/20"
+                          : filterResult.match_strength === "moderate"
+                            ? "bg-yellow-500/10 text-yellow-400 border-yellow-500/20"
+                            : "bg-orange-500/10 text-orange-400 border-orange-500/20"
+                      }
+                    >
+                      {filterResult.match_strength}
+                    </Badge>
+                  )}
+                </div>
+                {/* Add Job button when Apply */}
+                {isApply && (
+                  <Button
+                    size="sm"
+                    onClick={() =>
+                      onAddJob(
+                        filterResult.job_title || "",
+                        filterResult.company || "",
+                      )
+                    }
+                    className="bg-green-600 hover:bg-green-700 text-white"
+                  >
+                    <Plus className="w-4 h-4 mr-1" />
+                    Add Job
+                  </Button>
+                )}
+              </div>
+              {/* Job title & company */}
+              {(filterResult.job_title || filterResult.company) && (
+                <div className="flex items-center gap-2 mt-2 text-sm">
+                  {filterResult.job_title && filterResult.job_title !== "Not specified" && (
+                    <span className="text-white font-medium">{filterResult.job_title}</span>
+                  )}
+                  {filterResult.company && filterResult.company !== "Not specified" && (
+                    <>
+                      <span className="text-muted-foreground">@</span>
+                      <span className="text-muted-foreground">{filterResult.company}</span>
+                    </>
+                  )}
+                </div>
+              )}
+              <p className="text-sm text-muted-foreground mt-1">
+                {filterResult.reason}
+              </p>
+            </div>
+          )}
+        </div>
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={isFiltering}
+          >
+            Close
+          </Button>
+          <Button
+            onClick={onSubmit}
+            disabled={isFiltering || !jobDescription.trim()}
+            className="bg-red-600 hover:bg-red-700 text-white"
+          >
+            {isFiltering ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Filtering...
+              </>
+            ) : (
+              <>
+                <Filter className="w-4 h-4 mr-2" />
+                {filterResult ? "Filter Again" : "Filter"}
               </>
             )}
           </Button>

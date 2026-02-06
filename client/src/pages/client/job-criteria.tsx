@@ -210,14 +210,22 @@ export default function ClientJobCriteriaPage() {
                 </div>
               </div>
 
-              {/* Experience & Seniority */}
-              <div className="grid md:grid-cols-3 gap-4">
+              {/* Experience, Salary & Seniority */}
+              <div className="grid md:grid-cols-4 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-white">
                     Years of Experience
                   </label>
                   <div className="bg-white/5 border border-white/10 rounded-md px-3 py-2 text-white">
                     {yearsOfExperience}
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-white">
+                    Minimum Salary
+                  </label>
+                  <div className="bg-white/5 border border-white/10 rounded-md px-3 py-2 text-white">
+                    {client.min_salary ? `$${client.min_salary.toLocaleString()}` : "Not set"}
                   </div>
                 </div>
                 <div className="space-y-2 md:col-span-2">

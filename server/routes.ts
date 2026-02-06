@@ -2857,19 +2857,28 @@ export async function registerRoutes(
 
       // Fetch client documents (resume)
       const documents = await storage.getClientDocuments(client_id);
+      let resumeText = "";
+
+      // Try approved resume document first
       const resumeDoc = documents.find(
         (doc) => doc.document_type === "Resume" && doc.status === "approved",
       );
 
-      if (!resumeDoc || !resumeDoc.document_url) {
-        return res
-          .status(404)
-          .json({ error: "No approved resume found for client" });
+      if (resumeDoc && resumeDoc.document_url) {
+        const resumeResponse = await fetch(resumeDoc.document_url);
+        resumeText = await resumeResponse.text();
       }
 
-      // Fetch resume text
-      const resumeResponse = await fetch(resumeDoc.document_url);
-      const resumeText = await resumeResponse.text();
+      // Fall back to resume_text field on client record
+      if (!resumeText && (client as any).resume_text) {
+        resumeText = (client as any).resume_text;
+      }
+
+      if (!resumeText) {
+        return res
+          .status(404)
+          .json({ error: "No resume found for client" });
+      }
 
       // Fetch client criteria
       const criteriaDoc = documents.find(
@@ -2884,15 +2893,22 @@ export async function registerRoutes(
         try {
           criteria = JSON.parse(criteriaText);
         } catch {
-          criteria = {
-            target_job_titles: "Data Engineer",
-            required_skills: "",
-            nice_to_have_skills: "",
-            years_of_experience: "5+",
-            seniority_level: "Mid to Senior",
-            exclude_keywords: "",
-          };
+          // ignore parse error, fall through to client fields
         }
+      }
+
+      // Fall back to client record fields if no criteria doc
+      if (!criteria.target_job_titles && !criteria.required_skills) {
+        const c = client as any;
+        criteria = {
+          target_job_titles: c.target_job_titles?.join(", ") || "",
+          required_skills: c.required_skills?.join(", ") || "",
+          nice_to_have_skills: c.nice_to_have_skills?.join(", ") || "",
+          years_of_experience: c.years_of_experience || "",
+          seniority_level: Array.isArray(c.seniority_levels) ? c.seniority_levels.join(", ") : (c.seniority_levels || ""),
+          exclude_keywords: c.exclude_keywords?.join(", ") || "",
+          min_salary: c.min_salary || "",
+        };
       }
 
       // Build filter prompt
@@ -2905,12 +2921,15 @@ IMPORTANT: Always provide a reason for your decision, even for CONTINUE.
 
 <client_criteria>
 Target Job Titles: ${criteria.target_job_titles || "Data Engineer"}
-Required Skills: ${criteria.required_skills || ""}
+Preferred Skills: ${criteria.required_skills || ""}
 Nice-to-Have Skills: ${criteria.nice_to_have_skills || ""}
 Years of Experience: ${criteria.years_of_experience || "5+"}
 Seniority Levels: ${criteria.seniority_level || "Mid to Senior"}
 Exclude Keywords: ${criteria.exclude_keywords || ""}
+Minimum Acceptable Salary: ${criteria.min_salary ? `$${Number(criteria.min_salary).toLocaleString()}` : "Not specified"}
 Work Arrangement: Remote required (occasional/light travel is OK)
+
+NOTE: "Preferred Skills" are tools the candidate WANTS to work with, not hard requirements. If the JD is in the same field and the candidate's resume shows they can do the work, do NOT skip just because the JD uses different tools in the same category (e.g. BigQuery instead of Snowflake, Airflow instead of DBT). Transferable skills within the same domain are fine.
 </client_criteria>
 
 <resume>
@@ -2925,9 +2944,13 @@ Return HARD_SKIP only when there is an OBVIOUS, OBJECTIVE mismatch.
 3. COMPLETELY DIFFERENT PROFESSION
 4. HARD REQUIREMENTS THEY CANNOT MEET (clearances, licenses, certifications)
 5. EXPERIENCE MISMATCH (7+ year gap → HARD_SKIP. 2-4 year gap → CONTINUE)
+   OVERQUALIFIED: Only skip if the title explicitly says "Junior", "Entry Level", "Intern", or "New Grad". If the candidate has MORE experience than required but the role is not explicitly junior/entry-level, that is NOT a skip — companies regularly hire above listed requirements.
+   SENIORITY IN TITLE: A role titled "Data Engineer" (without "Senior") is NOT a skip for someone targeting "Senior Data Engineer". Companies often hire senior people into roles without "Senior" in the title. Only skip if the title explicitly indicates junior/entry-level.
+   SALARY OVERRIDE: If the JD lists a salary or salary range and the candidate has a minimum acceptable salary set, check if the TOP of the posted range meets or exceeds the candidate's minimum. Example: range $79K-$132K with candidate minimum $115K → $132K >= $115K → salary override APPLIES → CONTINUE. Only compare the maximum possible salary, NOT the midpoint or bottom of range. This OVERRIDES seniority/experience/overqualification concerns. If the top of the range is below the minimum, the override does not apply (but salary alone is never a reason to HARD_SKIP).
 6. FUNDAMENTALLY DIFFERENT JOB FUNCTION
+   ADJACENT FUNCTIONS: Roles in a closely related function (e.g. Data Analyst for a Data Engineer) should CONTINUE, but ONLY if the role is at an appropriate seniority level, is remote, and the candidate's core skills clearly apply. If the function is adjacent but everything else lines up, it is worth applying. However if the adjacent role is a step DOWN in seniority or responsibility, HARD_SKIP.
 7. SPECIALIST ROLE VS GENERALIST EXPERIENCE
-8. DOMAIN EXPERIENCE AS HARD REQUIREMENT
+8. DOMAIN/INDUSTRY EXPERIENCE - Do NOT skip just because the JD is in a different industry. If the core daily work matches what the candidate does (e.g. building data pipelines, cloud infrastructure), the industry is learnable. Only skip if the JD requires specific domain credentials or deep specialized knowledge that takes years to acquire (e.g. medical licenses, telecom certifications like TM Forum).
 
 CRITICAL: DEFAULT TO CONTINUE. Only HARD_SKIP for OBVIOUS mismatches.
 </hard_skip_criteria>
