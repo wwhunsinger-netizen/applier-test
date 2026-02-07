@@ -2859,9 +2859,11 @@ export async function registerRoutes(
       const documents = await storage.getClientDocuments(client_id);
       let resumeText = "";
 
-      // Try approved resume document first
+      // Try resume document (approved first, then any)
       const resumeDoc = documents.find(
         (doc) => doc.document_type === "Resume" && doc.status === "approved",
+      ) || documents.find(
+        (doc) => doc.document_type === "Resume",
       );
 
       if (resumeDoc && resumeDoc.document_url) {
@@ -2880,10 +2882,12 @@ export async function registerRoutes(
           .json({ error: "No resume found for client" });
       }
 
-      // Fetch client criteria
+      // Fetch client criteria (approved first, then any)
       const criteriaDoc = documents.find(
         (doc) =>
           doc.document_type === "JobCriteria" && doc.status === "approved",
+      ) || documents.find(
+        (doc) => doc.document_type === "JobCriteria",
       );
 
       let criteria: any = {};
