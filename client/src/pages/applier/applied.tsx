@@ -85,6 +85,7 @@ export default function AppliedPage() {
   const [filterJD, setFilterJD] = useState("");
   const [isFiltering, setIsFiltering] = useState(false);
   const [filterResult, setFilterResult] = useState<JobFilterResult | null>(null);
+  const filterStartTime = useRef<number | null>(null);
 
   // Client selection state
   const [assignedClients, setAssignedClients] = useState<AssignedClient[]>([]);
@@ -326,6 +327,9 @@ export default function AppliedPage() {
     try {
       const result = await filterJobDescription(selectedClientId, filterJD.trim());
       setFilterResult(result);
+      if (result.decision === "CONTINUE") {
+        filterStartTime.current = Date.now();
+      }
     } catch (error) {
       toast.error("Failed to filter job description");
       console.error(error);
@@ -361,6 +365,9 @@ export default function AppliedPage() {
           job_title: manualEntry.job_title.trim(),
           company_name: manualEntry.company_name.trim(),
           job_url: manualEntry.job_url.trim(),
+          duration_seconds: filterStartTime.current
+            ? Math.round((Date.now() - filterStartTime.current) / 1000)
+            : 0,
         }),
       });
 
@@ -373,7 +380,8 @@ export default function AppliedPage() {
       // Add to local state
       setApplications((prev) => [newApp.application, ...prev]);
 
-      // Reset form and close modal
+      // Reset form, timer, and close modal
+      filterStartTime.current = null;
       setManualEntry({ job_title: "", company_name: "", job_url: "" });
       setShowAddModal(false);
 
@@ -431,19 +439,12 @@ export default function AppliedPage() {
               </Select>
             )}
             <Button
-              variant="outline"
               onClick={() => {
                 setFilterResult(null);
                 setFilterJD("");
+                filterStartTime.current = null;
                 setShowFilterModal(true);
               }}
-              disabled={!selectedClientId}
-            >
-              <Filter className="w-4 h-4 mr-2" />
-              Filter JD
-            </Button>
-            <Button
-              onClick={() => setShowAddModal(true)}
               className="bg-[#0077B5] hover:bg-[#006097] text-white"
               disabled={!selectedClientId}
             >
@@ -740,19 +741,12 @@ export default function AppliedPage() {
             </div>
           )}
           <Button
-            variant="outline"
             onClick={() => {
               setFilterResult(null);
               setFilterJD("");
+              filterStartTime.current = null;
               setShowFilterModal(true);
             }}
-            disabled={!selectedClientId}
-          >
-            <Filter className="w-4 h-4 mr-2" />
-            Filter JD
-          </Button>
-          <Button
-            onClick={() => setShowAddModal(true)}
             className="bg-[#0077B5] hover:bg-[#006097] text-white"
             disabled={!selectedClientId}
           >
@@ -842,9 +836,15 @@ export default function AppliedPage() {
         jobDescription={filterJD}
         setJobDescription={setFilterJD}
         onSubmit={handleFilterSubmit}
+        onClear={() => setFilterResult(null)}
         isFiltering={isFiltering}
         filterResult={filterResult}
         selectedClientName={selectedClientName}
+        onAddJob={(jobTitle, companyName) => {
+          setManualEntry({ job_title: jobTitle, company_name: companyName, job_url: "" });
+          setShowFilterModal(false);
+          setShowAddModal(true);
+        }}
       />
     </div>
   );
@@ -1024,34 +1024,20 @@ function FilterJDModal({
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Filter className="w-5 h-5 text-red-400" />
-            Filter Job Description
+            <Plus className="w-5 h-5 text-[#0077B5]" />
+            Add Job
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-4">
-          {/* Client + Clear */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-white/5 border border-white/10">
-              <User className="w-4 h-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">Client:</span>
-              <span className="text-sm font-medium">{selectedClientName}</span>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setJobDescription("");
-                onClear();
-              }}
-              disabled={isFiltering || !jobDescription.trim()}
-              className="border-red-500/50 text-red-500 hover:bg-red-500/10"
-            >
-              Clear
-            </Button>
+          {/* Client */}
+          <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-white/5 border border-white/10 w-fit">
+            <User className="w-4 h-4 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">Client:</span>
+            <span className="text-sm font-medium">{selectedClientName}</span>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="filter_jd">Job Description</Label>
+            <Label htmlFor="filter_jd">Paste Job Description</Label>
             <Textarea
               id="filter_jd"
               placeholder="Paste the full job description here..."
@@ -1099,37 +1085,7 @@ function FilterJDModal({
                   >
                     {isApply ? "Apply" : "Skip"}
                   </span>
-                  {filterResult.match_strength !== "none" && (
-                    <Badge
-                      variant="outline"
-                      className={
-                        filterResult.match_strength === "strong"
-                          ? "bg-green-500/10 text-green-400 border-green-500/20"
-                          : filterResult.match_strength === "moderate"
-                            ? "bg-yellow-500/10 text-yellow-400 border-yellow-500/20"
-                            : "bg-orange-500/10 text-orange-400 border-orange-500/20"
-                      }
-                    >
-                      {filterResult.match_strength}
-                    </Badge>
-                  )}
                 </div>
-                {/* Add Job button when Apply */}
-                {isApply && (
-                  <Button
-                    size="sm"
-                    onClick={() =>
-                      onAddJob(
-                        filterResult.job_title || "",
-                        filterResult.company || "",
-                      )
-                    }
-                    className="bg-green-600 hover:bg-green-700 text-white"
-                  >
-                    <Plus className="w-4 h-4 mr-1" />
-                    Add Job
-                  </Button>
-                )}
               </div>
               {/* Job title & company */}
               {(filterResult.job_title || filterResult.company) && (
@@ -1151,31 +1107,59 @@ function FilterJDModal({
             </div>
           )}
         </div>
-        <DialogFooter>
+        <DialogFooter className="flex gap-2 sm:gap-2">
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
             disabled={isFiltering}
           >
-            Close
+            Cancel
           </Button>
-          <Button
-            onClick={onSubmit}
-            disabled={isFiltering || !jobDescription.trim()}
-            className="bg-red-600 hover:bg-red-700 text-white"
-          >
-            {isFiltering ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Filtering...
-              </>
-            ) : (
-              <>
-                <Filter className="w-4 h-4 mr-2" />
-                {filterResult ? "Filter Again" : "Filter"}
-              </>
-            )}
-          </Button>
+          <div className="flex-1" />
+          {filterResult && !isFiltering && (
+            <Button
+              variant="outline"
+              onClick={() => {
+                onClear();
+                setJobDescription("");
+              }}
+            >
+              <Filter className="w-4 h-4 mr-2" />
+              Filter Again
+            </Button>
+          )}
+          {isApply && !isFiltering ? (
+            <Button
+              onClick={() =>
+                onAddJob(
+                  filterResult?.job_title || "",
+                  filterResult?.company || "",
+                )
+              }
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add LinkedIn App
+            </Button>
+          ) : (
+            <Button
+              onClick={onSubmit}
+              disabled={isFiltering || !jobDescription.trim()}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {isFiltering ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Filtering...
+                </>
+              ) : (
+                <>
+                  <Filter className="w-4 h-4 mr-2" />
+                  Filter
+                </>
+              )}
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -354,7 +354,7 @@ export async function registerRoutes(
     isSupabaseAuthenticated,
     async (req, res) => {
       try {
-        const { applier_id, client_id, job_title, company_name, job_url } =
+        const { applier_id, client_id, job_title, company_name, job_url, duration_seconds } =
           req.body;
 
         if (
@@ -385,7 +385,7 @@ export async function registerRoutes(
           source: "LinkedIn",
           optimized_resume_url: null, // No tailored resume for manual entries
           applied_date: new Date().toISOString(),
-          duration_seconds: 0,
+          duration_seconds: duration_seconds || 0,
         });
 
         // Create base pay earning ($0.28)
@@ -397,7 +397,7 @@ export async function registerRoutes(
             amount: 0.28,
             earned_date: new Date().toISOString().split("T")[0],
             payment_status: "pending",
-            notes: `Manual LinkedIn: ${job_title} at ${company_name}`,
+            notes: `Manual LinkedIn: ${job_title} at ${company_name} (${duration_seconds || 0}s)`,
           });
           console.log(
             `[Earnings] Base pay $0.28 for manual LinkedIn: ${company_name}`,
@@ -2943,10 +2943,9 @@ Return HARD_SKIP only when there is an OBVIOUS, OBJECTIVE mismatch.
 2. NOT REMOTE - On-site only or hybrid-required → HARD_SKIP
 3. COMPLETELY DIFFERENT PROFESSION
 4. HARD REQUIREMENTS THEY CANNOT MEET (clearances, licenses, certifications)
-5. EXPERIENCE MISMATCH (7+ year gap → HARD_SKIP. 2-4 year gap → CONTINUE)
-   OVERQUALIFIED: Only skip if the title explicitly says "Junior", "Entry Level", "Intern", or "New Grad". If the candidate has MORE experience than required but the role is not explicitly junior/entry-level, that is NOT a skip — companies regularly hire above listed requirements.
+5. EXPERIENCE MISMATCH — Only applies when the candidate has LESS experience than required, with a 7+ year UNDERQUALIFIED gap → HARD_SKIP. Gaps under 7 years → CONTINUE.
+   OVERQUALIFIED IS ALMOST NEVER A SKIP: If the candidate has MORE experience than the JD requires, that is NOT a mismatch. A JD saying "2+ years" or "3+ years" is a MINIMUM requirement, not a ceiling. A candidate with 8 years applying to a "2+ years" role is perfectly fine — companies regularly hire above their listed minimums. Only skip overqualified if the title explicitly contains "Junior", "Entry Level", "Intern", or "New Grad".
    SENIORITY IN TITLE: A role titled "Data Engineer" (without "Senior") is NOT a skip for someone targeting "Senior Data Engineer". Companies often hire senior people into roles without "Senior" in the title. Only skip if the title explicitly indicates junior/entry-level.
-   SALARY OVERRIDE: If the JD lists a salary or salary range and the candidate has a minimum acceptable salary set, check if the TOP of the posted range meets or exceeds the candidate's minimum. Example: range $79K-$132K with candidate minimum $115K → $132K >= $115K → salary override APPLIES → CONTINUE. Only compare the maximum possible salary, NOT the midpoint or bottom of range. This OVERRIDES seniority/experience/overqualification concerns. If the top of the range is below the minimum, the override does not apply (but salary alone is never a reason to HARD_SKIP).
 6. FUNDAMENTALLY DIFFERENT JOB FUNCTION
    ADJACENT FUNCTIONS: Roles in a closely related function (e.g. Data Analyst for a Data Engineer) should CONTINUE, but ONLY if the role is at an appropriate seniority level, is remote, and the candidate's core skills clearly apply. If the function is adjacent but everything else lines up, it is worth applying. However if the adjacent role is a step DOWN in seniority or responsibility, HARD_SKIP.
 7. SPECIALIST ROLE VS GENERALIST EXPERIENCE
@@ -2960,11 +2959,15 @@ CRITICAL: DEFAULT TO CONTINUE. Only HARD_SKIP for OBVIOUS mismatches.
 2. Remote or remote-eligible? → If on-site only, HARD_SKIP
 3. Same FIELD? → If different profession, HARD_SKIP
 4. Unmeetable requirement? → HARD_SKIP
-5. Experience gap 7+ years? → HARD_SKIP
+5. UNDERQUALIFIED by 7+ years? → HARD_SKIP. (Overqualified is NOT a skip — more experience than required is always fine unless title says Junior/Entry/Intern)
 6. CORE work different? → HARD_SKIP
 7. Could hiring manager consider this? → If clearly NO, HARD_SKIP
 
-If no HARD_SKIP triggers → CONTINUE
+BEFORE returning HARD_SKIP, check the MANDATORY SALARY OVERRIDE:
+If the JD lists a salary range AND the candidate has a Minimum Acceptable Salary → compare the MAXIMUM of the posted range to the candidate's minimum. If max >= minimum → you MUST return CONTINUE, not HARD_SKIP. No exceptions. The salary proves the role pays at the candidate's level regardless of title wording or listed experience requirements.
+Example: JD range $79K-$132K, candidate minimum $115K → max $132K >= $115K → MUST CONTINUE.
+
+If no HARD_SKIP triggers (or salary override applies) → CONTINUE
 </decision_framework>
 
 <output_format>
