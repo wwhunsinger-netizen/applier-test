@@ -3050,6 +3050,76 @@ ${job_description}
     }
   });
 
+  // ========================================
+  // TEST SUBMISSIONS (Applier Assessment V2)
+  // No auth required - test takers aren't logged in
+  // ========================================
+
+  // Check if email has already taken the test (no auth)
+  app.get("/api/test-submissions/check-email", async (req, res) => {
+    try {
+      const email = (req.query.email as string || "").toLowerCase().trim();
+      if (!email) {
+        return res.status(400).json({ error: "Email required" });
+      }
+      const existing = await storage.getTestSubmissionByEmail(email);
+      res.json({ taken: !!existing });
+    } catch (error) {
+      console.error("Error checking email:", error);
+      res.status(500).json({ error: "Failed to check email" });
+    }
+  });
+
+  app.post("/api/test-submissions", async (req, res) => {
+    try {
+      const { insertTestSubmissionSchema } = await import("@shared/schema");
+      const parsed = insertTestSubmissionSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Invalid submission data", details: parsed.error.flatten() });
+      }
+
+      // Block duplicate submissions entirely (one attempt per email)
+      const existing = await storage.getTestSubmissionByEmail(parsed.data.candidate_email);
+      if (existing) {
+        return res.json({ id: existing.id, duplicate: true });
+      }
+
+      const submission = await storage.createTestSubmission({
+        ...parsed.data,
+        candidate_email: parsed.data.candidate_email.toLowerCase().trim(),
+      });
+      res.json(submission);
+    } catch (error) {
+      console.error("Error creating test submission:", error);
+      res.status(500).json({ error: "Failed to save test submission" });
+    }
+  });
+
+  // GET all submissions (admin use - requires auth)
+  app.get("/api/test-submissions", isSupabaseAuthenticated, async (req, res) => {
+    try {
+      const submissions = await storage.getTestSubmissions();
+      res.json(submissions);
+    } catch (error) {
+      console.error("Error fetching test submissions:", error);
+      res.status(500).json({ error: "Failed to fetch test submissions" });
+    }
+  });
+
+  // Mark a submission as invited (admin use)
+  app.post("/api/test-submissions/:id/invite", isSupabaseAuthenticated, async (req, res) => {
+    try {
+      const updated = await storage.markTestSubmissionInvited(req.params.id);
+      if (!updated) {
+        return res.status(404).json({ error: "Submission not found" });
+      }
+      res.json(updated);
+    } catch (error) {
+      console.error("Error marking submission as invited:", error);
+      res.status(500).json({ error: "Failed to update submission" });
+    }
+  });
+
   // Register object storage routes for file uploads
   registerObjectStorageRoutes(app);
 

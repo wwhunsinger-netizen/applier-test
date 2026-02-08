@@ -14,6 +14,7 @@ import {
   Calendar,
   ClipboardCheck,
   UserCheck,
+  GraduationCap,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -50,6 +51,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { icon: Calendar, label: "Interviews", href: "/admin/interviews" },
     { icon: List, label: "All Applications", href: "/admin/applications" },
     { icon: AlertTriangle, label: "Review Issues", href: "/admin/review" },
+    { icon: GraduationCap, label: "Test Results", href: "/admin/test-results" },
   ];
 
   const clientNavItems = [

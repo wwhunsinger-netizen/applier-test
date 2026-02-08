@@ -26,6 +26,8 @@ import type {
   ApplierEarning,
   InsertApplierEarning,
   UpdateApplierEarning,
+  TestSubmission,
+  InsertTestSubmission,
 } from "@shared/schema";
 import { supabase } from "./supabase";
 
@@ -129,6 +131,13 @@ export interface IStorage {
   ): Promise<ApplierEarning | null>;
   getEarningsByClient(clientId: string): Promise<ApplierEarning[]>;
   getAllEarnings(): Promise<ApplierEarning[]>;
+
+  // Test submission operations (Applier Assessment V2)
+  createTestSubmission(submission: InsertTestSubmission): Promise<TestSubmission>;
+  getTestSubmissions(): Promise<TestSubmission[]>;
+  getTestSubmission(id: string): Promise<TestSubmission | null>;
+  getTestSubmissionByEmail(email: string): Promise<TestSubmission | null>;
+  markTestSubmissionInvited(id: string): Promise<TestSubmission | null>;
 }
 
 export class SupabaseStorage implements IStorage {
@@ -868,6 +877,70 @@ export class SupabaseStorage implements IStorage {
 
     if (error) throw error;
     return data || [];
+  }
+
+  // Test submission operations (Applier Assessment V2)
+  async createTestSubmission(submission: InsertTestSubmission): Promise<TestSubmission> {
+    const { data, error } = await supabase
+      .from("test_submissions")
+      .insert(submission)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
+
+  async getTestSubmissions(): Promise<TestSubmission[]> {
+    const { data, error } = await supabase
+      .from("test_submissions")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+    return data || [];
+  }
+
+  async getTestSubmission(id: string): Promise<TestSubmission | null> {
+    const { data, error } = await supabase
+      .from("test_submissions")
+      .select("*")
+      .eq("id", id)
+      .single();
+
+    if (error) {
+      if (error.code === "PGRST116") return null;
+      throw error;
+    }
+    return data;
+  }
+
+  async getTestSubmissionByEmail(email: string): Promise<TestSubmission | null> {
+    const { data, error } = await supabase
+      .from("test_submissions")
+      .select("*")
+      .eq("candidate_email", email.toLowerCase())
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) throw error;
+    return data;
+  }
+
+  async markTestSubmissionInvited(id: string): Promise<TestSubmission | null> {
+    const { data, error } = await supabase
+      .from("test_submissions")
+      .update({ invited_at: new Date().toISOString() })
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) {
+      if (error.code === "PGRST116") return null;
+      throw error;
+    }
+    return data;
   }
 }
 
