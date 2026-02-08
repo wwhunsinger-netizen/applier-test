@@ -1,45 +1,12 @@
-import { Switch, Route, useLocation, useParams } from "wouter";
+import { Switch, Route, useLocation, useParams, Redirect } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import NotFound from "@/pages/not-found";
-import Layout from "@/components/layout";
-import LoginPage from "@/pages/login";
-import ResetPasswordPage from "@/pages/reset-password";
-import DashboardPage from "@/pages/dashboard";
-import QueuePage from "@/pages/queue";
-import ReviewPage from "@/pages/review";
-import LeaderboardPage from "@/pages/leaderboard";
-import LoadingScreen from "@/components/loading";
-import { UserProvider, useUser } from "@/lib/userContext";
 
-import { ApplicationsProvider } from "@/lib/applicationsContext";
-import AdminApplicationsPage from "@/pages/admin/applications";
-import AdminReviewPage from "@/pages/admin/review";
-import AdminQAPage from "@/pages/admin/qa";
-import AdminClientsPage from "@/pages/admin/clients";
-import AdminClientDetailPage from "@/pages/admin/clients/detail";
-import AdminAppliersPage from "@/pages/admin/appliers";
-import AdminQueuesPage from "@/pages/admin/queues";
-import ClientInterviewsPage from "@/pages/client/interviews";
-import ClientDocumentsPage from "@/pages/client/documents";
-import ClientApplicationsPage from "@/pages/client/applications";
-
-import ClientJobCriteriaPage from "@/pages/client/job-criteria";
-import AppliedPage from "@/pages/applier/applied";
-
-import ResumeTailorPage from "@/pages/applier/resume-tailor";
-import AdminInterviewsPage from "@/pages/admin/interviews";
-import AdminTestResultsPage from "@/pages/admin/test-results";
-
-// Applier Test V2 imports
 import { useState, useEffect } from "react";
 import { AnimatePresence } from "framer-motion";
 import { TestProvider, useTest } from "@/context/TestContext";
-// DevNav removed for production
-// import DevNav from "@/components/DevNav";
-import TestTimer from "@/components/TestTimer";
 import WelcomePage from "@/pages/Welcome";
 import EntryPage from "@/pages/Entry";
 import TypingTestPage from "@/pages/TypingTest";
@@ -48,65 +15,6 @@ import JobApplicationPage from "@/pages/JobApplication";
 import ScreeningPage from "@/pages/Screening";
 import ResultsPage from "@/pages/Results";
 
-function AuthGuard({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading } = useUser();
-
-  // Show loading while checking auth and resolving user role
-  if (isLoading) {
-    return <LoadingScreen />;
-  }
-
-  // If not authenticated, show login page
-  if (!isAuthenticated) {
-    return <LoginPage />;
-  }
-
-  return <>{children}</>;
-}
-
-function Router() {
-  return (
-    <AuthGuard>
-      <Layout>
-        <Switch>
-          <Route path="/" component={DashboardPage} />
-          <Route path="/queue" component={QueuePage} />
-          <Route path="/review/:id" component={ReviewPage} />
-          <Route path="/leaderboard" component={LeaderboardPage} />
-          <Route path="/applied" component={AppliedPage} />
-
-          {/* Admin Routes */}
-          <Route path="/admin/applications" component={AdminApplicationsPage} />
-          <Route path="/admin/review" component={AdminReviewPage} />
-          <Route path="/admin/qa" component={AdminQAPage} />
-          <Route path="/admin/clients" component={AdminClientsPage} />
-          <Route path="/admin/clients/:id" component={AdminClientDetailPage} />
-          <Route path="/admin/appliers" component={AdminAppliersPage} />
-          <Route path="/admin/queues" component={AdminQueuesPage} />
-          <Route path="/admin/interviews" component={AdminInterviewsPage} />
-          <Route path="/admin/test-results" component={AdminTestResultsPage} />
-
-          {/* Client Routes */}
-          <Route path="/client/interviews" component={ClientInterviewsPage} />
-          <Route path="/client/documents" component={ClientDocumentsPage} />
-          <Route
-            path="/client/applications"
-            component={ClientApplicationsPage}
-          />
-          <Route
-            path="/client/job-criteria"
-            component={ClientJobCriteriaPage}
-          />
-          <Route path="/resume-tailor" component={ResumeTailorPage} />
-
-          <Route component={NotFound} />
-        </Switch>
-      </Layout>
-    </AuthGuard>
-  );
-}
-
-// Test routes live outside AuthGuard, no login required
 function MobileWarning() {
   const [dismissed, setDismissed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -158,9 +66,7 @@ function TestRouteGuard() {
   const [location, navigate] = useLocation();
   const { completedSteps, screeningPassed } = useTest();
 
-  // Prevent skipping ahead via URL
   useEffect(() => {
-    // Normalize: strip trailing slashes and query params
     const normalizedPath = location.split("?")[0].replace(/\/+$/, "");
 
     const guards: Record<string, string> = {
@@ -177,13 +83,11 @@ function TestRouteGuard() {
       navigate("/test/welcome");
     }
 
-    // Block retry after screening failure
     if (normalizedPath === "/test/screening" && screeningPassed === false) {
       navigate("/test/welcome");
     }
   }, [location, completedSteps, screeningPassed, navigate]);
 
-  // Warn before closing/refreshing mid-test
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (completedSteps.length > 0 && !completedSteps.includes("results")) {
@@ -198,7 +102,6 @@ function TestRouteGuard() {
   return null;
 }
 
-// Wrapper to force remount of ApplicationReview when review ID changes
 function ReviewRouteWrapper() {
   const params = useParams<{ id: string }>();
   return <ApplicationReviewPage key={params.id} />;
@@ -212,7 +115,6 @@ function TestRouter() {
       <TestRouteGuard />
       <MobileWarning />
       <TestProgressBar />
-      {/* TestTimer hidden from user - still tracking in context */}
       <div className="relative pb-12 pt-8">
         <div className="absolute -bottom-[20%] -right-[10%] w-[50%] h-[50%] bg-primary/20 blur-[150px] rounded-full opacity-40 pointer-events-none z-0" />
         <div className="relative z-10">
@@ -229,47 +131,21 @@ function TestRouter() {
           </AnimatePresence>
         </div>
       </div>
-      {/* DevNav removed for production */}
     </TestProvider>
   );
 }
 
 function App() {
-  const [location] = useLocation();
-
-  // Handle reset-password route outside of auth (check URL hash for recovery token)
-  if (window.location.hash.includes("type=recovery")) {
-    return (
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Toaster />
-          <ResetPasswordPage />
-        </TooltipProvider>
-      </QueryClientProvider>
-    );
-  }
-
-  // Test assessment routes - no auth, no sidebar
-  if (location.startsWith("/test/")) {
-    return (
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Toaster />
-          <TestRouter />
-        </TooltipProvider>
-      </QueryClientProvider>
-    );
-  }
-
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <ApplicationsProvider>
-          <UserProvider>
-            <Toaster />
-            <Router />
-          </UserProvider>
-        </ApplicationsProvider>
+        <Toaster />
+        <Switch>
+          <Route path="/test/:rest*" component={TestRouter} />
+          <Route>
+            <Redirect to="/test/welcome" />
+          </Route>
+        </Switch>
       </TooltipProvider>
     </QueryClientProvider>
   );

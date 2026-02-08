@@ -1,6 +1,6 @@
-modules = ["nodejs-20", "web", "postgresql-16"]
+modules = ["nodejs-20", "web"]
 run = "npm run dev"
-hidden = [".config", ".git", "generated-icon.png", "node_modules", "dist"]
+hidden = [".config", ".git", "node_modules", "dist"]
 
 [nix]
 channel = "stable-24_05"
@@ -8,10 +8,6 @@ channel = "stable-24_05"
 [[ports]]
 localPort = 5000
 externalPort = 80
-
-[[ports]]
-localPort = 5001
-externalPort = 3001
 
 [env]
 PORT = "5000"
@@ -41,19 +37,3 @@ author = "agent"
 task = "shell.exec"
 args = "npm run dev"
 waitForPort = 5000
-
-[agent]
-mockupState = "FULLSTACK"
-integrations = ["javascript_object_storage:2.0.0", "javascript_database:1.0.0"]
-
-[userenv]
-
-[userenv.shared]
-CLIENT_CHAT_API_URL = "https://qpvgjsuqsyrkfaghcdks.supabase.co/functions/v1/client-chat"
-CLIENT_CHAT_API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFwdmdqc3Vxc3lya2ZhZ2hjZGtzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1MjAyOTAsImV4cCI6MjA4MjA5NjI5MH0.vnDN51kwUuYnLr81exXEKk7oWDkUBGY4nSoq-imuZUA"
-
-[userenv.production]
-SEED_CREDENTIALS = "[{\"userId\":\"0b319efe-b359-4bf2-a0dd-5a4d993d23cc\",\"email\":\"admin@jumpseat.com\",\"password\":\"smGeGcbEQSaA\",\"firstName\":\"Admin\",\"lastName\":\"User\"},{\"userId\":\"a86ed547-e7da-4844-ad0c-fc194c8d0325\",\"email\":\"thm.bacalla@gmail.com\",\"password\":\"R8cXuqmmJDVT\",\"firstName\":\"Thea\",\"lastName\":\"Bacalla\"},{\"userId\":\"23709e70-5086-43f3-a8f1-49ff4d51830e\",\"email\":\"jon@desk.inc\",\"password\":\"BuTp8sW5Cmeb\",\"firstName\":\"Jonathan\",\"lastName\":\"Ramirez\"},{\"userId\":\"0bb648f3-8bab-4d94-bc0e-3ba5df4ff617\",\"email\":\"dimas@desk.inc\",\"password\":\"GTYa6f7HKyV3\",\"firstName\":\"Dimas\",\"lastName\":\"Gonzalez\"},{\"userId\":\"7eacd0d8-280b-4689-93e2-132373d7ec50\",\"email\":\"carl@desk.inc\",\"password\":\"LPxWq2N9ZmcE\",\"firstName\":\"Carl\",\"lastName\":\"Noonan\"},{\"userId\":\"46a2a696-76b8-4e97-ae1c-d23678f3c0d6\",\"email\":\"del@desk.inc\",\"password\":\"H4sRfDk7VtYp\",\"firstName\":\"Del\",\"lastName\":\"Johnson\"}]"
-
-[userenv.development]
-SEED_CREDENTIALS = "[{\"userId\":\"0b319efe-b359-4bf2-a0dd-5a4d993d23cc\",\"email\":\"admin@jumpseat.com\",\"password\":\"smGeGcbEQSaA\",\"firstName\":\"Admin\",\"lastName\":\"User\"},{\"userId\":\"a86ed547-e7da-4844-ad0c-fc194c8d0325\",\"email\":\"thm.bacalla@gmail.com\",\"password\":\"R8cXuqmmJDVT\",\"firstName\":\"Thea\",\"lastName\":\"Bacalla\"},{\"userId\":\"23709e70-5086-43f3-a8f1-49ff4d51830e\",\"email\":\"jon@desk.inc\",\"password\":\"BuTp8sW5Cmeb\",\"firstName\":\"Jonathan\",\"lastName\":\"Ramirez\"},{\"userId\":\"0bb648f3-8bab-4d94-bc0e-3ba5df4ff617\",\"email\":\"dimas@desk.inc\",\"password\":\"GTYa6f7HKyV3\",\"firstName\":\"Dimas\",\"lastName\":\"Gonzalez\"},{\"userId\":\"7eacd0d8-280b-4689-93e2-132373d7ec50\",\"email\":\"carl@desk.inc\",\"password\":\"LPxWq2N9ZmcE\",\"firstName\":\"Carl\",\"lastName\":\"Noonan\"},{\"userId\":\"46a2a696-76b8-4e97-ae1c-d23678f3c0d6\",\"email\":\"del@desk.inc\",\"password\":\"H4sRfDk7VtYp\",\"firstName\":\"Del\",\"lastName\":\"Johnson\"}]"
